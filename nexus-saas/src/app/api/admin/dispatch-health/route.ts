@@ -2,6 +2,9 @@ import { requireOrgManager, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
 
+export const dynamic = "force-dynamic"
+export const runtime = "nodejs"
+
 function parseMeta(meta: string | null) {
   if (!meta) return null
   try {
