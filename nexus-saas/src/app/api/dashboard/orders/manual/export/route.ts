@@ -3,6 +3,8 @@ import { requireOrgManager, isAuthError } from "@/lib/auth-guard"
 import { db } from "@/lib/db"
 import { getDispatchMetaByOrderIds } from "@/lib/admin-order-dispatch"
 
+export const dynamic = "force-dynamic"
+
 function csvEscape(value: string | number | null | undefined) {
   const s = String(value ?? "")
   if (/[",\n]/.test(s)) {
