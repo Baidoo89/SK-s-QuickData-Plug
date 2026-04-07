@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+ 
+@layer base {
+  :root {
+    --background: 220 30% 98%;
+    --foreground: 224 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 224 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 47% 11%;
+
+    --primary: 218 92% 48%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 214 100% 97%;
+    --secondary-foreground: 224 47% 11%;
+
+    --muted: 214 32% 96%;
+    --muted-foreground: 215 16% 45%;
+
+    --accent: 190 100% 95%;
+    --accent-foreground: 210 40% 18%;
+
+    --blue-ice: 210 70% 92%;
+ 
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+ 
+    --border: 214 28% 88%;
+    --input: 214 28% 88%;
+    --ring: 218 92% 48%;
+ 
+    --radius: 0.75rem;
+  }
+ 
+  .dark {
+    --background: 224 47% 8%;
+    --foreground: 210 40% 98%;
+ 
+    --card: 224 40% 11%;
+    --card-foreground: 210 40% 98%;
+ 
+    --popover: 224 40% 11%;
+    --popover-foreground: 210 40% 98%;
+ 
+    --primary: 204 100% 68%;
+    --primary-foreground: 224 47% 11%;
+ 
+    --secondary: 224 30% 16%;
+    --secondary-foreground: 210 40% 98%;
+ 
+    --muted: 224 30% 16%;
+    --muted-foreground: 215 20% 68%;
+ 
+    --accent: 190 35% 18%;
+    --accent-foreground: 210 40% 98%;
+
+    --blue-ice: 210 65% 18%;
+ 
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+ 
+    --border: 224 22% 20%;
+    --input: 224 22% 20%;
+    --ring: 204 100% 68%;
+  }
+}
+ 
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    background:
+      radial-gradient(circle at top left, hsl(218 92% 48% / 0.10), transparent 30%),
+      radial-gradient(circle at top right, hsl(190 100% 44% / 0.08), transparent 24%),
+      hsl(var(--background));
+  }
+  body {
+    @apply min-h-screen bg-background text-foreground antialiased;
+    background:
+      radial-gradient(circle at top left, hsl(218 92% 48% / 0.08), transparent 28%),
+      radial-gradient(circle at bottom right, hsl(190 100% 44% / 0.08), transparent 22%),
+      linear-gradient(to bottom, hsl(var(--background)), hsl(var(--background)));
+    background-attachment: fixed;
+  }
+  ::selection {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+}

@@ -1,0 +1,35 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Dev Server",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"dev"
+			],
+			"isBackground": true,
+			"problemMatcher": [
+				"$tsc-watch"
+			],
+			"group": "test"
+		},
+		{
+			"label": "next-build",
+			"type": "shell",
+			"command": "npm run build",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "next-build",
+			"type": "shell",
+			"command": "npm run build",
+			"isBackground": false,
+			"group": "build"
+		}
+	]
+}

@@ -1,0 +1,318 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  users       User[]
+  products    Product[]
+  orders      Order[]
+  customers   Customer[]
+  customPrices CustomPrice[]
+  agents      Agent[]
+  basePrices  BasePrice[]
+  agentPrices AgentPrice[]
+  resellerPrices ResellerPrice[]
+  apiKeys     ApiKey[]
+  auditLogs   AuditLog[]
+  subscription Subscription?
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String    @default("SUBSCRIBER") // SUPERADMIN, SUBSCRIBER (agents are separate table)
+  active        Boolean   @default(true) // For deactivating resellers
+  
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  // When this user is an agent account, link to the Agent record
+  agentId        String?   @unique
+  agent          Agent?    @relation("UserAgent", fields: [agentId], references: [id])
+
+  // When this user is a reseller, link back to the parent Agent
+  parentAgentId  String?
+  parentAgent    Agent?    @relation("AgentResellers", fields: [parentAgentId], references: [id])
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  orders        Order[]
+  resellerPrices ResellerPrice[]
+
+  walletTransactions WalletTransaction[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  price       Float
+  stock       Int      @default(0)
+  imageUrl    String?
+  category    String   @default("DATA_BUNDLE") // DATA_BUNDLE, LEGAL_DOCUMENT, EDUCATION
+  
+  provider    String   @default("MTN") // MTN, AIRTELTIGO, TELECEL
+  bundleType  String   @default("DATA") // DATA, AIRTIME
+  active      Boolean  @default(true)
+  
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems  OrderItem[]
+  customPrices CustomPrice[]
+  basePrices  BasePrice[]
+  agentPrices AgentPrice[]
+  resellerPrices ResellerPrice[]
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  userId    String?
+  user      User?       @relation(fields: [userId], references: [id])
+  
+  customerId String?
+  customer   Customer?  @relation(fields: [customerId], references: [id])
+  
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  agentId   String?
+  agent     Agent?      @relation(fields: [agentId], references: [id])
+
+  phoneNumber String?
+  total     Float
+  status    String      @default("PENDING")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  items     OrderItem[]
+}
+
+model Customer {
+  id             String       @id @default(cuid())
+  name           String
+  email          String
+  phone          String?
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  customPrices   CustomPrice[]
+  orders         Order[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([email, organizationId])
+}
+
+model CustomPrice {
+  id             String       @id @default(cuid())
+  price          Float
+  
+  productId      String
+  product        Product      @relation(fields: [productId], references: [id])
+  
+  customerId     String
+  customer       Customer     @relation(fields: [customerId], references: [id])
+  
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([productId, customerId])
+}
+
+model BasePrice {
+  id             String       @id @default(cuid())
+  price          Float
+  productId      String
+  product        Product      @relation(fields: [productId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([productId, organizationId])
+}
+
+model Agent {
+  id             String       @id @default(cuid())
+  name           String
+  subscriberName String?
+  active         Boolean      @default(true)
+  commissionPercent Float     @default(0)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  prices         AgentPrice[]
+  orders         Order[]
+
+  // All reseller user accounts created under this agent
+  resellers      User[]    @relation("AgentResellers")
+
+  // Optional linked user account when the agent logs in directly
+  user           User?     @relation("UserAgent")
+}
+
+model AgentPrice {
+  id             String       @id @default(cuid())
+  price          Float
+  agentId        String
+  agent          Agent        @relation(fields: [agentId], references: [id])
+  productId      String
+  product        Product      @relation(fields: [productId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([agentId, productId])
+}
+
+model ApiKey {
+  id             String       @id @default(cuid())
+  key            String       @unique
+  name           String
+  lastUsed       DateTime?
+  
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model PasswordResetToken {
+  id String @id @default(cuid())
+  email String
+  token String @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Float
+  profit    Float   @default(0)
+}
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  actorId        String?
+  actorName      String?
+  action         String
+  targetType     String
+  targetId       String
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  before         String?
+  after          String?
+  meta           String?
+  createdAt      DateTime @default(now())
+}
+
+model Plan {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  priceGHS    Float
+  features    String   // JSON string of features array
+  maxProducts Int      @default(10)
+  maxAgents   Int      @default(5)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id             String   @id @default(cuid())
+  organizationId String   @unique
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  planId         String
+  plan           Plan     @relation(fields: [planId], references: [id])
+  status         String   @default("ACTIVE") // ACTIVE, CANCELED, PENDING, EXPIRED
+  paystackRef    String?  // Paystack reference/receipt number
+  nextBillingAt  DateTime?
+  canceledAt     DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  payments       Payment[]
+}
+
+model Payment {
+  id             String   @id @default(cuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+  amount         Float
+  paystackRef    String   @unique
+  status         String   @default("PENDING") // PENDING, SUCCESS, FAILED
+  paidAt         DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model WalletTransaction {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+
+  performedByEmail String?
+  performedByRole  String?
+
+  method           String   // "paystack" | "manual"
+  amount           Float
+  status           String   @default("success")
+  createdAt        DateTime @default(now())
+
+  @@index([userId])
+}
+
+
+
+
+
+model ResellerPrice {
+  id             String       @id @default(cuid())
+  price          Float
+  resellerId     String
+  reseller       User         @relation(fields: [resellerId], references: [id])
+  productId      String
+  product        Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([resellerId, productId])
+  @@index([resellerId])
+}
+
