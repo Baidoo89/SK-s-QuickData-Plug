@@ -8,7 +8,9 @@ export const dynamic = "force-dynamic"
 const updatePolicySchema = z.object({
   mode: z.enum(["MANUAL_ONLY", "API_ONLY", "HYBRID"]),
   apiEnabledNetworks: z.array(z.string()).default([]),
+  providerKey: z.string().optional().default("primary"),
   providerName: z.string().min(1).default("Primary Provider"),
+  networkProviderMap: z.record(z.string(), z.string()).optional().default({}),
 })
 
 export async function GET() {
@@ -56,7 +58,9 @@ export async function PUT(req: Request) {
       actorName: authResult.user.email,
       mode: parsed.data.mode,
       apiEnabledNetworks: parsed.data.apiEnabledNetworks,
+      providerKey: parsed.data.providerKey,
       providerName: parsed.data.providerName,
+      networkProviderMap: parsed.data.networkProviderMap,
     })
 
     return apiSuccess(payload, "Dispatch policy updated")

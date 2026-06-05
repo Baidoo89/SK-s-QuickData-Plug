@@ -11,7 +11,9 @@ type DispatchMode = "MANUAL_ONLY" | "API_ONLY" | "HYBRID"
 type DispatchPolicy = {
   mode: DispatchMode
   apiEnabledNetworks: string[]
+  providerKey: string
   providerName: string
+  networkProviderMap: Record<string, string>
 }
 
 type DispatchPolicyCardProps = {
@@ -23,8 +25,10 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [mode, setMode] = useState<DispatchMode>("HYBRID")
+  const [providerKey, setProviderKey] = useState("primary")
   const [providerName, setProviderName] = useState("Primary Provider")
   const [apiNetworksText, setApiNetworksText] = useState("MTN")
+  const [networkProviderText, setNetworkProviderText] = useState("")
 
   useEffect(() => {
     async function loadPolicy() {
@@ -36,8 +40,14 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
         const data: DispatchPolicy = payload.data
 
         setMode(data.mode)
+        setProviderKey(data.providerKey || "primary")
         setProviderName(data.providerName)
         setApiNetworksText(data.apiEnabledNetworks.join(", "))
+        setNetworkProviderText(
+          Object.entries(data.networkProviderMap || {})
+            .map(([network, key]) => `${network}=${key}`)
+            .join(", "),
+        )
       } catch (error) {
         toast({
           title: "Error",
@@ -59,14 +69,25 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
         .split(",")
         .map((n) => n.trim().toUpperCase())
         .filter(Boolean)
+      const networkProviderMap = networkProviderText
+        .split(",")
+        .map((entry) => entry.trim())
+        .filter(Boolean)
+        .reduce<Record<string, string>>((acc, entry) => {
+          const [network, key] = entry.split("=").map((part) => part?.trim())
+          if (network && key) acc[network.toUpperCase()] = key.toLowerCase()
+          return acc
+        }, {})
 
       const res = await fetch(endpoint, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           mode,
+          providerKey: providerKey.trim(),
           providerName: providerName.trim(),
           apiEnabledNetworks,
+          networkProviderMap,
         }),
       })
 
@@ -115,7 +136,21 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium">Provider Name</label>
+          <label className="text-xs font-medium">Default Provider Slot</label>
+          <Input
+            value={providerKey}
+            onChange={(e) => setProviderKey(e.target.value)}
+            disabled={loading || saving}
+            className="text-xs"
+            placeholder="primary"
+          />
+          <p className="text-[11px] text-muted-foreground">
+            This must match a saved provider slot key. Example: primary, backup, mtn-main.
+          </p>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium">Provider Display Name</label>
           <Input
             value={providerName}
             onChange={(e) => setProviderName(e.target.value)}
@@ -136,6 +171,20 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
           />
           <p className="text-[11px] text-muted-foreground">
             Comma-separated. Example: MTN for MTN-only API routing.
+          </p>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium">Network Provider Routing</label>
+          <Input
+            value={networkProviderText}
+            onChange={(e) => setNetworkProviderText(e.target.value)}
+            disabled={loading || saving}
+            className="text-xs"
+            placeholder="MTN=primary, TELECEL=backup, AIRTELTIGO=backup"
+          />
+          <p className="text-[11px] text-muted-foreground">
+            Optional. Leave blank to use the default slot for all API-enabled networks.
           </p>
         </div>
 

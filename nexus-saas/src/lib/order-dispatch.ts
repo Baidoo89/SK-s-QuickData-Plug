@@ -27,7 +27,7 @@ export async function resolveOrderDispatch(input: ResolveOrderDispatchInput): Pr
   const policy = await getEffectiveDispatchPolicy(input.organizationId)
   const decision = shouldUseProviderApi(policy, input.network)
   const providerConfig = decision.useApi
-    ? await getEffectiveProviderConnection(input.organizationId)
+    ? await getEffectiveProviderConnection(input.organizationId, decision.providerKey)
     : null
   const canUseApi = Boolean(decision.useApi && providerConfig?.providerOrderUrl)
   const fallbackReason = "Provider connection is not configured, so this order was routed to manual fulfillment"
@@ -43,6 +43,7 @@ export async function resolveOrderDispatch(input: ResolveOrderDispatchInput): Pr
       organizationId: input.organizationId,
       meta: JSON.stringify({
         mode: dispatchMode,
+        providerKey: decision.providerKey,
         provider: dispatchProvider,
         reason: dispatchReason,
         network: input.network,
@@ -74,6 +75,7 @@ export async function resolveOrderDispatch(input: ResolveOrderDispatchInput): Pr
     phone: input.phone,
     quantity: input.quantity,
     amount: input.amount,
+    providerKey: decision.providerKey,
     providerName: dispatchProvider,
   })
 

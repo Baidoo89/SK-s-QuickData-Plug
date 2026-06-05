@@ -27,13 +27,24 @@ type ProviderConnectionCardProps = {
   endpoint?: string
 }
 
+type ProviderConnectionSummary = {
+  providerKey: string
+  providerName: string
+  providerOrderUrl: string | null
+  hasApiKey: boolean
+  active: boolean
+}
+
 export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connection" }: ProviderConnectionCardProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [providerKey, setProviderKey] = useState("primary")
   const [providerName, setProviderName] = useState("Primary Provider")
   const [providerOrderUrl, setProviderOrderUrl] = useState("")
   const [providerApiKey, setProviderApiKey] = useState("")
+  const [active, setActive] = useState(true)
+  const [connections, setConnections] = useState<ProviderConnectionSummary[]>([])
   const [hasApiKey, setHasApiKey] = useState(false)
   const [updatedAt, setUpdatedAt] = useState<string | null>(null)
   const [hostname, setHostname] = useState("")
@@ -54,10 +65,13 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
         const payload = await res.json()
         const data = payload.data
 
+        setProviderKey(data.providerKey || "primary")
         setProviderName(data.providerName || "Primary Provider")
         setProviderOrderUrl(data.providerOrderUrl || "")
+        setActive(data.active !== false)
         setHasApiKey(Boolean(data.hasApiKey))
         setUpdatedAt(data.updatedAt || null)
+        setConnections(Array.isArray(data.connections) ? data.connections : [])
       } catch (error) {
         toast({
           title: "Error",
@@ -92,8 +106,10 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           providerName,
+          providerKey,
           providerOrderUrl,
           providerApiKey,
+          active,
         }),
       })
 
@@ -104,6 +120,9 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
 
       setHasApiKey(Boolean(payload?.data?.hasApiKey))
       setUpdatedAt(payload?.data?.updatedAt || null)
+      setProviderKey(payload?.data?.providerKey || providerKey)
+      setActive(payload?.data?.active !== false)
+      setConnections(Array.isArray(payload?.data?.connections) ? payload.data.connections : [])
       setProviderApiKey("")
       setAllowTestInProd(false)
       toast({
@@ -135,6 +154,33 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
           Store the provider endpoint and secret securely on the server. This is used only for API-routed orders.
         </p>
 
+        {connections.length > 0 ? (
+          <div className="space-y-2 rounded-md border border-border bg-muted/25 p-3">
+            <p className="text-xs font-semibold text-foreground">Saved provider slots</p>
+            <div className="flex flex-wrap gap-2">
+              {connections.map((connection) => (
+                <button
+                  key={connection.providerKey}
+                  type="button"
+                  className="rounded-md border border-border bg-background px-2.5 py-1 text-left text-[11px] transition hover:border-primary"
+                  onClick={() => {
+                    setProviderKey(connection.providerKey)
+                    setProviderName(connection.providerName)
+                    setProviderOrderUrl(connection.providerOrderUrl || "")
+                    setHasApiKey(connection.hasApiKey)
+                    setActive(connection.active)
+                    setProviderApiKey("")
+                  }}
+                >
+                  <span className="font-semibold text-foreground">{connection.providerKey}</span>
+                  <span className="ml-1 text-muted-foreground">{connection.providerName}</span>
+                  {!connection.active ? <span className="ml-1 text-destructive">Paused</span> : null}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-muted-foreground">Detected provider environment:</span>
           <Badge
@@ -164,6 +210,20 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
             </label>
           </div>
         ) : null}
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium">Provider Slot Key</label>
+          <Input
+            value={providerKey}
+            onChange={(e) => setProviderKey(e.target.value)}
+            disabled={loading || saving}
+            className="text-xs"
+            placeholder="primary"
+          />
+          <p className="text-[11px] text-muted-foreground">
+            Use short keys like primary, backup, mtn-main. Network routing uses this key.
+          </p>
+        </div>
 
         <div className="space-y-1.5">
           <label className="text-xs font-medium">Provider Name</label>
@@ -205,6 +265,17 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
         <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
           <span>{updatedAt ? `Last updated: ${new Date(updatedAt).toLocaleString()}` : "Not configured yet"}</span>
         </div>
+
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={active}
+            onChange={(e) => setActive(e.target.checked)}
+            disabled={loading || saving}
+            className="h-4 w-4 rounded border-border"
+          />
+          Provider slot is active
+        </label>
 
         <Button onClick={saveConnection} disabled={loading || saving} className="w-full text-xs sm:w-auto">
           {saving ? "Saving..." : "Save Provider Connection"}

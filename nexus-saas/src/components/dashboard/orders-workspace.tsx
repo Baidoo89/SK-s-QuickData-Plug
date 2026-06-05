@@ -93,13 +93,19 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
   const [previewOpen, setPreviewOpen] = useState(false)
 
   const actionableRows = useMemo(() => rows.filter((row) => row.actionable), [rows])
+  const pendingRows = useMemo(() => actionableRows.filter((row) => row.status === "PENDING"), [actionableRows])
+  const processingRows = useMemo(() => actionableRows.filter((row) => row.status === "PROCESSING"), [actionableRows])
   const selectedRows = useMemo(
     () => actionableRows.filter((row) => selected.has(row.id)),
     [actionableRows, selected],
   )
+  const selectedPendingRows = useMemo(
+    () => selectedRows.filter((row) => row.status === "PENDING"),
+    [selectedRows],
+  )
 
-  const allActionableSelected = actionableRows.length > 0 && selectedRows.length === actionableRows.length
-  const previewRows = selectedRows.length > 0 ? selectedRows : actionableRows
+  const allPendingSelected = pendingRows.length > 0 && pendingRows.every((row) => selected.has(row.id))
+  const previewRows = selectedRows.length > 0 ? selectedRows : pendingRows
   const copyPreview = buildCopyText(previewRows.slice(0, 8))
 
   function toggleOrder(order: DashboardOrderRow) {
@@ -116,19 +122,27 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
     })
   }
 
-  function toggleAllActionable() {
+  function toggleAllPending() {
     setSelected((current) => {
-      if (actionableRows.length > 0 && current.size === actionableRows.length) {
-        return new Set()
+      const next = new Set(current)
+      if (pendingRows.length > 0 && pendingRows.every((row) => next.has(row.id))) {
+        pendingRows.forEach((row) => next.delete(row.id))
+        return next
       }
-      return new Set(actionableRows.map((row) => row.id))
+      pendingRows.forEach((row) => next.add(row.id))
+      return next
     })
   }
 
-  async function copyOrders(scope: "selected" | "actionable") {
-    const copyRows = scope === "selected" ? selectedRows : actionableRows
+  async function copyOrders(scope: "selected" | "pending") {
+    const copyRows = scope === "selected" ? selectedRows : pendingRows
     if (copyRows.length === 0) {
-      toast({ title: "Nothing to copy", description: "There are no paid manual orders ready to copy." })
+      toast({
+        title: "Nothing to copy",
+        description: scope === "pending"
+          ? "There are no pending paid manual orders ready to pick."
+          : "Select one or more eligible orders first.",
+      })
       return
     }
 
@@ -140,13 +154,20 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
   }
 
   async function bulkUpdate(status: "PROCESSING" | "COMPLETED" | "FAILED") {
-    if (selectedRows.length === 0) {
-      toast({ title: "No orders selected", description: "Select paid manual orders first." })
+    const updateRows = status === "PROCESSING" ? selectedPendingRows : selectedRows
+
+    if (updateRows.length === 0) {
+      toast({
+        title: "No orders selected",
+        description: status === "PROCESSING"
+          ? "Select pending paid manual orders before claiming."
+          : "Select paid manual orders first.",
+      })
       return
     }
 
     const label = status === "PROCESSING" ? "processing" : status === "COMPLETED" ? "delivered" : "failed"
-    const confirmed = window.confirm(`Mark ${selectedRows.length} selected order${selectedRows.length === 1 ? "" : "s"} as ${label}?`)
+    const confirmed = window.confirm(`Mark ${updateRows.length} selected order${updateRows.length === 1 ? "" : "s"} as ${label}?`)
     if (!confirmed) return
 
     setSavingStatus(status)
@@ -155,7 +176,7 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          orderIds: selectedRows.map((row) => row.id),
+          orderIds: updateRows.map((row) => row.id),
           status,
         }),
       })
@@ -188,21 +209,26 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
         <label className="flex items-center gap-2 text-sm font-medium">
           <input
             type="checkbox"
-            checked={allActionableSelected}
-            onChange={toggleAllActionable}
-            className="h-4 w-4 rounded border-border"
-          />
-          Select eligible orders
-          <Badge variant="outline" className="ml-1">{actionableRows.length}</Badge>
+          checked={allPendingSelected}
+          onChange={toggleAllPending}
+          className="h-4 w-4 rounded border-border"
+        />
+          Select pending orders
+          <Badge variant="outline" className="ml-1">{pendingRows.length}</Badge>
         </label>
+        <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+          <Badge variant="outline">Pending to pick: {pendingRows.length}</Badge>
+          <Badge variant="outline">Processing: {processingRows.length}</Badge>
+          <Badge variant="outline">Selected: {selectedRows.length}</Badge>
+        </div>
         <div className="grid w-full min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:w-auto xl:flex xl:flex-wrap xl:justify-end">
           <Button type="button" variant="outline" size="sm" onClick={() => setPreviewOpen((open) => !open)}>
             <Eye className="mr-2 h-4 w-4" />
             Preview Copy
           </Button>
-          <Button type="button" variant="outline" size="sm" onClick={() => copyOrders("actionable")}>
+          <Button type="button" variant="outline" size="sm" onClick={() => copyOrders("pending")}>
             <ClipboardCopy className="mr-2 h-4 w-4" />
-            Copy Eligible
+            Copy Pending
           </Button>
           <Button type="button" variant="outline" size="sm" onClick={() => copyOrders("selected")} disabled={selectedRows.length === 0}>
             <ClipboardCopy className="mr-2 h-4 w-4" />
@@ -217,7 +243,7 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
             <div className="min-w-0">
               <p className="text-sm font-semibold text-foreground">Copy preview</p>
               <p className="text-[11px] text-muted-foreground">
-                MTN copies as phone and bundle. Other networks add the network label.
+                {selectedRows.length > 0 ? "Selected rows" : "Pending rows"} only. MTN copies as phone and bundle. Other networks add the network label.
               </p>
             </div>
             <Badge variant="outline">{previewRows.length} rows</Badge>
@@ -308,10 +334,10 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
               <TableHead className="w-10">
                 <input
                   type="checkbox"
-                  checked={allActionableSelected}
-                  onChange={toggleAllActionable}
+                  checked={allPendingSelected}
+                  onChange={toggleAllPending}
                   className="h-4 w-4 rounded border-border"
-                  aria-label="Select eligible orders"
+                  aria-label="Select pending orders"
                 />
               </TableHead>
               <TableHead className="w-[80px]">Order ID</TableHead>
@@ -399,15 +425,18 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
       {selectedRows.length > 0 ? (
         <div className="fixed inset-x-0 bottom-0 z-40 max-w-full border-t bg-background/95 p-3 shadow-lg backdrop-blur md:left-auto md:right-6 md:bottom-6 md:w-[520px] md:rounded-md md:border">
           <div className="mb-2 flex items-center justify-between gap-3 text-sm">
-            <span className="font-semibold">{selectedRows.length} selected</span>
+            <span className="font-semibold">
+              {selectedRows.length} selected
+              {selectedPendingRows.length !== selectedRows.length ? ` (${selectedPendingRows.length} pending)` : ""}
+            </span>
             <button type="button" className="text-xs text-muted-foreground" onClick={() => setSelected(new Set())}>
               Clear
             </button>
           </div>
           <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-4">
-            <Button type="button" variant="outline" size="sm" onClick={() => bulkUpdate("PROCESSING")} disabled={savingStatus !== null}>
+            <Button type="button" variant="outline" size="sm" onClick={() => bulkUpdate("PROCESSING")} disabled={savingStatus !== null || selectedPendingRows.length === 0}>
               {savingStatus === "PROCESSING" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-4 w-4" />}
-              Claim
+              Claim Pending
             </Button>
             <Button type="button" variant="outline" size="sm" onClick={() => copyOrders("selected")}>
               <ClipboardCopy className="mr-2 h-4 w-4" />

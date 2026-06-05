@@ -96,9 +96,15 @@ export function ManualQueueWorkspace({ rows }: Props) {
     () => rows.filter((row) => selected.has(row.id)),
     [rows, selected],
   )
+  const pendingRows = useMemo(() => rows.filter((row) => row.status === "PENDING"), [rows])
+  const processingRows = useMemo(() => rows.filter((row) => row.status === "PROCESSING"), [rows])
+  const selectedPendingRows = useMemo(
+    () => selectedRows.filter((row) => row.status === "PENDING"),
+    [selectedRows],
+  )
 
-  const allVisibleSelected = rows.length > 0 && selected.size === rows.length
-  const previewRows = selectedRows.length > 0 ? selectedRows : rows
+  const allPendingSelected = pendingRows.length > 0 && pendingRows.every((row) => selected.has(row.id))
+  const previewRows = selectedRows.length > 0 ? selectedRows : pendingRows
   const copyPreview = buildCopyText(previewRows.slice(0, 8))
 
   function toggleOrder(orderId: string) {
@@ -113,19 +119,25 @@ export function ManualQueueWorkspace({ rows }: Props) {
     })
   }
 
-  function toggleAllVisible() {
+  function toggleAllPending() {
     setSelected((current) => {
-      if (rows.length > 0 && current.size === rows.length) {
-        return new Set()
+      const next = new Set(current)
+      if (pendingRows.length > 0 && pendingRows.every((row) => next.has(row.id))) {
+        pendingRows.forEach((row) => next.delete(row.id))
+        return next
       }
-      return new Set(rows.map((row) => row.id))
+      pendingRows.forEach((row) => next.add(row.id))
+      return next
     })
   }
 
-  async function copyOrders(scope: "selected" | "visible") {
-    const copyRows = scope === "selected" ? selectedRows : rows
+  async function copyOrders(scope: "selected" | "pending") {
+    const copyRows = scope === "selected" ? selectedRows : pendingRows
     if (copyRows.length === 0) {
-      toast({ title: "Nothing to copy", description: "Select at least one order or copy visible orders." })
+      toast({
+        title: "Nothing to copy",
+        description: scope === "pending" ? "There are no pending orders ready to pick." : "Select at least one order first.",
+      })
       return
     }
 
@@ -137,13 +149,17 @@ export function ManualQueueWorkspace({ rows }: Props) {
   }
 
   async function bulkUpdate(status: "PROCESSING" | "COMPLETED" | "FAILED") {
-    if (selectedRows.length === 0) {
-      toast({ title: "No orders selected", description: "Select the orders you want to update first." })
+    const updateRows = status === "PROCESSING" ? selectedPendingRows : selectedRows
+    if (updateRows.length === 0) {
+      toast({
+        title: "No orders selected",
+        description: status === "PROCESSING" ? "Select pending orders before claiming." : "Select the orders you want to update first.",
+      })
       return
     }
 
     const label = status === "PROCESSING" ? "processing" : status === "COMPLETED" ? "delivered" : "failed"
-    const confirmed = window.confirm(`Mark ${selectedRows.length} selected order${selectedRows.length === 1 ? "" : "s"} as ${label}?`)
+    const confirmed = window.confirm(`Mark ${updateRows.length} selected order${updateRows.length === 1 ? "" : "s"} as ${label}?`)
     if (!confirmed) return
 
     setSavingStatus(status)
@@ -152,7 +168,7 @@ export function ManualQueueWorkspace({ rows }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          orderIds: selectedRows.map((row) => row.id),
+          orderIds: updateRows.map((row) => row.id),
           status,
         }),
       })
@@ -185,20 +201,26 @@ export function ManualQueueWorkspace({ rows }: Props) {
         <label className="flex items-center gap-2 text-sm font-medium">
           <input
             type="checkbox"
-            checked={allVisibleSelected}
-            onChange={toggleAllVisible}
-            className="h-4 w-4 rounded border-border"
-          />
-          Select visible orders
+          checked={allPendingSelected}
+          onChange={toggleAllPending}
+          className="h-4 w-4 rounded border-border"
+        />
+          Select pending orders
+          <Badge variant="outline" className="ml-1">{pendingRows.length}</Badge>
         </label>
+        <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+          <Badge variant="outline">Pending to pick: {pendingRows.length}</Badge>
+          <Badge variant="outline">Processing: {processingRows.length}</Badge>
+          <Badge variant="outline">Selected: {selectedRows.length}</Badge>
+        </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:flex lg:flex-wrap lg:justify-end">
               <Button type="button" variant="outline" size="sm" onClick={() => setPreviewOpen((open) => !open)}>
                 <Eye className="mr-2 h-4 w-4" />
                 Preview
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => copyOrders("visible")}>
+              <Button type="button" variant="outline" size="sm" onClick={() => copyOrders("pending")}>
                 <ClipboardCopy className="mr-2 h-4 w-4" />
-                Copy Visible
+                Copy Pending
               </Button>
           <Button type="button" variant="outline" size="sm" onClick={() => copyOrders("selected")} disabled={selectedRows.length === 0}>
             <ClipboardCopy className="mr-2 h-4 w-4" />
@@ -213,7 +235,7 @@ export function ManualQueueWorkspace({ rows }: Props) {
             <div>
               <p className="text-sm font-semibold text-foreground">Copy preview</p>
               <p className="text-[11px] text-muted-foreground">
-                {selectedRows.length > 0 ? "Selected orders" : "Visible orders"}: phone, bundle, and network for non-MTN rows.
+                {selectedRows.length > 0 ? "Selected orders" : "Pending orders"}: phone, bundle, and network for non-MTN rows.
               </p>
             </div>
             <Badge variant="outline">{previewRows.length} rows</Badge>
@@ -284,10 +306,10 @@ export function ManualQueueWorkspace({ rows }: Props) {
               <TableHead className="w-10">
                 <input
                   type="checkbox"
-                  checked={allVisibleSelected}
-                  onChange={toggleAllVisible}
+                  checked={allPendingSelected}
+                  onChange={toggleAllPending}
                   className="h-4 w-4 rounded border-border"
-                  aria-label="Select visible orders"
+                  aria-label="Select pending orders"
                 />
               </TableHead>
               <TableHead className="w-[86px]">Order ID</TableHead>
@@ -371,15 +393,18 @@ export function ManualQueueWorkspace({ rows }: Props) {
       {selectedRows.length > 0 ? (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 p-3 shadow-lg backdrop-blur md:left-auto md:right-6 md:bottom-6 md:w-[520px] md:rounded-md md:border">
           <div className="mb-2 flex items-center justify-between gap-3 text-sm">
-            <span className="font-semibold">{selectedRows.length} selected</span>
+            <span className="font-semibold">
+              {selectedRows.length} selected
+              {selectedPendingRows.length !== selectedRows.length ? ` (${selectedPendingRows.length} pending)` : ""}
+            </span>
             <button type="button" className="text-xs text-muted-foreground" onClick={() => setSelected(new Set())}>
               Clear
             </button>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <Button type="button" variant="outline" size="sm" onClick={() => bulkUpdate("PROCESSING")} disabled={savingStatus !== null}>
+            <Button type="button" variant="outline" size="sm" onClick={() => bulkUpdate("PROCESSING")} disabled={savingStatus !== null || selectedPendingRows.length === 0}>
               {savingStatus === "PROCESSING" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-4 w-4" />}
-              Claim
+              Claim Pending
             </Button>
             <Button type="button" variant="outline" size="sm" onClick={() => copyOrders("selected")}>
               <ClipboardCopy className="mr-2 h-4 w-4" />

@@ -9,6 +9,7 @@ export type ProviderDispatchInput = {
   phone: string
   quantity: number
   amount: number
+  providerKey?: string
   providerName: string
 }
 
@@ -29,7 +30,7 @@ function toSafeStatus(value: unknown): "PENDING" | "COMPLETED" | "FAILED" {
 export async function dispatchOrderToProvider(
   input: ProviderDispatchInput
 ): Promise<ProviderDispatchResult> {
-  const providerConfig = await getEffectiveProviderConnection(input.organizationId)
+  const providerConfig = await getEffectiveProviderConnection(input.organizationId, input.providerKey || "primary")
   const providerOrderUrl = providerConfig.providerOrderUrl
   const providerApiKey = providerConfig.providerApiKey
 
@@ -40,7 +41,7 @@ export async function dispatchOrderToProvider(
         targetType: "ORDER",
         targetId: input.orderId,
         organizationId: input.organizationId,
-        meta: JSON.stringify({ reason: "Missing provider order URL", provider: input.providerName }),
+        meta: JSON.stringify({ reason: "Missing provider order URL", providerKey: providerConfig.providerKey, provider: input.providerName }),
       },
     })
 
@@ -92,6 +93,7 @@ export async function dispatchOrderToProvider(
         organizationId: input.organizationId,
         meta: JSON.stringify({
           provider: input.providerName,
+          providerKey: providerConfig.providerKey,
           accepted,
           httpStatus: response.status,
           externalRef,
@@ -122,6 +124,7 @@ export async function dispatchOrderToProvider(
         organizationId: input.organizationId,
         meta: JSON.stringify({
           provider: input.providerName,
+          providerKey: providerConfig.providerKey,
           error: error instanceof Error ? error.message : "Unknown dispatch error",
         }),
       },
