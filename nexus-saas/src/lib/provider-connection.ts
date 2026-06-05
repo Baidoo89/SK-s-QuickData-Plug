@@ -82,6 +82,39 @@ export async function getEffectiveProviderConnection(organizationId: string, pro
   }
 }
 
+export async function getDispatchProviderConnection(organizationId: string, providerKey = "primary"): Promise<ProviderConnection | null> {
+  const fallback = getDefaultProviderConnection()
+  const normalizedProviderKey = normalizeProviderKey(providerKey)
+
+  try {
+    const records = await db.$queryRaw<ProviderConnectionRow[]>`
+      SELECT
+        "providerKey",
+        "providerName",
+        "providerOrderUrl",
+        "providerApiKey",
+        "active",
+        "updatedAt"
+      FROM "ProviderConnection"
+      WHERE "organizationId" = ${organizationId}
+        AND "providerKey" = ${normalizedProviderKey}
+        AND "active" = true
+      LIMIT 1
+    `
+
+    const record = mapConnection(records[0], { ...fallback, providerKey: normalizedProviderKey })
+    if (record) return record
+    if (normalizedProviderKey === "primary" && fallback.providerOrderUrl) return fallback
+    return null
+  } catch {
+    if (normalizedProviderKey !== "primary") return null
+
+    const record = await getStoredProviderConnection(organizationId)
+    if (!record) return fallback.providerOrderUrl ? fallback : null
+    return mapConnection(record, fallback) || (fallback.providerOrderUrl ? fallback : null)
+  }
+}
+
 export async function listStoredProviderConnections(organizationId: string) {
   try {
     const records = await db.$queryRaw<ProviderConnectionRow[]>`

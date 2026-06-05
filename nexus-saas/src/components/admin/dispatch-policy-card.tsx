@@ -181,10 +181,10 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
             onChange={(e) => setNetworkProviderText(e.target.value)}
             disabled={loading || saving}
             className="text-xs"
-            placeholder="MTN=primary, TELECEL=backup, AIRTELTIGO=backup"
+            placeholder="MTN=primary>backup, TELECEL=backup, AIRTELTIGO=primary"
           />
           <p className="text-[11px] text-muted-foreground">
-            Optional. Leave blank to use the default slot for all API-enabled networks.
+            Optional. Use &gt; for fallback order. Example: MTN tries primary first, then backup.
           </p>
         </div>
 

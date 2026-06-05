@@ -35,6 +35,22 @@ function normalizeProviderKey(value: string | undefined): string {
     .replace(/(^-|-$)+/g, "") || "primary"
 }
 
+function normalizeProviderChain(value: string | undefined): string {
+  const keys = (value || "primary")
+    .split(">")
+    .map((part) => normalizeProviderKey(part))
+    .filter(Boolean)
+
+  return Array.from(new Set(keys)).join(">") || "primary"
+}
+
+export function parseProviderChain(value: string | undefined): string[] {
+  return normalizeProviderChain(value)
+    .split(">")
+    .map((part) => normalizeProviderKey(part))
+    .filter(Boolean)
+}
+
 function parseCsvNetworks(value: string | undefined): string[] {
   if (!value) return []
   return value
@@ -54,7 +70,7 @@ export function getDefaultDispatchPolicy(): DispatchPolicy {
   return {
     mode,
     apiEnabledNetworks,
-    providerKey: normalizeProviderKey(process.env.DISPATCH_PROVIDER_KEY),
+    providerKey: normalizeProviderChain(process.env.DISPATCH_PROVIDER_KEY),
     providerName: process.env.DISPATCH_PROVIDER_NAME || "Primary Provider",
     networkProviderMap: {},
   }
@@ -90,7 +106,7 @@ export async function getEffectiveDispatchPolicy(organizationId: string): Promis
       parsed?.networkProviderMap && typeof parsed.networkProviderMap === "object" && !Array.isArray(parsed.networkProviderMap)
         ? Object.entries(parsed.networkProviderMap as Record<string, unknown>).reduce<Record<string, string>>((acc, [network, providerKey]) => {
             if (typeof providerKey === "string" && providerKey.trim()) {
-              acc[normalizeNetwork(network)] = normalizeProviderKey(providerKey)
+              acc[normalizeNetwork(network)] = normalizeProviderChain(providerKey)
             }
             return acc
           }, {})
@@ -101,7 +117,7 @@ export async function getEffectiveDispatchPolicy(organizationId: string): Promis
       apiEnabledNetworks,
       providerKey:
         typeof parsed?.providerKey === "string" && parsed.providerKey.trim().length > 0
-          ? normalizeProviderKey(parsed.providerKey)
+          ? normalizeProviderChain(parsed.providerKey)
           : fallback.providerKey,
       providerName:
         typeof parsed?.providerName === "string" && parsed.providerName.trim().length > 0
@@ -118,11 +134,11 @@ export async function saveDispatchPolicy(input: SaveDispatchPolicyInput): Promis
   const payload = {
     mode: input.mode,
     apiEnabledNetworks: input.apiEnabledNetworks.map((network) => normalizeNetwork(network)).filter(Boolean),
-    providerKey: normalizeProviderKey(input.providerKey),
+    providerKey: normalizeProviderChain(input.providerKey),
     providerName: input.providerName.trim() || "Primary Provider",
     networkProviderMap: Object.entries(input.networkProviderMap || {}).reduce<Record<string, string>>((acc, [network, providerKey]) => {
       const normalizedNetwork = normalizeNetwork(network)
-      const normalizedProviderKey = normalizeProviderKey(providerKey)
+      const normalizedProviderKey = normalizeProviderChain(providerKey)
       if (normalizedNetwork) acc[normalizedNetwork] = normalizedProviderKey
       return acc
     }, {}),
@@ -147,12 +163,14 @@ export function shouldUseProviderApi(policy: DispatchPolicy, network: string) {
   const normalized = normalizeNetwork(network)
   const enabled = policy.apiEnabledNetworks.includes(normalized)
   const providerKey = policy.networkProviderMap[normalized] || policy.providerKey || "primary"
+  const providerKeys = parseProviderChain(providerKey)
 
   if (policy.mode === "MANUAL_ONLY") {
     return {
       useApi: false,
       reason: "Global mode is manual only",
       providerKey,
+      providerKeys,
       providerName: policy.providerName,
     }
   }
@@ -163,6 +181,7 @@ export function shouldUseProviderApi(policy: DispatchPolicy, network: string) {
         useApi: true,
         reason: "Global mode is API only",
         providerKey,
+        providerKeys,
         providerName: policy.providerName,
       }
     }
@@ -171,6 +190,7 @@ export function shouldUseProviderApi(policy: DispatchPolicy, network: string) {
       useApi: false,
       reason: `Network ${normalized} is not allowed for API in current policy`,
       providerKey,
+      providerKeys,
       providerName: policy.providerName,
     }
   }
@@ -181,6 +201,7 @@ export function shouldUseProviderApi(policy: DispatchPolicy, network: string) {
       useApi: true,
       reason: `Network ${normalized} is enabled for API dispatch`,
       providerKey,
+      providerKeys,
       providerName: policy.providerName,
     }
   }
@@ -189,6 +210,7 @@ export function shouldUseProviderApi(policy: DispatchPolicy, network: string) {
     useApi: false,
     reason: `Network ${normalized} is routed to manual processing`,
     providerKey,
+    providerKeys,
     providerName: policy.providerName,
   }
 }

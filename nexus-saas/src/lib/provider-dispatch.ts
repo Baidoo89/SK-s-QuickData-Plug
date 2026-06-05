@@ -1,5 +1,5 @@
 import { db } from "@/lib/db"
-import { getEffectiveProviderConnection } from "@/lib/provider-connection"
+import { getDispatchProviderConnection } from "@/lib/provider-connection"
 
 export type ProviderDispatchInput = {
   orderId: string
@@ -19,6 +19,10 @@ export type ProviderDispatchResult = {
   immediateStatus: "PENDING" | "COMPLETED" | "FAILED"
   externalRef: string | null
   message: string
+  retryable: boolean
+  httpStatus?: number
+  providerKey?: string
+  providerName?: string
 }
 
 function toSafeStatus(value: unknown): "PENDING" | "COMPLETED" | "FAILED" {
@@ -30,9 +34,38 @@ function toSafeStatus(value: unknown): "PENDING" | "COMPLETED" | "FAILED" {
 export async function dispatchOrderToProvider(
   input: ProviderDispatchInput
 ): Promise<ProviderDispatchResult> {
-  const providerConfig = await getEffectiveProviderConnection(input.organizationId, input.providerKey || "primary")
+  const providerConfig = await getDispatchProviderConnection(input.organizationId, input.providerKey || "primary")
+
+  if (!providerConfig) {
+    await db.auditLog.create({
+      data: {
+        action: "ORDER_DISPATCH_SKIPPED",
+        targetType: "ORDER",
+        targetId: input.orderId,
+        organizationId: input.organizationId,
+        meta: JSON.stringify({
+          reason: "Provider slot is not configured or inactive",
+          providerKey: input.providerKey || "primary",
+          provider: input.providerName,
+        }),
+      },
+    })
+
+    return {
+      attempted: false,
+      accepted: false,
+      immediateStatus: "PENDING",
+      externalRef: null,
+      message: "Provider slot is not configured or inactive. Order kept pending for manual handling.",
+      retryable: true,
+      providerKey: input.providerKey || "primary",
+      providerName: input.providerName,
+    }
+  }
+
   const providerOrderUrl = providerConfig.providerOrderUrl
   const providerApiKey = providerConfig.providerApiKey
+  const providerName = providerConfig.providerName || input.providerName
 
   if (!providerOrderUrl) {
     await db.auditLog.create({
@@ -41,7 +74,7 @@ export async function dispatchOrderToProvider(
         targetType: "ORDER",
         targetId: input.orderId,
         organizationId: input.organizationId,
-        meta: JSON.stringify({ reason: "Missing provider order URL", providerKey: providerConfig.providerKey, provider: input.providerName }),
+        meta: JSON.stringify({ reason: "Missing provider order URL", providerKey: providerConfig.providerKey, provider: providerName }),
       },
     })
 
@@ -51,6 +84,9 @@ export async function dispatchOrderToProvider(
       immediateStatus: "PENDING",
       externalRef: null,
       message: "Provider URL not configured. Order kept pending for manual handling.",
+      retryable: true,
+      providerKey: providerConfig.providerKey,
+      providerName,
     }
   }
 
@@ -73,6 +109,7 @@ export async function dispatchOrderToProvider(
 
     const payload = await response.json().catch(() => null)
     const accepted = response.ok
+    const retryable = !accepted && (response.status === 429 || response.status >= 500)
 
     const externalRef =
       typeof payload?.externalRef === "string"
@@ -92,12 +129,13 @@ export async function dispatchOrderToProvider(
         targetId: input.orderId,
         organizationId: input.organizationId,
         meta: JSON.stringify({
-          provider: input.providerName,
+          provider: providerName,
           providerKey: providerConfig.providerKey,
           accepted,
           httpStatus: response.status,
           externalRef,
           immediateStatus,
+          retryable,
           payload,
         }),
       },
@@ -108,12 +146,18 @@ export async function dispatchOrderToProvider(
       accepted,
       immediateStatus,
       externalRef,
+      retryable,
+      httpStatus: response.status,
+      providerKey: providerConfig.providerKey,
+      providerName,
       message:
         typeof payload?.message === "string"
           ? payload.message
           : accepted
             ? "Submitted to provider"
-            : "Provider rejected order",
+            : retryable
+              ? "Provider temporarily failed"
+              : "Provider rejected order",
     }
   } catch (error) {
     await db.auditLog.create({
@@ -123,7 +167,7 @@ export async function dispatchOrderToProvider(
         targetId: input.orderId,
         organizationId: input.organizationId,
         meta: JSON.stringify({
-          provider: input.providerName,
+          provider: providerName,
           providerKey: providerConfig.providerKey,
           error: error instanceof Error ? error.message : "Unknown dispatch error",
         }),
@@ -136,6 +180,9 @@ export async function dispatchOrderToProvider(
       immediateStatus: "PENDING",
       externalRef: null,
       message: "Dispatch request failed. Order kept pending for retry/manual handling.",
+      retryable: true,
+      providerKey: providerConfig.providerKey,
+      providerName,
     }
   }
 }

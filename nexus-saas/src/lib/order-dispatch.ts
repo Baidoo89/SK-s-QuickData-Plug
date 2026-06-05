@@ -1,7 +1,6 @@
 import { db } from "@/lib/db"
 import { getEffectiveDispatchPolicy, shouldUseProviderApi } from "@/lib/dispatch-policy"
 import { dispatchOrderToProvider, type ProviderDispatchResult } from "@/lib/provider-dispatch"
-import { getEffectiveProviderConnection } from "@/lib/provider-connection"
 import { notifyApiOrderStatus } from "@/lib/api-order-tracking"
 import { reverseOrderWalletDebitIfNeeded } from "@/lib/order-wallet"
 
@@ -26,14 +25,10 @@ export type ResolveOrderDispatchResult = {
 export async function resolveOrderDispatch(input: ResolveOrderDispatchInput): Promise<ResolveOrderDispatchResult> {
   const policy = await getEffectiveDispatchPolicy(input.organizationId)
   const decision = shouldUseProviderApi(policy, input.network)
-  const providerConfig = decision.useApi
-    ? await getEffectiveProviderConnection(input.organizationId, decision.providerKey)
-    : null
-  const canUseApi = Boolean(decision.useApi && providerConfig?.providerOrderUrl)
-  const fallbackReason = "Provider connection is not configured, so this order was routed to manual fulfillment"
-  const dispatchMode = canUseApi ? "API" : "MANUAL"
-  const dispatchProvider = providerConfig?.providerName || decision.providerName
-  const dispatchReason = decision.useApi && !canUseApi ? fallbackReason : decision.reason
+  const providerKeys = Array.isArray(decision.providerKeys) && decision.providerKeys.length > 0
+    ? decision.providerKeys
+    : [decision.providerKey || "primary"]
+  const initialDispatchMode = decision.useApi ? "API" : "MANUAL"
 
   await db.auditLog.create({
     data: {
@@ -42,10 +37,11 @@ export async function resolveOrderDispatch(input: ResolveOrderDispatchInput): Pr
       targetId: input.orderId,
       organizationId: input.organizationId,
       meta: JSON.stringify({
-        mode: dispatchMode,
+        mode: initialDispatchMode,
         providerKey: decision.providerKey,
-        provider: dispatchProvider,
-        reason: dispatchReason,
+        providerKeys,
+        provider: decision.providerName,
+        reason: decision.reason,
         network: input.network,
       }),
     },
@@ -53,31 +49,83 @@ export async function resolveOrderDispatch(input: ResolveOrderDispatchInput): Pr
 
   await db.order.update({
     where: { id: input.orderId },
-    data: { fulfillmentMode: dispatchMode },
+    data: { fulfillmentMode: initialDispatchMode },
     select: { id: true },
   })
 
-  if (!canUseApi) {
+  if (!decision.useApi) {
     return {
       finalStatus: "PENDING",
-      dispatchMode,
-      dispatchProvider,
-      dispatchReason,
+      dispatchMode: "MANUAL",
+      dispatchProvider: decision.providerName,
+      dispatchReason: decision.reason,
       dispatchResult: null,
     }
   }
 
-  const dispatchResult = await dispatchOrderToProvider({
-    orderId: input.orderId,
-    organizationId: input.organizationId,
-    productId: input.productId,
-    network: input.network,
-    phone: input.phone,
-    quantity: input.quantity,
-    amount: input.amount,
-    providerKey: decision.providerKey,
-    providerName: dispatchProvider,
-  })
+  let dispatchResult: ProviderDispatchResult | null = null
+  let dispatchProvider = decision.providerName
+  const attemptedProviders: Array<{ providerKey: string; message: string; retryable: boolean; accepted: boolean }> = []
+
+  for (const providerKey of providerKeys) {
+    const result = await dispatchOrderToProvider({
+      orderId: input.orderId,
+      organizationId: input.organizationId,
+      productId: input.productId,
+      network: input.network,
+      phone: input.phone,
+      quantity: input.quantity,
+      amount: input.amount,
+      providerKey,
+      providerName: decision.providerName,
+    })
+
+    dispatchResult = result
+    dispatchProvider = result.providerName || decision.providerName
+    attemptedProviders.push({
+      providerKey: result.providerKey || providerKey,
+      message: result.message,
+      retryable: result.retryable,
+      accepted: result.accepted,
+    })
+
+    if (result.accepted || !result.retryable) {
+      break
+    }
+  }
+
+  if (!dispatchResult || (!dispatchResult.accepted && dispatchResult.retryable)) {
+    const dispatchReason = dispatchResult?.message || "No provider connection is available"
+
+    await db.order.update({
+      where: { id: input.orderId },
+      data: { fulfillmentMode: "MANUAL", status: "PENDING" },
+      select: { id: true },
+    })
+
+    await db.auditLog.create({
+      data: {
+        action: "ORDER_DISPATCH_MANUAL_FALLBACK",
+        targetType: "ORDER",
+        targetId: input.orderId,
+        organizationId: input.organizationId,
+        meta: JSON.stringify({
+          reason: dispatchReason,
+          providerKeys,
+          attemptedProviders,
+          network: input.network,
+        }),
+      },
+    })
+
+    return {
+      finalStatus: "PENDING",
+      dispatchMode: "MANUAL",
+      dispatchProvider,
+      dispatchReason,
+      dispatchResult,
+    }
+  }
 
   let finalStatus = "PENDING"
   if (dispatchResult.immediateStatus !== "PENDING") {
@@ -101,7 +149,7 @@ export async function resolveOrderDispatch(input: ResolveOrderDispatchInput): Pr
 
   return {
     finalStatus,
-    dispatchMode,
+    dispatchMode: "API",
     dispatchProvider,
     dispatchReason: dispatchResult.message,
     dispatchResult,
