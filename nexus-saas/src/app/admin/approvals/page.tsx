@@ -5,6 +5,7 @@ import { db } from "@/lib/db"
 import { SignupApprovalActions } from "@/components/admin/signup-approval-actions"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { AlertTriangle, CheckCircle2 } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
@@ -33,6 +34,8 @@ export default async function AdminApprovalsPage() {
       id: true,
       name: true,
       email: true,
+      emailVerified: true,
+      emailVerificationRequired: true,
       createdAt: true,
       active: true,
       signupStatus: true,
@@ -76,6 +79,10 @@ export default async function AdminApprovalsPage() {
                   <p className="font-semibold text-foreground">{agentUser.name ?? "Unnamed agent"}</p>
                   <p className="break-all text-sm text-muted-foreground">{agentUser.email ?? "-"}</p>
                   <p className="text-xs text-muted-foreground">{agentUser.organization?.name ?? "No organization"}</p>
+                  <p className={agentUser.emailVerified ? "flex items-center gap-1 text-xs text-primary" : "flex items-center gap-1 text-xs text-amber-700"}>
+                    {agentUser.emailVerified ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
+                    {agentUser.emailVerified ? "Email verified" : "Email not verified yet"}
+                  </p>
                   <p className="text-xs text-muted-foreground">Requested {new Date(agentUser.createdAt).toLocaleString()}</p>
                 </div>
                 <SignupApprovalActions
@@ -84,6 +91,8 @@ export default async function AdminApprovalsPage() {
                   agentName={agentUser.agent?.name ?? agentUser.name ?? "Agent"}
                   commissionPercent={agentUser.agent?.commissionPercent ?? 0}
                   label="Approve agent"
+                  verificationWarning={!agentUser.emailVerified ? "Email is not verified yet." : undefined}
+                  requireVerified
                 />
               </div>
             ))

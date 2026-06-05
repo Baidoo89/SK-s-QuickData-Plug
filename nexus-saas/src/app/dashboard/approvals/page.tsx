@@ -146,6 +146,7 @@ export default async function DashboardApprovalsPage() {
                   commissionPercent={agentUser.agent?.commissionPercent ?? 0}
                   label="Approve agent"
                   verificationWarning={!agentUser.emailVerified ? "Email is not verified yet." : undefined}
+                  requireVerified
                 />
               </div>
             ))

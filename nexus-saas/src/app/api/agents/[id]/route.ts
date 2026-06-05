@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { requireOrgManager, isAuthError } from "@/lib/auth-guard"
+import { requireAuth, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors } from "@/lib/api-response"
 import { z } from "zod"
 import { getBaseUrl, sendSignupNotificationEmail } from "@/lib/mail"
@@ -13,16 +13,37 @@ const updateAgentSchema = z.object({
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   try {
-    const authResult = await requireOrgManager()
+    const authResult = await requireAuth()
     if (isAuthError(authResult)) return authResult
-    const organizationId = authResult.user.organizationId!
+    if (authResult.user.role !== "SUPERADMIN" && authResult.user.role !== "SUBSCRIBER") {
+      return ApiErrors.FORBIDDEN()
+    }
+    const organizationId = authResult.user.organizationId
 
     const body = await req.json()
     const parsed = updateAgentSchema.safeParse(body)
     if (!parsed.success) return ApiErrors.VALIDATION_ERROR(parsed.error.flatten().fieldErrors)
 
-    const existing = await db.agent.findFirst({ where: { id: params.id, organizationId } })
+    const existing = await db.agent.findFirst({
+      where: {
+        id: params.id,
+        ...(authResult.user.role === "SUPERADMIN" ? {} : { organizationId: organizationId ?? "" }),
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            emailVerified: true,
+            emailVerificationRequired: true,
+          },
+        },
+      },
+    })
     if (!existing) return ApiErrors.NOT_FOUND("Agent not found")
+    if (parsed.data.active === true && existing.user?.emailVerificationRequired && !existing.user.emailVerified) {
+      return ApiErrors.BAD_REQUEST("Email verification is required before approving this agent.")
+    }
 
     const agent = await db.$transaction(async (tx) => {
       const updatedAgent = await tx.agent.update({
@@ -43,9 +64,9 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         }
 
         await tx.user.updateMany({
-          where: { agentId: existing.id },
-          data: userData,
-        })
+        where: { agentId: existing.id },
+        data: userData,
+      })
 
       }
 
@@ -78,11 +99,19 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   try {
-    const authResult = await requireOrgManager()
+    const authResult = await requireAuth()
     if (isAuthError(authResult)) return authResult
-    const organizationId = authResult.user.organizationId!
+    if (authResult.user.role !== "SUPERADMIN" && authResult.user.role !== "SUBSCRIBER") {
+      return ApiErrors.FORBIDDEN()
+    }
+    const organizationId = authResult.user.organizationId
 
-    const existing = await db.agent.findFirst({ where: { id: params.id, organizationId } })
+    const existing = await db.agent.findFirst({
+      where: {
+        id: params.id,
+        ...(authResult.user.role === "SUPERADMIN" ? {} : { organizationId: organizationId ?? "" }),
+      },
+    })
     if (!existing) return ApiErrors.NOT_FOUND("Agent not found")
 
     await db.$transaction(async (tx) => {
@@ -90,7 +119,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
         where: { agentId: existing.id },
         select: { email: true },
       })
-      await tx.agentPrice.deleteMany({ where: { agentId: existing.id, organizationId } })
+      await tx.agentPrice.deleteMany({ where: { agentId: existing.id, organizationId: existing.organizationId } })
       await tx.order.updateMany({ where: { agentId: existing.id }, data: { agentId: null } })
       await tx.user.deleteMany({ where: { agentId: existing.id } })
       await tx.agent.delete({ where: { id: existing.id } })
@@ -102,7 +131,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
             action: "AGENT_SIGNUP_REJECTED",
             targetType: "USER",
             targetId: user.email,
-            organizationId,
+            organizationId: existing.organizationId,
             meta: JSON.stringify({ email: user.email }),
           },
         })

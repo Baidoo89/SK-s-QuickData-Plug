@@ -71,16 +71,13 @@ function phoneMatchesProvider(phoneNumber: string, provider: string) {
   return prefixes.includes(phoneNumber.slice(0, 3))
 }
 
-function storefrontReturnPath(subscriberSlug: string, agentId?: string) {
+function storefrontReturnPath(subscriberSlug: string) {
   const encodedSlug = encodeURIComponent(subscriberSlug)
-  if (agentId) return `/store/${encodedSlug}/agent/${encodeURIComponent(agentId)}`
-  return `/store/${encodedSlug}`
+  return `/shop/${encodedSlug}`
 }
 
-function resellerStorefrontReturnPath(subscriberSlug: string, resellerId?: string, agentId?: string) {
-  const encodedSlug = encodeURIComponent(subscriberSlug)
-  if (resellerId) return `/store/${encodedSlug}/reseller/${encodeURIComponent(resellerId)}`
-  return storefrontReturnPath(subscriberSlug, agentId)
+function resellerStorefrontReturnPath(subscriberSlug: string) {
+  return storefrontReturnPath(subscriberSlug)
 }
 
 function safeStorefrontReturnPath(value: string | undefined) {
@@ -355,7 +352,7 @@ export async function createStorefrontCheckout(input: StorefrontCheckoutInput) {
   const orderIds = orders.map((order) => order.id)
   const amountInPesewas = Math.round(total * 100)
   const firstPhone = resolvedItems[0]?.phoneNumber || "customer"
-  const returnPath = safeStorefrontReturnPath(input.returnPath) ?? resellerStorefrontReturnPath(subscriber.slug, resolvedResellerId ?? undefined, resolvedAgentId ?? undefined)
+  const returnPath = safeStorefrontReturnPath(input.returnPath) ?? resellerStorefrontReturnPath(subscriber.slug)
   const callbackUrl = `${baseUrl}/api/store/paystack/verify?organizationId=${encodeURIComponent(subscriber.id)}`
 
   const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {

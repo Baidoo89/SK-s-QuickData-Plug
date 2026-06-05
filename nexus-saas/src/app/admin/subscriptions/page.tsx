@@ -107,6 +107,7 @@ async function updateSubscriptionStatus(formData: FormData) {
 
   revalidatePath("/admin/subscriptions")
   revalidatePath("/admin")
+  redirect("/admin/subscriptions?notice=subscription-updated")
 }
 
 async function extendSubscription(formData: FormData) {
@@ -159,6 +160,7 @@ async function extendSubscription(formData: FormData) {
   revalidatePath("/admin/subscriptions")
   revalidatePath("/admin")
   revalidatePath("/dashboard/subscription")
+  redirect("/admin/subscriptions?notice=subscription-extended")
 }
 
 async function assignDefaultPlan(formData: FormData) {
@@ -205,6 +207,7 @@ async function assignDefaultPlan(formData: FormData) {
 
   revalidatePath("/admin/subscriptions")
   revalidatePath("/admin")
+  redirect("/admin/subscriptions?notice=plan-assigned")
 }
 
 function subscriptionBadgeClass(status: string) {
@@ -214,7 +217,11 @@ function subscriptionBadgeClass(status: string) {
   return ""
 }
 
-export default async function AdminSubscriptionsPage() {
+export default async function AdminSubscriptionsPage({
+  searchParams,
+}: {
+  searchParams?: { notice?: string }
+}) {
   await requireSuperAdmin()
   await ensureSaasPlans()
   await expireOverdueSubscriptions()
@@ -265,6 +272,16 @@ export default async function AdminSubscriptionsPage() {
           Control SaaS plans, subscription records, and tenant access to paid platform features.
         </p>
       </div>
+
+      {searchParams?.notice ? (
+        <div className="status-success rounded-md border px-4 py-3 text-sm">
+          {searchParams.notice === "plan-assigned"
+            ? "Plan assigned and subscription activated successfully."
+            : searchParams.notice === "subscription-extended"
+              ? "Subscription extended and payment record added successfully."
+              : "Subscription status updated successfully."}
+        </div>
+      ) : null}
 
       <div className="grid min-w-0 gap-4 lg:grid-cols-3">
         <MetricCard label="Plans" value={plans.length} description={`${publicPlans.length} public, ${retiredPlans.length} retired or disabled.`} icon={Layers3} tone="primary" />

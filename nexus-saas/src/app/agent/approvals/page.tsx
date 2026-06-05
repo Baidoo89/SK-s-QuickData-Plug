@@ -149,6 +149,7 @@ export default async function AgentApprovalsPage() {
                   id={reseller.id}
                   label="Approve reseller"
                   verificationWarning={!reseller.emailVerified ? "Email is not verified yet." : undefined}
+                  requireVerified
                 />
               </div>
             ))

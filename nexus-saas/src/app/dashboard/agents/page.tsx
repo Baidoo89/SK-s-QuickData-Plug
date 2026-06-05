@@ -224,14 +224,14 @@ export default function AgentsPage() {
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Agents</h1>
           </div>
           <p className="text-sm text-muted-foreground max-w-xl">
-            Onboard agents, send them a one-time password setup link, share storefront links for their customers, and control their commission and prices from one place.
+            Onboard agents, send invite links that show your business clearly, share storefront links, and control commission and prices from one place.
           </p>
         </div>
         <Card className="w-full max-w-md">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Add new agent</CardTitle>
             <CardDescription className="text-xs">
-              We&apos;ll generate a secure invite link the agent uses once to set a password. After that they log in via your normal login page.
+              The invite opens on TechDalt, but the signup page tells the agent they are joining your business. They verify email first, then you approve access.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -281,7 +281,7 @@ export default function AgentsPage() {
               <div className="rounded-lg border border-info/30 bg-info/10 p-3 space-y-2">
                 <p className="text-xs font-medium text-info-foreground">Tenant-scoped agent request link</p>
                 <p className="text-[11px] text-muted-foreground">
-                  Share this if agents should request access under {tenantName || "your organization"} themselves. You still approve them before they can sell.
+                  Share this if agents should request access under {tenantName || "your organization"} themselves. TechDalt appears as the platform, while your business appears as the workspace they are joining.
                 </p>
                 <p className="break-all text-[11px] text-foreground">{agentRequestLink}</p>
                 <div className="flex flex-wrap gap-2">

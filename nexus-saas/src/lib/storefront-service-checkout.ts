@@ -125,16 +125,13 @@ function normalizeFormValues(value: unknown) {
   }, {})
 }
 
-function storefrontReturnPath(subscriberSlug: string, agentId?: string) {
+function storefrontReturnPath(subscriberSlug: string) {
   const encodedSlug = encodeURIComponent(subscriberSlug)
-  if (agentId) return `/store/${encodedSlug}/agent/${encodeURIComponent(agentId)}`
-  return `/store/${encodedSlug}`
+  return `/shop/${encodedSlug}`
 }
 
-function resellerStorefrontReturnPath(subscriberSlug: string, resellerId?: string, agentId?: string) {
-  const encodedSlug = encodeURIComponent(subscriberSlug)
-  if (resellerId) return `/store/${encodedSlug}/reseller/${encodeURIComponent(resellerId)}`
-  return storefrontReturnPath(subscriberSlug, agentId)
+function resellerStorefrontReturnPath(subscriberSlug: string) {
+  return storefrontReturnPath(subscriberSlug)
 }
 
 function safeStorefrontReturnPath(value: string | undefined) {
@@ -371,7 +368,7 @@ export async function createStorefrontServiceCheckout(input: StorefrontServiceCh
   }, { maxWait: 10000, timeout: 20000 })
 
   const returnPath = safeStorefrontReturnPath(input.returnPath)
-    ?? resellerStorefrontReturnPath(subscriber.slug, resolvedResellerId ?? undefined, resolvedAgentId ?? undefined)
+    ?? resellerStorefrontReturnPath(subscriber.slug)
   const callbackUrl = `${baseUrl}/api/store/paystack/verify?organizationId=${encodeURIComponent(subscriber.id)}`
 
   const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {

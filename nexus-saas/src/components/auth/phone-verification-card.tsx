@@ -80,7 +80,7 @@ export function PhoneVerificationCard({
           Phone Verification
         </CardTitle>
         <CardDescription className="text-xs">
-          Confirm a phone number for account recovery and security notifications.
+          Confirm a phone number for account recovery and security notifications once SMS delivery is connected.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -122,7 +122,7 @@ export function PhoneVerificationCard({
           </div>
         ) : null}
         <p className="text-xs text-muted-foreground">
-          In development, the code is printed in the server console until an SMS provider is connected.
+          Email verification is active for launch. Phone verification requires an SMS provider before real users can receive codes.
         </p>
       </CardContent>
     </Card>

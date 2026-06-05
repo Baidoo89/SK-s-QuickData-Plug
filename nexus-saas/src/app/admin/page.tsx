@@ -456,7 +456,7 @@ export default async function SuperAdminPage({
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2">
                       <Button asChild size="sm" variant="outline" className="text-xs">
-                        <Link href={`/store/${org.slug}`} target="_blank">View Store</Link>
+                        <Link href={`/shop/${org.slug}`} target="_blank">View Store</Link>
                       </Button>
                       <form action={setOrganizationStatus}>
                         <input type="hidden" name="organizationId" value={org.id} />
@@ -523,7 +523,7 @@ export default async function SuperAdminPage({
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button asChild size="sm" variant="outline">
-                            <Link href={`/store/${org.slug}`} target="_blank">Store</Link>
+                            <Link href={`/shop/${org.slug}`} target="_blank">Store</Link>
                           </Button>
                           <form action={setOrganizationStatus}>
                             <input type="hidden" name="organizationId" value={org.id} />

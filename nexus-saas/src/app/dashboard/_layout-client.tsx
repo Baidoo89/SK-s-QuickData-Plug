@@ -633,7 +633,9 @@ function DashboardLayoutInner({
               <DropdownMenuItem asChild>
                 <Link href="/dashboard/settings">Settings</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>Support</DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/support">Support</Link>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-red-600"

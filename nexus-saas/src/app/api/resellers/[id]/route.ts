@@ -207,6 +207,9 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     if (!reseller) {
       return ApiErrors.NOT_FOUND("Reseller not found")
     }
+    if (parsed.data.active === true && reseller.emailVerificationRequired && !reseller.emailVerified) {
+      return ApiErrors.BAD_REQUEST("Email verification is required before approving this reseller.")
+    }
 
     // Update reseller
     const updated = await db.user.update({

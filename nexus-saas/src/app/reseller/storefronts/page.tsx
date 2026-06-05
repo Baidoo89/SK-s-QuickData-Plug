@@ -53,24 +53,12 @@ export default async function ResellerStorefrontsPage() {
     },
   ]
 
-  const apiLinks = [
-    ...(user.parentAgentId
-      ? [
-          {
-            label: "Reseller-context products API",
-            path: `/api/shop/${user.organization.slug}/reseller/${user.id}/products`,
-            description: "Fetch products with your reseller storefront prices and buy-cost context.",
-          },
-        ]
-      : []),
-  ]
-
   return (
     <div className="portal-page space-y-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Storefronts</h1>
         <p className="text-sm text-muted-foreground">
-          Share your storefront links with customers and track how your reseller orders are performing.
+          Share clean customer links like techdalt.com/shop/your-name and track how your reseller orders are performing.
         </p>
       </div>
 
@@ -103,15 +91,10 @@ export default async function ResellerStorefrontsPage() {
 
       <ShareLinksCard
         title="Shareable storefront links"
-        description="Use these links on social channels to receive customer purchases."
+        description="Customers only see your clean storefront handle. Technical API URLs stay in API Docs."
         links={storefrontLinks}
       />
 
-      <ShareLinksCard
-        title="Storefront API endpoints"
-        description="Use these endpoints when integrating external checkout flows."
-        links={apiLinks}
-      />
     </div>
   )
 }

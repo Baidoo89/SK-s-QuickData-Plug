@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/components/ui/use-toast"
+import { Mail } from "lucide-react"
 
 type SubscriptionStatus = {
   status: "NONE" | "ACTIVE" | "EXPIRED"
@@ -91,10 +92,15 @@ export default function SubscriptionPage() {
       toast({
         variant: "destructive",
         title: "Checkout failed",
-        description: error instanceof Error ? error.message : "Could not start Paystack checkout.",
+        description: error instanceof Error ? `${error.message} You can also contact support for manual activation.` : "Could not start Paystack checkout. Contact support for manual activation.",
       })
       setCheckingOut(null)
     }
+  }
+
+  function contactSupport(planName?: string) {
+    const subject = planName ? `Subscription request: ${planName}` : "Subscription activation request"
+    window.location.href = `mailto:support@techdalt.com?subject=${encodeURIComponent(subject)}`
   }
 
   const active = status?.status === "ACTIVE"
@@ -165,7 +171,11 @@ export default function SubscriptionPage() {
             ) : (
               <>
                 <p>Your organization does not currently have active selling access.</p>
-                <p>Choose a plan to unlock your subscriber workspace, storefront checkout, agents, resellers, and VTU ordering.</p>
+                <p>Choose a plan to pay online, or contact support for manual activation after payment confirmation.</p>
+                <Button type="button" variant="outline" onClick={() => contactSupport()} className="w-full sm:w-auto">
+                  <Mail className="mr-2 h-4 w-4" />
+                  Contact for manual activation
+                </Button>
               </>
             )}
           </CardContent>
@@ -206,6 +216,14 @@ export default function SubscriptionPage() {
                         : active
                           ? "Change plan"
                           : "Choose plan"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full text-xs"
+                    onClick={() => contactSupport(planOption.name)}
+                  >
+                    Contact support instead
                   </Button>
                 </CardContent>
               </Card>

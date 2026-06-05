@@ -228,7 +228,7 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
         </div>
       ) : null}
 
-      <div className="grid gap-3 lg:grid-cols-2 xl:hidden">
+      <div className="hidden">
         {rows.map((order) => {
           const checked = selected.has(order.id)
           const editableStatus = canEditStatus(order)
@@ -300,7 +300,7 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
         })}
       </div>
 
-      <div className="hidden min-w-0 max-w-full overflow-hidden rounded-md border bg-background xl:block">
+      <div className="min-w-0 max-w-full overflow-hidden rounded-md border bg-background">
         <div className="table-scroll">
         <Table className="min-w-[1440px] table-fixed text-xs">
           <TableHeader className="bg-muted/40">

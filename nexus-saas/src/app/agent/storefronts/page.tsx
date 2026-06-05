@@ -82,19 +82,7 @@ export default async function AgentStorefrontsPage() {
           {
             label: "Reseller signup invite",
             path: `/register/reseller?agentId=${agentId}`,
-            description: "Invite new resellers directly under your account.",
-          },
-        ]
-      : []),
-  ]
-
-  const apiLinks = [
-    ...(agentId
-      ? [
-          {
-            label: "Agent products API",
-            path: `/api/shop/${user.organization.slug}/agent/${agentId}/products`,
-            description: "Fetch products using your agent storefront prices and buy-cost context.",
+            description: "Invite new resellers directly under your account. The signup page shows your name and organization, with TechDalt as the secure platform.",
           },
         ]
       : []),
@@ -105,7 +93,7 @@ export default async function AgentStorefrontsPage() {
       <div className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Storefronts</h1>
         <p className="text-sm text-muted-foreground">
-          Share storefront links, invite resellers, and monitor storefront activity from one place.
+          Share clean customer links like techdalt.com/shop/your-name, invite resellers, and monitor storefront activity from one place.
         </p>
       </div>
 
@@ -138,15 +126,10 @@ export default async function AgentStorefrontsPage() {
 
       <ShareLinksCard
         title="Shareable storefront links"
-        description="Use these links in WhatsApp, social pages, or campaigns."
+        description="Customers only see clean brand links like techdalt.com/shop/your-name. Technical API URLs stay in API Docs."
         links={storefrontLinks}
       />
 
-      <ShareLinksCard
-        title="Storefront API endpoints"
-        description="Use these endpoints if you embed products in a custom frontend."
-        links={apiLinks}
-      />
     </div>
   )
 }

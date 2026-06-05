@@ -16,6 +16,11 @@ export async function POST(req: Request) {
     const session = await auth()
     if (!session?.user?.email) return ApiErrors.UNAUTHORIZED()
 
+    const smsConfigured = process.env.SMS_PROVIDER_ENABLED === "true"
+    if (process.env.NODE_ENV === "production" && !smsConfigured) {
+      return ApiErrors.BAD_REQUEST("Phone verification is not active yet. Email verification is active for launch testing.")
+    }
+
     const body = await req.json().catch(() => ({}))
     const phoneNumber = normalizePhoneNumber(body.phoneNumber)
     if (!phoneNumber) return ApiErrors.BAD_REQUEST("A valid Ghana phone number is required")

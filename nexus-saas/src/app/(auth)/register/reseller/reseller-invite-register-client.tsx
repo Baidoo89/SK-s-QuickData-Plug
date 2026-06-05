@@ -140,9 +140,13 @@ export default function ResellerInviteRegisterClient({ initialAgentId }: { initi
   return (
     <Card className="w-full border border-border/80 bg-card/95 shadow-xl backdrop-blur-xl">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Reseller signup</CardTitle>
+          <CardTitle className="text-2xl font-bold">
+            {inviteContext ? `Join ${inviteContext.agentName} as a reseller` : "Reseller invite"}
+          </CardTitle>
           <CardDescription>
-            This invite creates a reseller request under one agent account.
+            {inviteContext
+              ? `This reseller account will belong to ${inviteContext.organizationName}.`
+              : "Open this page from the reseller invite link sent by your agent."}
           </CardDescription>
         </CardHeader>
 
@@ -158,10 +162,13 @@ export default function ResellerInviteRegisterClient({ initialAgentId }: { initi
               <div className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-foreground">
                 <p className="flex items-center gap-2 font-medium">
                   <Building2 className="h-4 w-4 text-primary" />
-                  Joining {inviteContext.agentName}
+                  {inviteContext.agentName}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Your reseller account will belong to {inviteContext.organizationName}. The agent must approve you before you can sell.
+                  You are joining {inviteContext.agentName}&apos;s reseller network under {inviteContext.organizationName}. Verify your email first, then the agent approves your access.
+                </p>
+                <p className="mt-2 text-[11px] font-medium uppercase tracking-wide text-primary">
+                  Secure invite powered by TechDalt
                 </p>
               </div>
             )}
@@ -180,7 +187,7 @@ export default function ResellerInviteRegisterClient({ initialAgentId }: { initi
 
             <div className="flex gap-3 rounded-md border border-info/30 bg-info/10 px-3 py-2 text-xs text-info-foreground">
               <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <p>If you want to operate your own business and Paystack instead, use the public workspace signup.</p>
+              <p>This invite does not create your own TechDalt business workspace. Use public signup only if you want to operate your own organization and Paystack.</p>
             </div>
 
             <div className="space-y-2">

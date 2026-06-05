@@ -5,5 +5,5 @@ interface LegacyStorefrontProps {
 }
 
 export default function LegacyStorefrontRedirect({ params }: LegacyStorefrontProps) {
-  redirect(`/store/${params.slug}`)
+  redirect(`/shop/${params.slug}`)
 }

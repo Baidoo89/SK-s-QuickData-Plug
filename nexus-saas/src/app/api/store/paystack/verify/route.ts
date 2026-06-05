@@ -37,10 +37,10 @@ function parseJsonObject(value: string | null | undefined) {
   }
 }
 
-function resolveReturnPath(meta: Record<string, unknown>, payment: StorefrontPaymentRow | null) {
+async function resolveReturnPath(meta: Record<string, unknown>, payment: StorefrontPaymentRow | null) {
   const rawReturnPath = typeof meta.returnPath === "string" ? meta.returnPath : ""
   if (
-    (rawReturnPath.startsWith("/shop/") || rawReturnPath.startsWith("/store/")) &&
+    rawReturnPath.startsWith("/shop/") &&
     !rawReturnPath.startsWith("//") &&
     !rawReturnPath.includes("\\") &&
     !rawReturnPath.includes("\n") &&
@@ -70,9 +70,24 @@ function resolveReturnPath(meta: Record<string, unknown>, payment: StorefrontPay
         : ""
 
   if (!subscriberSlug) return "/"
-  if (resellerId) return `/store/${encodeURIComponent(subscriberSlug)}/reseller/${encodeURIComponent(resellerId)}`
-  if (agentId) return `/store/${encodeURIComponent(subscriberSlug)}/agent/${encodeURIComponent(agentId)}`
-  return `/store/${encodeURIComponent(subscriberSlug)}`
+
+  const organization = await db.organization.findUnique({
+    where: { slug: subscriberSlug },
+    select: { id: true },
+  })
+
+  if (!organization) return `/shop/${encodeURIComponent(subscriberSlug)}`
+
+  const storefrontLink = await db.storefrontLink.findFirst({
+    where: resellerId
+      ? { organizationId: organization.id, ownerType: "RESELLER", resellerId, active: true }
+      : agentId
+        ? { organizationId: organization.id, ownerType: "AGENT", agentId, active: true }
+        : { organizationId: organization.id, ownerType: "SUBSCRIBER", agentId: null, resellerId: null, active: true },
+    select: { slug: true },
+  })
+
+  return `/shop/${encodeURIComponent(storefrontLink?.slug || subscriberSlug)}`
 }
 
 async function findStorefrontPayment(reference: string) {
@@ -132,7 +147,7 @@ export async function GET(req: Request) {
     const data = await response.json().catch(() => null)
     const meta = (data?.data?.metadata || {}) as Record<string, unknown>
     const payment = await findStorefrontPayment(reference)
-    const returnPath = resolveReturnPath(meta, payment)
+    const returnPath = await resolveReturnPath(meta, payment)
 
     if (!payment || payment.organizationId !== organizationId) {
       return NextResponse.redirect(`${baseUrl}${returnPath}?checkout=failed`)

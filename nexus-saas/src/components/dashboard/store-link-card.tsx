@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -14,20 +14,25 @@ interface StoreLinkCardProps {
 
 export function StoreLinkCard({ storePath }: StoreLinkCardProps) {
   const { toast } = useToast()
+  const [origin, setOrigin] = useState("")
+
+  useEffect(() => {
+    setOrigin(window.location.origin)
+  }, [])
 
   const handleCopy = useCallback(async () => {
     if (!storePath) return
     try {
-      const origin = typeof window !== "undefined" ? window.location.origin : ""
       const fullUrl = `${origin}${storePath}`
       await navigator.clipboard.writeText(fullUrl)
-      toast({ title: "Store link copied", description: "Share this link with your customers and agents." })
+      toast({ title: "Store link copied", description: "Share this clean storefront link with customers." })
     } catch {
       toast({ variant: "destructive", title: "Copy failed", description: "Could not copy link to clipboard." })
     }
-  }, [storePath, toast])
+  }, [origin, storePath, toast])
 
   if (!storePath) return null
+  const displayUrl = origin ? `${origin}${storePath}` : storePath
 
   return (
     <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
@@ -35,7 +40,7 @@ export function StoreLinkCard({ storePath }: StoreLinkCardProps) {
         <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <CardTitle className="text-sm font-semibold">Customer storefront</CardTitle>
-            <CardDescription className="text-xs">Share this link with customers when your launch checks are ready.</CardDescription>
+            <CardDescription className="text-xs">Share this clean storefront link with customers when your launch checks are ready.</CardDescription>
           </div>
           <span className="w-fit rounded-md border border-primary/20 bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
             Customer checkout
@@ -45,7 +50,7 @@ export function StoreLinkCard({ storePath }: StoreLinkCardProps) {
       <CardContent className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center">
         <Input
           readOnly
-          value={storePath}
+          value={displayUrl}
           className="min-w-0 bg-muted font-mono text-xs sm:text-sm"
         />
         <div className="flex shrink-0 gap-2 justify-end sm:justify-normal">

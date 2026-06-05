@@ -13,14 +13,24 @@ type Props = {
   agentName?: string
   commissionPercent?: number
   verificationWarning?: string
+  requireVerified?: boolean
 }
 
-export function SignupApprovalActions({ kind, id, label, agentName, commissionPercent, verificationWarning }: Props) {
+export function SignupApprovalActions({ kind, id, label, agentName, commissionPercent, verificationWarning, requireVerified }: Props) {
   const [loadingAction, setLoadingAction] = useState<"approve" | "reject" | null>(null)
   const router = useRouter()
   const { toast } = useToast()
 
   const handleApprove = async () => {
+    if (requireVerified && verificationWarning) {
+      toast({
+        variant: "destructive",
+        title: "Email verification required",
+        description: "Ask the user to verify their email before approving access.",
+      })
+      return
+    }
+
     if (verificationWarning) {
       const shouldContinue = window.confirm(`${verificationWarning}\n\nApprove this request anyway?`)
       if (!shouldContinue) return
@@ -88,7 +98,7 @@ export function SignupApprovalActions({ kind, id, label, agentName, commissionPe
           <span>{verificationWarning}</span>
         </div>
       ) : null}
-      <Button type="button" size="sm" onClick={handleApprove} disabled={Boolean(loadingAction)}>
+      <Button type="button" size="sm" onClick={handleApprove} disabled={Boolean(loadingAction) || Boolean(requireVerified && verificationWarning)}>
         {loadingAction === "approve" ? null : <CheckCircle2 className="mr-2 h-3.5 w-3.5" />}
         {loadingAction === "approve" ? "Approving..." : label || "Approve"}
       </Button>
