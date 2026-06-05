@@ -163,7 +163,9 @@ export default async function SettingsPage() {
               <RadioTower className="h-4 w-4 text-primary" />
               Fulfillment Routing
             </h2>
-            <p className="text-sm text-muted-foreground">Choose which networks use provider API routing and which orders stay in manual fulfillment.</p>
+            <p className="text-sm text-muted-foreground">
+              Configure this subscriber&apos;s own provider API slots, turn slots on or off, and choose which networks use API routing or manual fulfillment.
+            </p>
           </div>
         <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
           <div className="space-y-6">

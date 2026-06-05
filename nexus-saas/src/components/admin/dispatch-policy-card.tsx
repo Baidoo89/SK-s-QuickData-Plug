@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/components/ui/use-toast"
 
 type DispatchMode = "MANUAL_ONLY" | "API_ONLY" | "HYBRID"
@@ -19,6 +20,8 @@ type DispatchPolicy = {
 type DispatchPolicyCardProps = {
   endpoint?: string
 }
+
+const NETWORKS = ["MTN", "TELECEL", "AIRTELTIGO"]
 
 export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: DispatchPolicyCardProps) {
   const { toast } = useToast()
@@ -111,6 +114,21 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
     }
   }
 
+  const enabledNetworks = apiNetworksText
+    .split(",")
+    .map((network) => network.trim().toUpperCase())
+    .filter(Boolean)
+
+  function toggleNetwork(network: string) {
+    const current = new Set(enabledNetworks)
+    if (current.has(network)) {
+      current.delete(network)
+    } else {
+      current.add(network)
+    }
+    setApiNetworksText(Array.from(current).join(", "))
+  }
+
   return (
     <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
       <CardHeader className="border-b bg-muted/30 pb-3">
@@ -123,16 +141,24 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
 
         <div className="space-y-1.5">
           <label className="text-xs font-medium">Dispatch Mode</label>
-          <select
-            value={mode}
-            onChange={(e) => setMode(e.target.value as DispatchMode)}
-            disabled={loading || saving}
-            className="h-9 w-full rounded-md border bg-background px-3 text-xs"
-          >
-            <option value="MANUAL_ONLY">Manual only</option>
-            <option value="HYBRID">Hybrid (recommended)</option>
-            <option value="API_ONLY">API only</option>
-          </select>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {[
+              { value: "HYBRID", label: "Hybrid", detail: "API + manual fallback" },
+              { value: "MANUAL_ONLY", label: "Manual", detail: "No provider API" },
+              { value: "API_ONLY", label: "API only", detail: "Strict automation" },
+            ].map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                disabled={loading || saving}
+                onClick={() => setMode(item.value as DispatchMode)}
+                className={`rounded-md border px-3 py-2 text-left transition ${mode === item.value ? "border-primary bg-primary/10 text-foreground" : "border-border bg-background text-muted-foreground hover:text-foreground"}`}
+              >
+                <span className="block text-xs font-semibold">{item.label}</span>
+                <span className="mt-0.5 block text-[10px]">{item.detail}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="space-y-1.5">
@@ -162,6 +188,27 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
 
         <div className="space-y-1.5">
           <label className="text-xs font-medium">API Enabled Networks</label>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {NETWORKS.map((network) => {
+              const enabled = enabledNetworks.includes(network)
+              return (
+                <button
+                  key={network}
+                  type="button"
+                  disabled={loading || saving}
+                  onClick={() => toggleNetwork(network)}
+                  className={`rounded-md border px-3 py-2 text-left text-xs font-semibold transition ${enabled ? "border-primary bg-primary/10 text-foreground" : "border-border bg-background text-muted-foreground hover:text-foreground"}`}
+                >
+                  <span className="flex items-center justify-between gap-2">
+                    {network === "AIRTELTIGO" ? "AirtelTigo" : network.charAt(0) + network.slice(1).toLowerCase()}
+                    <Badge variant={enabled ? "secondary" : "outline"} className="rounded-md px-2 py-0 text-[10px]">
+                      {enabled ? "API on" : "Manual"}
+                    </Badge>
+                  </span>
+                </button>
+              )
+            })}
+          </div>
           <Input
             value={apiNetworksText}
             onChange={(e) => setApiNetworksText(e.target.value)}

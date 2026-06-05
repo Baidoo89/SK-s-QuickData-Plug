@@ -156,7 +156,26 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
 
         {connections.length > 0 ? (
           <div className="space-y-2 rounded-md border border-border bg-muted/25 p-3">
-            <p className="text-xs font-semibold text-foreground">Saved provider slots</p>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-semibold text-foreground">Saved provider slots</p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-8 text-[11px]"
+                onClick={() => {
+                  setProviderKey("backup")
+                  setProviderName("Backup Provider")
+                  setProviderOrderUrl("")
+                  setProviderApiKey("")
+                  setHasApiKey(false)
+                  setActive(true)
+                  setUpdatedAt(null)
+                }}
+              >
+                New slot
+              </Button>
+            </div>
             <div className="flex flex-wrap gap-2">
               {connections.map((connection) => (
                 <button
@@ -174,7 +193,9 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
                 >
                   <span className="font-semibold text-foreground">{connection.providerKey}</span>
                   <span className="ml-1 text-muted-foreground">{connection.providerName}</span>
-                  {!connection.active ? <span className="ml-1 text-destructive">Paused</span> : null}
+                  <span className={connection.active ? "ml-1 text-primary" : "ml-1 text-destructive"}>
+                    {connection.active ? "Active" : "Paused"}
+                  </span>
                 </button>
               ))}
             </div>
@@ -266,16 +287,30 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
           <span>{updatedAt ? `Last updated: ${new Date(updatedAt).toLocaleString()}` : "Not configured yet"}</span>
         </div>
 
-        <label className="flex items-center gap-2 text-xs text-muted-foreground">
-          <input
-            type="checkbox"
-            checked={active}
-            onChange={(e) => setActive(e.target.checked)}
-            disabled={loading || saving}
-            className="h-4 w-4 rounded border-border"
-          />
-          Provider slot is active
-        </label>
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium">Provider Slot Status</label>
+          <div className="grid grid-cols-2 rounded-md border border-border bg-muted/30 p-1">
+            <button
+              type="button"
+              disabled={loading || saving}
+              onClick={() => setActive(true)}
+              className={`rounded-md px-3 py-2 text-xs font-semibold transition ${active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Active
+            </button>
+            <button
+              type="button"
+              disabled={loading || saving}
+              onClick={() => setActive(false)}
+              className={`rounded-md px-3 py-2 text-xs font-semibold transition ${!active ? "bg-destructive text-destructive-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Paused
+            </button>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Paused provider slots are skipped during dispatch and fallback routing.
+          </p>
+        </div>
 
         <Button onClick={saveConnection} disabled={loading || saving} className="w-full text-xs sm:w-auto">
           {saving ? "Saving..." : "Save Provider Connection"}
