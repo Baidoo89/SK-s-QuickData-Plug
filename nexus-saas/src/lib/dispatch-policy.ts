@@ -8,6 +8,15 @@ export type DispatchPolicy = {
   providerName: string
 }
 
+export type SaveDispatchPolicyInput = {
+  organizationId: string
+  actorId: string
+  actorName: string
+  mode: DispatchMode
+  apiEnabledNetworks: string[]
+  providerName: string
+}
+
 const VALID_MODES: DispatchMode[] = ["MANUAL_ONLY", "API_ONLY", "HYBRID"]
 
 function normalizeNetwork(value: string): string {
@@ -74,6 +83,28 @@ export async function getEffectiveDispatchPolicy(organizationId: string): Promis
   } catch {
     return fallback
   }
+}
+
+export async function saveDispatchPolicy(input: SaveDispatchPolicyInput): Promise<DispatchPolicy> {
+  const payload = {
+    mode: input.mode,
+    apiEnabledNetworks: input.apiEnabledNetworks.map((network) => normalizeNetwork(network)).filter(Boolean),
+    providerName: input.providerName.trim() || "Primary Provider",
+  }
+
+  await db.auditLog.create({
+    data: {
+      actorId: input.actorId,
+      actorName: input.actorName,
+      action: "DISPATCH_POLICY_SET",
+      targetType: "SYSTEM_CONFIG",
+      targetId: "dispatch-policy",
+      organizationId: input.organizationId,
+      meta: JSON.stringify(payload),
+    },
+  })
+
+  return payload
 }
 
 export function shouldUseProviderApi(policy: DispatchPolicy, network: string) {

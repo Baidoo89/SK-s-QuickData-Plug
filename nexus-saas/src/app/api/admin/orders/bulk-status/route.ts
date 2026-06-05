@@ -1,4 +1,4 @@
-import { requireOrgManager, isAuthError } from "@/lib/auth-guard"
+import { requireAdmin, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
 import { z } from "zod"
@@ -10,7 +10,7 @@ const schema = z.object({
 
 export async function POST(req: Request) {
   try {
-    const authResult = await requireOrgManager()
+    const authResult = await requireAdmin()
     if (isAuthError(authResult)) {
       return authResult
     }

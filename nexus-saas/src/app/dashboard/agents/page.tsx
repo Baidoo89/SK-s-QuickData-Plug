@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Input } from "@/components/ui/input"
+import { MetricCard } from "@/components/ui/metric-card"
 import { useToast } from "@/components/ui/use-toast"
-import { Users, ChevronRight } from "lucide-react"
+import { Activity, ChevronRight, CircleDollarSign, UserCheck, UserPlus, Users } from "lucide-react"
 import { formatGhanaCedis } from "@/lib/currency"
 
 interface Agent {
@@ -20,6 +22,13 @@ interface Agent {
   totalProfit?: number
   estimatedCommission?: number
   commissionPercent?: number
+}
+
+interface TenantResponse {
+  tenant?: {
+    slug?: string
+    name?: string
+  }
 }
 
 type ApiDataWrapper<T> = {
@@ -47,6 +56,8 @@ export default function AgentsPage() {
   const [newAgentName, setNewAgentName] = useState("")
   const [newAgentEmail, setNewAgentEmail] = useState("")
   const [lastInviteLink, setLastInviteLink] = useState<string | null>(null)
+  const [agentRequestLink, setAgentRequestLink] = useState<string | null>(null)
+  const [tenantName, setTenantName] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const [editModalOpen, setEditModalOpen] = useState(false)
@@ -78,6 +89,16 @@ export default function AgentsPage() {
         const agentsData = normalizeArrayResponse<Agent>(await agentsRes.json())
         setAgents(agentsData)
         if (agentsData.length > 0) setSelectedAgentId(agentsData[0].id)
+
+        const tenantRes = await fetch("/api/tenants/current")
+        if (tenantRes.ok) {
+          const tenantPayload = extractApiData<TenantResponse>(await tenantRes.json())
+          const slug = tenantPayload?.tenant?.slug
+          if (slug && typeof window !== "undefined") {
+            setTenantName(tenantPayload.tenant?.name ?? null)
+            setAgentRequestLink(`${window.location.origin}/register/agent?tenant=${encodeURIComponent(slug)}`)
+          }
+        }
       } finally {
         setInitialLoading(false)
       }
@@ -194,7 +215,7 @@ export default function AgentsPage() {
   }
 
   return (
-    <div className="flex-1 space-y-6 px-4 py-6 md:p-8 md:pt-6">
+    <div className="portal-page flex-1 space-y-6">
       {/* Page header */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
@@ -256,48 +277,33 @@ export default function AgentsPage() {
                 <p className="text-[11px] text-muted-foreground">The email is still sent through Resend when configured, but the link is always shown here for quick access.</p>
               </div>
             )}
+            {agentRequestLink && (
+              <div className="rounded-lg border border-info/30 bg-info/10 p-3 space-y-2">
+                <p className="text-xs font-medium text-info-foreground">Tenant-scoped agent request link</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Share this if agents should request access under {tenantName || "your organization"} themselves. You still approve them before they can sell.
+                </p>
+                <p className="break-all text-[11px] text-foreground">{agentRequestLink}</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" size="sm" variant="outline" onClick={() => copyInviteLink(agentRequestLink)}>
+                    Copy request link
+                  </Button>
+                  <Button type="button" size="sm" variant="secondary" asChild>
+                    <a href={agentRequestLink} target="_blank" rel="noreferrer">Open link</a>
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
       {/* High-level agent overview */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Total agents</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold">{aggregateStats.totalAgents}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Across your VTU business.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Active agents</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold">{aggregateStats.activeAgents}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Currently allowed to sell.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Total orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold">{aggregateStats.totalOrders}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Completed orders from all agents.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Total revenue</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold">{formatGhanaCedis(aggregateStats.totalRevenue)}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Gross VTU revenue driven by agents.</p>
-          </CardContent>
-        </Card>
+      <div className="grid min-w-0 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <MetricCard label="Total Agents" value={aggregateStats.totalAgents} description="Across your VTU business." icon={Users} tone="primary" />
+        <MetricCard label="Active Agents" value={aggregateStats.activeAgents} description="Currently allowed to sell." icon={UserCheck} tone="success" />
+        <MetricCard label="Total Orders" value={aggregateStats.totalOrders} description="Orders from all agents." icon={Activity} tone="info" />
+        <MetricCard label="Total Revenue" value={formatGhanaCedis(aggregateStats.totalRevenue)} description="Gross VTU revenue driven by agents." icon={CircleDollarSign} tone="success" />
       </div>
 
       {/* Main layout: left = agents & stats, right = pricing */}
@@ -311,7 +317,7 @@ export default function AgentsPage() {
                   Tap an agent to view full details and pricing.
                 </CardDescription>
               </div>
-              <span className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary">
+              <span className="rounded-md border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary">
                 {agents.length} total
               </span>
             </div>
@@ -371,9 +377,13 @@ export default function AgentsPage() {
               </div>
             )}
             {!initialLoading && agents.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                No agents yet. Create your first agent above.
-              </p>
+              <EmptyState
+                icon={UserPlus}
+                title="No agents onboarded"
+                description="Create an agent above to generate their password setup link. Agents can sell with their own storefront link once pricing and wallet access are ready."
+                secondaryAction={{ label: "Review Setup", href: "/dashboard/setup" }}
+                className="py-6"
+              />
             )}
             {!initialLoading && agents.length > 0 && (
               <div className="space-y-3">
@@ -389,12 +399,12 @@ export default function AgentsPage() {
                       key={agent.id}
                       type="button"
                       onClick={() => router.push(`/dashboard/agents/${agent.id}`)}
-                      className="flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-background/70 px-3 py-3 text-left text-xs transition-colors hover:bg-muted/80"
+                    className="flex w-full items-center justify-between gap-3 rounded-md border border-border bg-background/70 px-3 py-3 text-left text-xs transition-colors hover:border-primary/30 hover:bg-muted/60"
                     >
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-foreground">{agent.name}</p>
                         <p className="mt-1 text-[11px] text-muted-foreground">
-                          {orders} orders · {formatGhanaCedis(revenue)}
+                          {orders} orders | {formatGhanaCedis(revenue)}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -402,8 +412,8 @@ export default function AgentsPage() {
                           className={[
                             "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold",
                             isActive
-                              ? "bg-emerald-50 text-emerald-700"
-                              : "bg-red-50 text-red-600",
+                              ? "status-success border"
+                              : "bg-destructive/10 text-destructive",
                           ].join(" ")}
                         >
                           {isActive ? "Active" : "Inactive"}

@@ -11,6 +11,10 @@ export async function POST(req: Request) {
       return ApiErrors.BAD_REQUEST("Missing required fields")
     }
 
+    if (String(password).length < 8) {
+      return ApiErrors.BAD_REQUEST("Password must be at least 8 characters")
+    }
+
     const existingToken = await db.passwordResetToken.findUnique({
       where: { token }
     })
@@ -40,8 +44,8 @@ export async function POST(req: Request) {
       data: { password: hashedPassword }
     })
 
-    await db.passwordResetToken.delete({
-      where: { id: existingToken.id }
+    await db.passwordResetToken.deleteMany({
+      where: { email: existingToken.email }
     })
 
     return apiSuccess({ success: true, message: "Password updated!" })

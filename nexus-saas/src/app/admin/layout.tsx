@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import AdminLayoutClient from "./_layout-client";
+import { getRoleLandingPath } from "@/lib/role-landing";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  // Check authentication
   const session = await auth();
   if (!session || !session.user) {
     redirect("/login");
@@ -11,9 +11,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const role = (session.user as { role?: string }).role;
 
-  // Check for admin portal role.
-  if (role !== "SUBSCRIBER" && role !== "SUPERADMIN") {
-    redirect("/");
+  if (role !== "SUPERADMIN") {
+    redirect(getRoleLandingPath(role));
   }
 
   return <AdminLayoutClient>{children}</AdminLayoutClient>;

@@ -53,10 +53,12 @@ export async function authenticateRequest(): Promise<AuthenticatedRequest | null
         email: true,
         role: true,
         organizationId: true,
+        active: true,
+        signupStatus: true,
       },
     });
 
-    if (!user || !user.email) {
+    if (!user || !user.email || user.active === false || user.signupStatus !== "APPROVED") {
       return null;
     }
 

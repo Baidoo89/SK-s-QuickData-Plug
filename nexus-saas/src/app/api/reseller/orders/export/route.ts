@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { getStorefrontPaymentMap } from "@/lib/storefront-payment-map";
 
 export async function GET(req: Request) {
   const session = await auth();
@@ -69,8 +70,9 @@ export async function GET(req: Request) {
     },
     orderBy: { createdAt: "desc" },
   });
+  const paymentMap = await getStorefrontPaymentMap(orders.map((order) => order.id), user.organizationId);
 
-  const header = ["id", "date", "buyer", "email", "phone", "status", "total", "items"];
+  const header = ["id", "date", "buyer", "email", "phone", "status", "paymentOwner", "paymentStatus", "paymentReference", "total", "items"];
   const rows = orders.map((order) => {
     const buyerName = order.customer?.name || "Guest";
     const buyerEmail = order.customer?.email || "";
@@ -88,6 +90,9 @@ export async function GET(req: Request) {
       buyerEmail,
       order.phoneNumber || "",
       order.status,
+      paymentMap.get(order.id)?.owner || "WALLET",
+      paymentMap.get(order.id)?.status || "PAID",
+      paymentMap.get(order.id)?.reference || "Wallet/Internal",
       order.total.toString(),
       itemsSummary,
     ];

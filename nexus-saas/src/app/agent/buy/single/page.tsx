@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
+import { SellingAccessAlert } from "@/components/access/selling-access-alert"
 import { CheckCircle, Smartphone } from "lucide-react"
 
 function formatGhanaCedis(value: number): string {
-  return `GH₵ ${value.toFixed(2)}`
+  return `GHS ${value.toFixed(2)}`
 }
 
 function formatBundleLabel(name: string) {
@@ -26,6 +27,23 @@ export default function AgentBuySinglePage() {
   const [loadingBundles, setLoadingBundles] = useState(false)
   const [buying, setBuying] = useState(false)
   const [orderSuccess, setOrderSuccess] = useState<any>(null)
+  const [sellingAccess, setSellingAccess] = useState<any>(null)
+
+  // Load networks on mount
+  useEffect(() => {
+    async function loadSellingAccess() {
+      try {
+        const res = await fetch("/api/selling-access/status")
+        if (!res.ok) return
+        const payload = await res.json()
+        setSellingAccess(payload?.data ?? payload)
+      } catch {
+        // The API still enforces access. This banner is only for clearer UX.
+      }
+    }
+
+    loadSellingAccess()
+  }, [])
 
   // Load networks on mount
   useEffect(() => {
@@ -95,6 +113,7 @@ export default function AgentBuySinglePage() {
   const selectedBundleObj = bundles.find((b) => b.id === selectedBundle)
   const totalCost = selectedBundleObj ? selectedBundleObj.effectivePrice : 0
   const selectedNetworkObj = networks.find((n) => n.id === selectedNetwork)
+  const sellingBlocked = Boolean(sellingAccess && !sellingAccess.canSell)
 
   async function handleSingleBuy(e: React.FormEvent) {
     e.preventDefault()
@@ -107,8 +126,17 @@ export default function AgentBuySinglePage() {
       return
     }
 
+    if (sellingBlocked) {
+      toast({
+        title: "Selling is blocked",
+        description: sellingAccess?.reason || "Ask the subscriber admin to complete selling setup.",
+        variant: "destructive",
+      })
+      return
+    }
+
     const shouldContinue = window.confirm(
-      `Confirm purchase for ${phone.trim()}?\nBundle: ${formatBundleLabel(selectedBundleObj?.name ?? "Selected bundle")}\nAmount: ${formatGhanaCedis(totalCost)}`
+      `Confirm dashboard purchase for ${phone.trim()}?\nBundle: ${formatBundleLabel(selectedBundleObj?.name ?? "Selected bundle")}\nBuy total: ${formatGhanaCedis(totalCost)}`
     )
     if (!shouldContinue) {
       return
@@ -155,13 +183,21 @@ export default function AgentBuySinglePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6 px-4 py-6 md:p-8">
+    <div className="portal-page mx-auto w-full max-w-2xl space-y-6">
       <div>
         {/* Header */}
         <div className="mb-2 space-y-1">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Buy data</h1>
           <p className="text-sm text-muted-foreground">Create a single purchase with guided pricing and confirmation.</p>
         </div>
+
+        {sellingAccess ? (
+          <SellingAccessAlert
+            canSell={sellingAccess.canSell}
+            reason={sellingAccess.reason}
+            compact={sellingAccess.canSell}
+          />
+        ) : null}
 
         {/* Main Card */}
         <Card className="overflow-hidden">
@@ -186,6 +222,7 @@ export default function AgentBuySinglePage() {
                             setSelectedNetwork(n.id)
                             setSelectedBundle("")
                           }}
+                          disabled={sellingBlocked}
                           className={[
                             "rounded-full px-3 py-1 text-xs font-semibold transition",
                             active
@@ -205,7 +242,7 @@ export default function AgentBuySinglePage() {
                       setSelectedNetwork(e.target.value)
                       setSelectedBundle("")
                     }}
-                    disabled={networks.length === 0}
+                    disabled={sellingBlocked || networks.length === 0}
                   >
                     <option value="">Select network</option>
                     {networks.map((n) => (
@@ -215,7 +252,7 @@ export default function AgentBuySinglePage() {
                     ))}
                   </select>
                   {networks.length === 0 && (
-                    <p className="text-xs text-red-500">No networks available</p>
+                    <p className="text-xs text-destructive">No networks available</p>
                   )}
                   <p className="text-xs text-muted-foreground">
                     Showing bundles for {selectedNetworkObj?.name || "selected network"}
@@ -229,25 +266,25 @@ export default function AgentBuySinglePage() {
                     className="w-full rounded-md border bg-background px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-ring"
                     value={selectedBundle}
                     onChange={(e) => setSelectedBundle(e.target.value)}
-                    disabled={!selectedNetwork || loadingBundles || bundles.length === 0}
+                    disabled={sellingBlocked || !selectedNetwork || loadingBundles || bundles.length === 0}
                   >
                     <option value="">Select bundle</option>
                     {bundles.map((b) => {
-                      // Extract size from name (e.g., "1GB Bundle" → "1GB")
+                      // Extract size from name (e.g., "1GB Bundle" -> "1GB")
                       const sizeMatch = b.name.match(/^[\d.]+\s*[A-Z]+/)
                       const size = sizeMatch ? sizeMatch[0] : b.name
                       return (
                         <option key={b.id} value={b.id}>
-                          {size} – {formatGhanaCedis(b.effectivePrice)}
+                          {size} - {formatGhanaCedis(b.effectivePrice)}
                         </option>
                       )
                     })}
                   </select>
                   {bundles.length === 0 && !loadingBundles && selectedNetwork && (
-                    <p className="text-xs text-yellow-600">No bundles available for {selectedNetworkObj?.name}</p>
+                    <p className="text-xs text-accent-foreground">No bundles available for {selectedNetworkObj?.name}</p>
                   )}
                   {loadingBundles && (
-                    <p className="text-xs text-blue-600">Loading bundles...</p>
+                    <p className="text-xs text-primary">Loading bundles...</p>
                   )}
                 </div>
 
@@ -270,14 +307,14 @@ export default function AgentBuySinglePage() {
 
                 {/* Price Summary */}
                 {selectedBundleObj && (
-                  <div className="mt-2 rounded-lg border border-blue-200 bg-blue-50 p-4">
+                  <div className="mt-2 rounded-md border border-primary/30 bg-primary/10 p-4">
                     <div className="flex justify-between items-center text-sm mb-2">
-                      <span className="text-slate-700">Recipient number:</span>
-                      <span className="font-semibold text-slate-900">{phone.trim() || "-"}</span>
+                      <span className="text-foreground">Recipient number:</span>
+                      <span className="font-semibold text-foreground">{phone.trim() || "-"}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-slate-700">Total cost:</span>
-                      <span className="text-2xl font-bold text-blue-600">{formatGhanaCedis(totalCost)}</span>
+                      <span className="text-sm text-foreground">Buy total:</span>
+                      <span className="text-2xl font-bold text-primary">{formatGhanaCedis(totalCost)}</span>
                     </div>
                   </div>
                 )}
@@ -285,7 +322,7 @@ export default function AgentBuySinglePage() {
                 {/* Buy Button */}
                 <Button
                   type="submit"
-                  disabled={buying || !selectedBundle || !phone}
+                  disabled={sellingBlocked || buying || !selectedBundle || !phone}
                   className="mt-2 h-10 w-full text-sm font-semibold"
                 >
                   {buying ? "Processing..." : "Complete Purchase"}
@@ -294,44 +331,44 @@ export default function AgentBuySinglePage() {
             ) : (
               /* Success Message */
               <div className="space-y-4">
-                <div className="rounded-lg border border-green-200 bg-green-50 p-5 text-center">
+                <div className="rounded-md border border-primary/30 bg-primary/10 p-5 text-center">
                   <div className="flex justify-center mb-4">
-                    <CheckCircle className="w-12 h-12 text-green-600" />
+                    <CheckCircle className="w-12 h-12 text-primary" />
                   </div>
-                  <h3 className="text-lg font-bold text-green-700 mb-2">Order Created!</h3>
-                  <p className="text-sm text-green-600 mb-4">Your data bundle has been ordered successfully.</p>
+                  <h3 className="text-lg font-bold text-primary mb-2">Order Created!</h3>
+                  <p className="text-sm text-primary mb-4">Your data bundle has been ordered successfully.</p>
                 </div>
 
-                <div className="space-y-3 rounded-lg bg-slate-50 p-4">
+                <div className="space-y-3 rounded-md bg-muted/40 p-4">
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">Order ID:</span>
-                    <span className="font-mono font-semibold text-slate-900">{orderSuccess.orderId}</span>
+                    <span className="text-muted-foreground">Order ID:</span>
+                    <span className="font-mono font-semibold text-foreground">{orderSuccess.orderId}</span>
                   </div>
-                  <div className="border-t border-slate-200 pt-3 flex justify-between text-sm">
-                    <span className="text-slate-600">Bundle:</span>
-                    <span className="font-semibold text-slate-900">{formatBundleLabel(orderSuccess.bundle)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">Phone:</span>
-                    <span className="font-semibold text-slate-900">{orderSuccess.phone}</span>
+                  <div className="border-t border-border pt-3 flex justify-between text-sm">
+                    <span className="text-muted-foreground">Bundle:</span>
+                    <span className="font-semibold text-foreground">{formatBundleLabel(orderSuccess.bundle)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">Amount:</span>
-                    <span className="font-bold text-blue-600">{formatGhanaCedis(orderSuccess.total)}</span>
+                    <span className="text-muted-foreground">Phone:</span>
+                    <span className="font-semibold text-foreground">{orderSuccess.phone}</span>
                   </div>
-                  <div className="flex justify-between text-sm pt-2 border-t border-slate-200">
-                    <span className="text-slate-600">Status:</span>
-                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Buy total:</span>
+                    <span className="font-bold text-primary">{formatGhanaCedis(orderSuccess.total)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm pt-2 border-t border-border">
+                    <span className="text-muted-foreground">Status:</span>
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-accent/70 text-accent-foreground rounded-full text-xs font-semibold">
                       {orderSuccess.status}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">Dispatch:</span>
-                    <span className="font-semibold text-slate-900">{orderSuccess.dispatchMode || "MANUAL"}</span>
+                    <span className="text-muted-foreground">Dispatch:</span>
+                    <span className="font-semibold text-foreground">{orderSuccess.dispatchMode || "MANUAL"}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">Provider:</span>
-                    <span className="font-semibold text-slate-900">{orderSuccess.dispatchProvider || "Manual Queue"}</span>
+                    <span className="text-muted-foreground">Provider:</span>
+                    <span className="font-semibold text-foreground">{orderSuccess.dispatchProvider || "Manual fulfillment"}</span>
                   </div>
                 </div>
 
@@ -357,3 +394,4 @@ export default function AgentBuySinglePage() {
     </div>
   )
 }
+

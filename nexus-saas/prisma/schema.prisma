@@ -26,7 +26,12 @@ model Organization {
   resellerPrices ResellerPrice[]
   apiKeys     ApiKey[]
   auditLogs   AuditLog[]
+  withdrawalRequests WithdrawalRequest[]
+  pricingProfiles PricingProfile[]
+  userPricingProfileAssignments UserPricingProfileAssignment[]
+  paymentSettings OrganizationPaymentSettings?
   subscription Subscription?
+  storefrontLinks StorefrontLink[]
 }
 
 model User {
@@ -34,10 +39,14 @@ model User {
   name          String?
   email         String?   @unique
   emailVerified DateTime?
+  emailVerificationRequired Boolean @default(false)
+  phoneNumber   String?   @unique
+  phoneVerified DateTime?
   image         String?
   password      String?
   role          String    @default("SUBSCRIBER") // SUPERADMIN, SUBSCRIBER (agents are separate table)
   active        Boolean   @default(true) // For deactivating resellers
+  signupStatus  String    @default("APPROVED") // APPROVED, PENDING
   
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id])
@@ -57,6 +66,8 @@ model User {
   resellerPrices ResellerPrice[]
 
   walletTransactions WalletTransaction[]
+  withdrawalRequests WithdrawalRequest[]
+  pricingProfileAssignment UserPricingProfileAssignment?
 }
 
 model Product {
@@ -71,6 +82,7 @@ model Product {
   provider    String   @default("MTN") // MTN, AIRTELTIGO, TELECEL
   bundleType  String   @default("DATA") // DATA, AIRTIME
   active      Boolean  @default(true)
+  serviceForm String?
   
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id])
@@ -83,6 +95,7 @@ model Product {
   basePrices  BasePrice[]
   agentPrices AgentPrice[]
   resellerPrices ResellerPrice[]
+  pricingProfileItems PricingProfileItem[]
 }
 
 model Order {
@@ -102,10 +115,87 @@ model Order {
   phoneNumber String?
   total     Float
   status    String      @default("PENDING")
+
+  // Explicit commercial channel metadata. Kept as strings so the app can evolve
+  // status values without a migration for every operational label.
+  source          String  @default("DASHBOARD_BUY") // DASHBOARD_BUY, STOREFRONT, API
+  sellerRole      String? // SUBSCRIBER, AGENT, RESELLER
+  sellerUserId    String?
+  sellerAgentId   String?
+  customerType    String  @default("DASHBOARD_USER") // DASHBOARD_USER, PUBLIC_CUSTOMER, API_CUSTOMER
+  paymentOwner    String  @default("WALLET") // WALLET, STOREFRONT, EXTERNAL
+  paymentStatus   String  @default("PAID") // PAID, PENDING, FAILED
+  fulfillmentMode String  @default("MANUAL") // MANUAL, API
+  externalReference String?
+
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
   items     OrderItem[]
+
+  @@index([source])
+  @@index([sellerRole])
+  @@index([sellerUserId])
+  @@index([sellerAgentId])
+  @@index([paymentStatus])
+  @@index([fulfillmentMode])
+  @@index([externalReference])
+}
+
+model ServiceRequest {
+  id               String   @id @default(cuid())
+  organizationId   String
+  productId        String
+  customerId       String?
+  agentId          String?
+  userId           String?
+  type             String   @default("REGISTRATION_SERVICE")
+  status           String   @default("PENDING_PAYMENT") // PENDING_PAYMENT, PENDING_REVIEW, PROCESSING, COMPLETED, FAILED, REJECTED
+  paymentStatus    String   @default("PENDING") // PENDING, PAID, FAILED
+  paymentReference String?
+  source           String   @default("STOREFRONT")
+  sellerRole       String?
+  sellerUserId     String?
+  sellerAgentId    String?
+  paymentOwner     String   @default("STOREFRONT")
+  customerName     String
+  phoneNumber      String
+  location         String?
+  dateOfBirth      DateTime?
+  details          String?
+  total            Float
+  profit           Float    @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([productId])
+  @@index([customerId])
+  @@index([agentId])
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([paymentReference])
+  @@index([sellerRole])
+  @@index([sellerUserId])
+  @@index([sellerAgentId])
+}
+
+model StorefrontPayment {
+  id             String   @id @default(cuid())
+  organizationId String
+  reference      String   @unique
+  amount         Float
+  status         String   @default("PENDING") // PENDING, SUCCESS, FAILED
+  orderIds       String   // JSON string of order ids included in this checkout
+  metadata       String?
+  paidAt         DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([status])
 }
 
 model Customer {
@@ -113,14 +203,21 @@ model Customer {
   name           String
   email          String
   phone          String?
+  
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
+  
+  agentId        String?
+  agent          Agent?       @relation(fields: [agentId], references: [id])
+  
   customPrices   CustomPrice[]
   orders         Order[]
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
   @@unique([email, organizationId])
+  @@index([agentId])
+  @@index([organizationId])
 }
 
 model CustomPrice {
@@ -165,8 +262,10 @@ model Agent {
   organization   Organization @relation(fields: [organizationId], references: [id])
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+  
   prices         AgentPrice[]
   orders         Order[]
+  customers      Customer[]
 
   // All reseller user accounts created under this agent
   resellers      User[]    @relation("AgentResellers")
@@ -212,6 +311,19 @@ model PasswordResetToken {
   @@unique([email, token])
 }
 
+model VerificationToken {
+  id         String   @id @default(cuid())
+  identifier String
+  token      String   @unique
+  type       String   @default("EMAIL") // EMAIL, PHONE
+  expires    DateTime
+  createdAt  DateTime @default(now())
+
+  @@unique([identifier, token])
+  @@index([identifier])
+  @@index([type])
+}
+
 model OrderItem {
   id        String  @id @default(cuid())
   orderId   String
@@ -246,6 +358,10 @@ model Plan {
   features    String   // JSON string of features array
   maxProducts Int      @default(10)
   maxAgents   Int      @default(5)
+  active      Boolean  @default(true)
+  visible     Boolean  @default(true)
+  recommended Boolean  @default(false)
+  retiredAt   DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -296,6 +412,29 @@ model WalletTransaction {
   @@index([userId])
 }
 
+model WithdrawalRequest {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+  organizationId   String
+  organization     Organization @relation(fields: [organizationId], references: [id])
+
+  amount           Float
+  status           String   @default("PENDING") // PENDING, APPROVED, PAID, REJECTED, CANCELED
+  note             String?
+  requestedByEmail String?
+  requestedByRole  String?
+  reviewedByEmail  String?
+  reviewedAt       DateTime?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([status])
+}
+
 
 
 
@@ -314,5 +453,125 @@ model ResellerPrice {
 
   @@unique([resellerId, productId])
   @@index([resellerId])
+}
+
+model AgentStorefrontPrice {
+  id             String   @id @default(cuid())
+  price          Float
+  agentId        String
+  productId      String
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([agentId, productId])
+  @@index([agentId])
+  @@index([organizationId])
+}
+
+model ResellerStorefrontPrice {
+  id             String   @id @default(cuid())
+  price          Float
+  resellerId     String
+  productId      String
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([resellerId, productId])
+  @@index([resellerId])
+  @@index([organizationId])
+}
+
+model SubscriberStorefrontPrice {
+  id             String   @id @default(cuid())
+  price          Float
+  productId      String
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([productId, organizationId])
+  @@index([organizationId])
+}
+
+model StorefrontLink {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ownerType      String   @default("SUBSCRIBER") // SUBSCRIBER, AGENT, RESELLER
+  agentId        String?
+  resellerId     String?
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([ownerType])
+  @@index([agentId])
+  @@index([resellerId])
+}
+
+model PricingProfile {
+  id             String   @id @default(cuid())
+  name           String
+  tag            String?
+  targetRole     String   @default("BOTH") // AGENT, RESELLER, BOTH
+  ownerAgentId   String?
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  items          PricingProfileItem[]
+  assignments    UserPricingProfileAssignment[]
+
+  @@index([organizationId])
+  @@index([ownerAgentId])
+}
+
+model PricingProfileItem {
+  id               String   @id @default(cuid())
+  pricingProfileId String
+  pricingProfile   PricingProfile @relation(fields: [pricingProfileId], references: [id], onDelete: Cascade)
+  productId        String
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  price            Float
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([pricingProfileId, productId])
+  @@index([productId])
+}
+
+model UserPricingProfileAssignment {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pricingProfileId String
+  pricingProfile   PricingProfile @relation(fields: [pricingProfileId], references: [id], onDelete: Cascade)
+  strictPricing    Boolean  @default(false)
+  organizationId   String
+  organization     Organization @relation(fields: [organizationId], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([organizationId, userId])
+  @@index([pricingProfileId])
+}
+
+model OrganizationPaymentSettings {
+  id                    String   @id @default(cuid())
+  organizationId        String   @unique
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  paystackPublicKey     String?
+  paystackSecretKeyEnc  String?
+  paystackConnected     Boolean  @default(false)
+  updatedById           String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([organizationId])
 }
 

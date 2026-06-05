@@ -1,11 +1,20 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BadgeCheck, ShieldCheck, ShoppingCart, Wallet } from "lucide-react";
+import { formatGhanaCedis } from "@/lib/currency";
+import { PortalAccessMessage } from "@/components/access/portal-access-message";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { MetricCard } from "@/components/ui/metric-card";
+import Link from "next/link";
+import { getOrCreateResellerStorefrontLink } from "@/lib/storefront-links";
+import { PhoneVerificationCard } from "@/components/auth/phone-verification-card";
 
 export default async function ResellerAccountPage() {
   const session = await auth();
   if (!session?.user?.email) {
-    return null;
+    return <PortalAccessMessage title="Login required" description="Sign in with an approved reseller account to manage your profile." />;
   }
 
   const user = await db.user.findUnique({
@@ -15,6 +24,10 @@ export default async function ResellerAccountPage() {
       name: true,
       email: true,
       role: true,
+      active: true,
+      signupStatus: true,
+      phoneNumber: true,
+      phoneVerified: true,
       createdAt: true,
       parentAgentId: true,
       organizationId: true,
@@ -22,7 +35,7 @@ export default async function ResellerAccountPage() {
   });
 
   if (!user || user.role !== "RESELLER") {
-    return null;
+    return <PortalAccessMessage title="Reseller profile unavailable" description="This account is not linked to an approved reseller profile. Ask your agent or subscriber admin to review the account." />;
   }
 
   const agent = user.parentAgentId
@@ -43,60 +56,101 @@ export default async function ResellerAccountPage() {
   const org = agent?.organization ?? fallbackOrg;
   const orgName = org?.name ?? "Not linked";
   const orgSlug = org?.slug ?? null;
-  const storefrontPath = orgSlug ? `/store/${orgSlug}` : null;
+  const resellerStorePath = orgSlug && user.organizationId && user.parentAgentId
+    ? await getOrCreateResellerStorefrontLink({
+        organizationId: user.organizationId,
+        organizationSlug: orgSlug,
+        resellerId: user.id,
+        resellerName: user.name || user.email || "Store",
+      })
+    : null;
+  const [walletAgg, orderCount, completedOrderCount] = await Promise.all([
+    db.walletTransaction.aggregate({
+      _sum: { amount: true },
+      where: { userId: user.id, status: "success" },
+    }),
+    db.order.count({
+      where: { organizationId: user.organizationId ?? undefined, userId: user.id },
+    }),
+    db.order.count({
+      where: { organizationId: user.organizationId ?? undefined, userId: user.id, status: "COMPLETED" },
+    }),
+  ]);
+  const walletBalance = walletAgg._sum.amount ?? 0;
+  const isActive = user.active && user.signupStatus === "APPROVED";
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Account</h1>
-        <p className="text-sm text-muted-foreground max-w-xl">
-          Your reseller profile, linked agent, and storefront information.
-        </p>
+    <div className="portal-page space-y-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Account</h1>
+          <p className="text-sm text-muted-foreground max-w-xl">
+            Your reseller profile, linked agent, storefront access, and wallet context.
+          </p>
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link href="/reset">Change password</Link>
+        </Button>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 max-w-4xl">
+
+      <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard label="Wallet Balance" value={formatGhanaCedis(walletBalance)} description="Successful wallet transactions" icon={Wallet} tone="success" />
+        <MetricCard label="Orders" value={orderCount} description={`${completedOrderCount} completed orders`} icon={ShoppingCart} tone="info" />
+        <MetricCard label="Access" value={isActive ? "Active" : "Restricted"} description={`Signup status: ${user.signupStatus}`} icon={ShieldCheck} tone={isActive ? "success" : "warning"} />
+        <MetricCard label="Parent Agent" value={agent ? "Linked" : "Missing"} description={agent?.name ?? "Ask admin to link this account"} icon={BadgeCheck} tone={agent ? "primary" : "warning"} />
+      </div>
+
+      <PhoneVerificationCard initialPhoneNumber={user.phoneNumber} verified={Boolean(user.phoneVerified)} />
+
+      <div className="grid min-w-0 gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Profile</CardTitle>
+            <CardTitle className="text-sm font-semibold">Profile</CardTitle>
+            <CardDescription className="text-xs">Basic information about your reseller account.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p><span className="font-medium text-foreground">Name:</span> {user.name || "Unnamed reseller"}</p>
-            <p><span className="font-medium text-foreground">Email:</span> {user.email}</p>
-            <p><span className="font-medium text-foreground">Role:</span> {user.role}</p>
-            <p><span className="font-medium text-foreground">Joined:</span> {joined}</p>
+          <CardContent className="space-y-3 text-sm">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-muted-foreground">Name</span>
+              <span className="font-medium">{user.name || "Unnamed reseller"}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-muted-foreground">Email</span>
+              <span className="break-all text-right font-medium">{user.email}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-muted-foreground">Status</span>
+              <Badge variant={isActive ? "secondary" : "outline"} className={isActive ? "status-success border" : "status-warning border"}>
+                {isActive ? "Active" : user.signupStatus}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-muted-foreground">Joined</span>
+              <span className="font-medium">{joined}</span>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Linked agent & organization</CardTitle>
+            <CardTitle className="text-sm font-semibold">Linked Agent & Organization</CardTitle>
+            <CardDescription className="text-xs">Where your reseller sales are routed.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p>
-              <span className="font-medium text-foreground">Parent agent:</span>{" "}
-              {agent ? agent.name : "Not linked to a parent agent"}
-            </p>
-            <p>
-              <span className="font-medium text-foreground">Organization:</span>{" "}
-              {orgName}
-            </p>
-            {storefrontPath ? (
-              <p>
-                <span className="font-medium text-foreground">Storefront link:</span>{" "}
-                <span className="font-mono text-xs break-all">{storefrontPath}</span>
-              </p>
-            ) : org ? (
-              <p className="text-xs">
-                This organization has no storefront slug yet. Ask your agent or admin to finish storefront setup.
-              </p>
-            ) : (
-              <p className="text-xs">
-                You&apos;re not yet linked to an organization. Contact your agent or admin if this is unexpected.
-              </p>
-            )}
-            <p className="text-[11px]">
-              API keys are managed at the organization level. Ask your parent agent or admin if you need
-              organization-wide API access.
-            </p>
+          <CardContent className="space-y-3 text-sm">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-muted-foreground">Parent agent</span>
+              <span className="font-medium">{agent ? agent.name : "Not linked"}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-muted-foreground">Organization</span>
+              <span className="font-medium">{orgName}</span>
+            </div>
+            <div className="space-y-1">
+              <span className="text-muted-foreground">Recommended storefront</span>
+              <p className="break-all font-mono text-xs">{resellerStorePath ?? "Not available yet"}</p>
+            </div>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/reseller/storefronts">View storefront tools</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>

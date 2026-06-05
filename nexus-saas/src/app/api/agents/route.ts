@@ -2,6 +2,7 @@ import { requireOrgManager, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
 import { sendPasswordResetEmail, getBaseUrl } from "@/lib/mail"
+import { requireActiveSubscription } from "@/lib/subscription-access"
 import { z } from "zod"
 import { randomUUID } from "crypto"
 
@@ -91,6 +92,9 @@ export async function POST(req: Request) {
     }
 
     const organizationId = authResult.user.organizationId!
+    const subscriptionError = await requireActiveSubscription(organizationId)
+    if (subscriptionError) return subscriptionError
+
     const body = await req.json()
     const parsed = createAgentSchema.safeParse(body)
 
@@ -100,6 +104,17 @@ export async function POST(req: Request) {
 
     const { name, email, commissionPercent } = parsed.data
     const normalizedEmail = email.trim().toLowerCase()
+
+    const subscription = await db.subscription.findUnique({
+      where: { organizationId },
+      include: { plan: true },
+    })
+
+    const agentCount = await db.agent.count({ where: { organizationId } })
+    const maxAgents = subscription?.plan.maxAgents ?? 20
+    if (agentCount >= maxAgents) {
+      return ApiErrors.BAD_REQUEST(`Plan agent limit reached (${maxAgents}).`)
+    }
 
     // Check if agent already exists with this email
     const existingUserWithEmail = await db.user.findFirst({

@@ -3,6 +3,8 @@ import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
 import { Prisma } from "@prisma/client"
 
+export const dynamic = "force-dynamic"
+
 export async function GET(req: Request) {
   try {
     const authResult = await requireAdmin()

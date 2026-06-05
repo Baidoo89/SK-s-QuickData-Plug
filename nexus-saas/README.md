@@ -1,6 +1,6 @@
 # Nexus SaaS Platform
 
-A modern B2B2C SaaS platform built with the best tech stack.
+A multi-tenant VTU/data bundle SaaS for subscriber organizations, agents, and resellers.
 
 ## Tech Stack
 
@@ -9,7 +9,19 @@ A modern B2B2C SaaS platform built with the best tech stack.
 - **Styling:** Tailwind CSS
 - **UI Library:** Shadcn UI
 - **Database:** PostgreSQL (via Prisma ORM)
-- **Authentication:** NextAuth.js v5
+- **Authentication:** NextAuth.js v4 with credentials login
+
+## What This Project Is About
+
+Nexus SaaS is built around a B2B2C sales flow:
+
+- **Subscriber dashboard (`/dashboard`)**: organization owner portal for products, base pricing, agents, resellers, customers, orders, wallet top-ups, withdrawal reviews, storefront links, API keys, and analytics.
+- **Agent portal (`/agent`)**: agents buy data, manage reseller accounts, approve reseller signup requests, track agent-linked storefront orders, and manage wallet/withdrawals.
+- **Reseller portal (`/reseller`)**: resellers buy data, use storefront/API tools, view their own customers/orders, and request withdrawals.
+- **Storefronts (`/store/[subscriberSlug]`)**: public purchase pages for customer checkout against subscriber or agent storefront links.
+- **Admin/SUPERADMIN foundation (`/admin`)**: operational screens exist, but the true SUPERADMIN control dashboard that oversees the whole system is planned as a later phase.
+
+Core integrations include Paystack wallet funding, provider dispatch/callback handling, manual order queues, signup approvals, pricing profiles, and withdrawal workflows.
 
 ## Getting Started
 

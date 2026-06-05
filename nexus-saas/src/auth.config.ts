@@ -1,49 +1,94 @@
-type TokenUser = { role?: string; organizationId?: string; hasActiveSubscription?: boolean }
+import type { NextAuthOptions, Session, User } from "next-auth"
+import type { JWT } from "next-auth/jwt"
+import type { NextRequest } from "next/server"
+import { db } from "@/lib/db"
+
+type TokenUser = { role?: string; organizationId?: string | null; hasActiveSubscription?: boolean }
+type AppToken = JWT & TokenUser
+type AppSessionUser = NonNullable<Session["user"]> & TokenUser
+type AuthorizedParams = {
+  auth: { user?: TokenUser } | null
+  request: { nextUrl: NextRequest["nextUrl"] }
+}
+
+type AuthConfig = Omit<NextAuthOptions, "callbacks"> & {
+  callbacks: NonNullable<NextAuthOptions["callbacks"]> & {
+    authorized?: (params: AuthorizedParams) => boolean
+  }
+}
 
 export const authConfig = {
   pages: {
     signIn: "/login",
   },
   callbacks: {
-    async jwt({ token, user }: any) {
-      // Keep jwt callback DB-free so it is safe in edge/runtime contexts.
-      // Credentials authorize() already reads from DB and returns user fields.
-      if (user) {
-        token.role = (user as any).role ?? token.role ?? "SUBSCRIBER"
-        token.organizationId = (user as any).organizationId ?? token.organizationId ?? null
-        ;(token as any).hasActiveSubscription = (user as any).hasActiveSubscription ?? (token as any).hasActiveSubscription ?? false
+    async jwt({ token, user }: { token: AppToken; user?: User | null }) {
+      // In edge runtime (middleware), avoid hitting Prisma; rely on the token
+      // that was already populated during the regular auth flow.
+      // This prevents Prisma's "not configured for Edge Runtime" error.
+      if (process.env.NEXT_RUNTIME === "edge") {
+        return token
+      }
+
+      // Persist role, org and subscription status for routing guards
+      const email = user?.email ?? token.email
+
+      if (email) {
+        const existing = await db.user.findUnique({
+          where: { email: email as string },
+          include: {
+            organization: {
+              include: {
+                subscription: true,
+              },
+            },
+          },
+        })
+
+        if (existing) {
+          token.role = existing.role ?? "SUBSCRIBER"
+          token.organizationId = existing.organizationId ?? null
+
+          const subscription = existing.organization?.subscription
+          const now = new Date()
+          const hasActiveSubscription = !!(
+            subscription &&
+            subscription.status === "ACTIVE" &&
+            (!subscription.nextBillingAt || subscription.nextBillingAt > now)
+          )
+
+          token.hasActiveSubscription = hasActiveSubscription
+        }
       }
 
       return token
     },
-    async session({ session, token }: any) {
+    async session({ session, token }: { session: Session; token: AppToken }) {
       if (session.user) {
         const role = typeof token.role === "string" ? token.role : undefined
         const organizationId = typeof token.organizationId === "string" ? token.organizationId : undefined
-        const hasActiveSubscription = Boolean((token as any).hasActiveSubscription)
+        const hasActiveSubscription = Boolean(token.hasActiveSubscription)
 
-        ;(session.user as TokenUser).role = role
-        ;(session.user as TokenUser).organizationId = organizationId
-        ;(session.user as TokenUser).hasActiveSubscription = hasActiveSubscription
+        ;(session.user as AppSessionUser).role = role
+        ;(session.user as AppSessionUser).organizationId = organizationId
+        ;(session.user as AppSessionUser).hasActiveSubscription = hasActiveSubscription
       }
       return session
     },
-    async redirect({ url, baseUrl }: any) {
+    async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
       // Only redirect to URLs on the same origin
       if (url.startsWith("/")) return `${baseUrl}${url}`
       else if (new URL(url).origin === baseUrl) return url
       return baseUrl
     },
-    authorized({ auth, request: { nextUrl } }: any) {
+    authorized({ auth, request: { nextUrl } }: AuthorizedParams) {
       const isLoggedIn = !!auth?.user
-      const role = (auth?.user as TokenUser)?.role
+      const role = auth?.user?.role
       const path = nextUrl.pathname
       const isDashboard = path.startsWith("/dashboard")
       const isAdmin = path.startsWith("/admin")
       const isAuthPage = path.startsWith("/login") || path.startsWith("/register") || path.startsWith("/reset")
-      const isStore = path.startsWith("/store")
-      const isReseller = path.startsWith("/reseller")
-      const isAgent = path.startsWith("/agent")
+      const isSubscriptionPage = path.startsWith("/dashboard/subscription")
 
       // Allow auth pages to be accessed by anyone
       if (isAuthPage) {
@@ -69,23 +114,8 @@ export const authConfig = {
         return role === "SUPERADMIN"
       }
 
-      // Agent portal requires AGENT role
-      if (isAgent) {
-        return role === "AGENT"
-      }
-
-      // Reseller portal requires RESELLER role
-      if (isReseller) {
-        return role === "RESELLER"
-      }
-
-      // Storefront areas (admin/agent storefronts) must be authenticated but can be any role
-      if (isStore) {
-        return isLoggedIn
-      }
-
       return true
     },
   },
   providers: [],
-}
+} satisfies AuthConfig

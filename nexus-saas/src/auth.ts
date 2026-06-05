@@ -26,8 +26,10 @@ export const authOptions: NextAuthOptions = {
           const normalizedEmail = email.trim().toLowerCase();
           const user = await db.user.findFirst({
             where: { email: { equals: normalizedEmail, mode: "insensitive" } },
+            select: { id: true, email: true, password: true, active: true, signupStatus: true, role: true, name: true, organizationId: true, agentId: true, parentAgentId: true, image: true, emailVerified: true, emailVerificationRequired: true, createdAt: true, updatedAt: true },
           });
-          if (!user || !user.password) return null;
+          if (!user || !user.password || user.active === false || user.signupStatus !== "APPROVED") return null;
+          if (user.emailVerificationRequired && !user.emailVerified) return null;
           const passwordsMatch = await bcrypt.compare(password, user.password);
           if (passwordsMatch) return user;
         }

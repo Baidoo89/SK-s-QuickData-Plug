@@ -3,6 +3,8 @@ import { requireAuth, isAuthError } from "@/lib/auth-guard"
 import { ApiErrors } from "@/lib/api-response"
 import { db } from "@/lib/db"
 
+export const dynamic = "force-dynamic"
+
 type SalesRangeKey = "daily" | "weekly" | "monthly"
 
 function resolveSalesRange(input?: string | null): SalesRangeKey {

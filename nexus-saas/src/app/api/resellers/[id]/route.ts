@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { requireAuth, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors } from "@/lib/api-response"
 import { z } from "zod"
+import { getBaseUrl, sendSignupNotificationEmail } from "@/lib/mail"
 
 const updateResellerSchema = z.object({
   name: z.string().min(2).optional(),
@@ -28,32 +29,25 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     if (isAuthError(authResult)) return authResult
     const { user: authUser } = authResult
 
+    if (authUser.role !== "AGENT") {
+      return ApiErrors.FORBIDDEN()
+    }
+
     if (!authUser.organizationId) {
-      return ApiErrors.BAD_REQUEST("User not linked to organization")
+      return ApiErrors.BAD_REQUEST("Agent account is not linked correctly")
     }
 
     const organizationId = authUser.organizationId
-
-    const fullUser = await db.user.findUnique({
+    const currentAgentUser = await db.user.findUnique({
       where: { id: authUser.id },
       select: { agentId: true },
     })
 
-    let agentId = fullUser?.agentId ?? null
-    if (!agentId) {
-      const candidates = await db.agent.findMany({
-        where: { organizationId },
-        select: { id: true },
-        take: 2,
-      })
-
-      if (candidates.length === 1) {
-        agentId = candidates[0].id
-        await db.user.update({ where: { id: authUser.id }, data: { agentId, role: "AGENT" } })
-      } else {
-        return ApiErrors.BAD_REQUEST("Agent profile not linked to this account. Ask admin to relink your agent login.")
-      }
+    if (!currentAgentUser?.agentId) {
+      return ApiErrors.BAD_REQUEST("Agent account is not linked correctly")
     }
+
+    const agentId = currentAgentUser.agentId
 
     const reseller = await db.user.findFirst({
       where: {
@@ -176,32 +170,25 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     if (isAuthError(authResult)) return authResult
     const { user: authUser } = authResult
 
+    if (authUser.role !== "AGENT") {
+      return ApiErrors.FORBIDDEN()
+    }
+
     if (!authUser.organizationId) {
-      return ApiErrors.BAD_REQUEST("User not linked to organization")
+      return ApiErrors.BAD_REQUEST("Agent account is not linked correctly")
     }
 
     const organizationId = authUser.organizationId
-
-    const fullUser = await db.user.findUnique({
+    const currentAgentUser = await db.user.findUnique({
       where: { id: authUser.id },
       select: { agentId: true },
     })
 
-    let agentId = fullUser?.agentId ?? null
-    if (!agentId) {
-      const candidates = await db.agent.findMany({
-        where: { organizationId },
-        select: { id: true },
-        take: 2,
-      })
-
-      if (candidates.length === 1) {
-        agentId = candidates[0].id
-        await db.user.update({ where: { id: authUser.id }, data: { agentId, role: "AGENT" } })
-      } else {
-        return ApiErrors.BAD_REQUEST("Agent profile not linked to this account. Ask admin to relink your agent login.")
-      }
+    if (!currentAgentUser?.agentId) {
+      return ApiErrors.BAD_REQUEST("Agent account is not linked correctly")
     }
+
+    const agentId = currentAgentUser.agentId
 
     const body = await req.json()
     const parsed = updateResellerSchema.safeParse(body)
@@ -226,7 +213,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       where: { id: params.id },
       data: {
         ...(parsed.data.name && { name: parsed.data.name }),
-        ...(parsed.data.active !== undefined && { active: parsed.data.active }),
+        ...(parsed.data.active !== undefined && {
+          active: parsed.data.active,
+          ...(parsed.data.active ? { signupStatus: "APPROVED" } : {}),
+        }),
       },
       select: {
         id: true,
@@ -236,6 +226,17 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         createdAt: true,
       },
     })
+
+    if (parsed.data.active === true && updated.email) {
+      await sendSignupNotificationEmail({
+        to: updated.email,
+        subject: "Your reseller account was approved",
+        title: "Reseller account approved",
+        message: "Your reseller request has been approved. If your email is verified, you can now sign in to your reseller dashboard.",
+        actionLabel: "Open login",
+        actionHref: `${getBaseUrl()}/login`,
+      }).catch(() => null)
+    }
 
     return apiSuccess(updated, "Reseller updated")
   } catch (error) {
@@ -250,31 +251,25 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     if (isAuthError(authResult)) return authResult
     const { user: authUser } = authResult
 
+    if (authUser.role !== "AGENT") {
+      return ApiErrors.FORBIDDEN()
+    }
+
     if (!authUser.organizationId) {
-      return ApiErrors.BAD_REQUEST("User not linked to organization")
+      return ApiErrors.BAD_REQUEST("Agent account is not linked correctly")
     }
 
     const organizationId = authUser.organizationId
-    const fullUser = await db.user.findUnique({
+    const currentAgentUser = await db.user.findUnique({
       where: { id: authUser.id },
       select: { agentId: true },
     })
 
-    let agentId = fullUser?.agentId ?? null
-    if (!agentId) {
-      const candidates = await db.agent.findMany({
-        where: { organizationId },
-        select: { id: true },
-        take: 2,
-      })
-
-      if (candidates.length === 1) {
-        agentId = candidates[0].id
-        await db.user.update({ where: { id: authUser.id }, data: { agentId, role: "AGENT" } })
-      } else {
-        return ApiErrors.BAD_REQUEST("Agent profile not linked to this account. Ask admin to relink your agent login.")
-      }
+    if (!currentAgentUser?.agentId) {
+      return ApiErrors.BAD_REQUEST("Agent account is not linked correctly")
     }
+
+    const agentId = currentAgentUser.agentId
 
     // Verify this reseller belongs to this agent's organization
     const reseller = await db.user.findFirst({

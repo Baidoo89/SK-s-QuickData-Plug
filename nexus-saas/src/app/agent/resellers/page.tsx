@@ -4,8 +4,12 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Input } from "@/components/ui/input"
+import { MetricCard } from "@/components/ui/metric-card"
 import { useToast } from "@/components/ui/use-toast"
+import { formatGhanaCedis } from "@/lib/currency"
+import { CheckCircle2, Clock3, UsersRound } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -39,6 +43,8 @@ export default function AgentResellersPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [selectedReseller, setSelectedReseller] = useState<Reseller | null>(null)
   const [editName, setEditName] = useState("")
+  const activeCount = resellers.filter((reseller) => reseller.active !== false).length
+  const inactiveCount = resellers.length - activeCount
 
   const loadResellers = async () => {
     try {
@@ -241,15 +247,21 @@ export default function AgentResellersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="portal-page space-y-6">
       <div className="space-y-1">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Resellers</h1>
         <p className="text-sm text-muted-foreground">
-          Invite resellers under your organization and share secure login links with them.
+          Invite resellers under your organization, review public signup requests, and approve them when ready.
         </p>
       </div>
 
-      <Card className="w-full max-w-2xl">
+      <div className="grid min-w-0 gap-4 md:grid-cols-3">
+        <MetricCard label="Total Resellers" value={resellers.length} description="Linked under your agent account." icon={UsersRound} tone="primary" />
+        <MetricCard label="Active" value={activeCount} description="Allowed to sell." icon={CheckCircle2} tone="success" />
+        <MetricCard label="Inactive" value={inactiveCount} description="Paused or awaiting approval." icon={Clock3} tone={inactiveCount > 0 ? "warning" : "muted"} />
+      </div>
+
+      <Card className="w-full max-w-2xl border border-border bg-card/95 shadow-md">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-semibold">Add new reseller</CardTitle>
           <CardDescription className="text-xs">
@@ -257,7 +269,7 @@ export default function AgentResellersPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
-          <div className="grid gap-2 md:grid-cols-2">
+          <div className="grid min-w-0 gap-2 md:grid-cols-2">
             <Input
               placeholder="Reseller name"
               value={name}
@@ -284,16 +296,16 @@ export default function AgentResellersPage() {
             {loading ? "Creating reseller..." : "Create & copy invite"}
           </Button>
           {lastInvite && (
-            <div className="rounded border border-sky-200 bg-sky-50 p-3 text-xs space-y-2">
-              <p className="font-medium text-sky-900">Latest invite link</p>
-              <p className="break-all text-sky-800">{lastInvite}</p>
+            <div className="rounded border border-primary/30 bg-primary/10 p-3 text-xs space-y-2">
+              <p className="font-medium text-foreground">Latest invite link</p>
+              <p className="break-all text-foreground">{lastInvite}</p>
               {lastInviteEmailSent === false && (
-                <p className="text-amber-700">
+                <p className="text-accent-foreground">
                   Email delivery failed. Share this link manually with the reseller.
                 </p>
               )}
               {lastInviteEmailSent === true && (
-                <p className="text-emerald-700">
+                <p className="text-primary">
                   Invitation email sent successfully.
                 </p>
               )}
@@ -335,17 +347,23 @@ export default function AgentResellersPage() {
             <p className="text-sm text-muted-foreground">Loading resellers...</p>
           )}
           {!initialLoading && resellers.length === 0 && (
-            <p className="text-sm text-muted-foreground">No resellers yet. Add your first reseller above.</p>
+            <EmptyState
+              icon={UsersRound}
+              title="No resellers under you yet"
+              description="Create a reseller above to generate their password setup link. You can then configure their pricing and fund their wallet."
+              secondaryAction={{ label: "Open Wallet", href: "/agent/wallet" }}
+              className="py-6"
+            />
           )}
           {!initialLoading && resellers.length > 0 && (
             <div className="space-y-3 text-xs">
               {resellers.map((r) => (
                 <div
                   key={r.id}
-                  className="rounded-xl border bg-background px-3 py-3 shadow-sm"
+                className="rounded-md border bg-background px-3 py-3 shadow-sm"
                 >
                   {r.isOwnedByCurrentAgent === false && (
-                    <p className="mb-2 text-[11px] font-medium text-amber-700">
+                    <p className="mb-2 text-[11px] font-medium text-accent-foreground">
                       Managed by another agent. View only.
                     </p>
                   )}
@@ -355,20 +373,20 @@ export default function AgentResellersPage() {
                         <p className="truncate text-sm font-semibold">{r.name || "Unnamed reseller"}</p>
                         <span
                           className={[
-                            "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold sm:mt-1",
-                            r.active === false ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700",
+                            "inline-flex shrink-0 items-center rounded-md border px-2 py-0.5 text-[10px] font-semibold sm:mt-1",
+                            r.active === false ? "border-destructive/30 bg-destructive/10 text-destructive" : "status-success",
                           ].join(" ")}
                         >
                           {r.active === false ? "Inactive" : "Active"}
                         </span>
                       </div>
                       <p className="truncate text-[11px] text-muted-foreground">{r.email}</p>
-                      <p className="text-[11px] font-medium text-emerald-700">
-                        Profit: GH₵ {(r.profit ?? 0).toFixed(2)}
+                      <p className="text-[11px] font-medium text-primary">
+                        Profit: {formatGhanaCedis(r.profit ?? 0)}
                       </p>
                       <p className="text-[11px] text-muted-foreground">Added {new Date(r.createdAt).toLocaleDateString()}</p>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
+                    <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
                       {r.isOwnedByCurrentAgent !== false ? (
                         <>
                           <Button asChild variant="outline" size="sm" className="h-8 w-full text-[11px] sm:w-auto">
@@ -390,7 +408,7 @@ export default function AgentResellersPage() {
                             onClick={() => toggleActive(r)}
                             disabled={loading}
                           >
-                            {r.active === false ? "Activate" : "Deactivate"}
+                            {r.active === false ? "Approve" : "Deactivate"}
                           </Button>
                           <Button
                             variant="destructive"
@@ -451,3 +469,4 @@ export default function AgentResellersPage() {
     </div>
   )
 }
+

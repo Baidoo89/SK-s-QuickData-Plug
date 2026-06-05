@@ -1,7 +1,6 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Overview } from "@/components/overview";
 import { Button } from "@/components/ui/button";
 import { DollarSign, Percent, Users, Activity, BarChart2 } from "lucide-react";
@@ -9,6 +8,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdvancedAnalyticsTables } from "@/components/dashboard/advanced-analytics-tables";
 import { formatGhanaCedis } from "@/lib/currency";
+import { MetricCard } from "@/components/ui/metric-card";
 
 function getRangeDates(range: string) {
   const now = new Date();
@@ -95,6 +95,8 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: { 
   const activeAgentIds = new Set<string>();
 
   for (const order of orders) {
+    const isCompleted = order.status === "COMPLETED";
+
     if (order.status === "COMPLETED") {
       revenue += order.total;
       completed += 1;
@@ -105,14 +107,21 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: { 
 
     const dayKey = order.createdAt.toISOString().slice(0, 10);
     const currentForDay = byDay.get(dayKey) ?? 0;
-    byDay.set(dayKey, currentForDay + (order.status === "COMPLETED" ? order.total : 0));
+    byDay.set(dayKey, currentForDay + (isCompleted ? order.total : 0));
+
+    const orderProductIds = new Set<string>();
 
     for (const item of order.items) {
-      profit += item.profit;
+      if (isCompleted) {
+        // Profit is meaningful only for completed sales.
+        profit += item.profit;
+      }
+
+      const lineRevenue = isCompleted ? item.price * item.quantity : 0;
 
       const provider = item.product.provider || "OTHER";
       const currentNetwork = byNetwork.get(provider) ?? 0;
-      byNetwork.set(provider, currentNetwork + (order.status === "COMPLETED" ? order.total : 0));
+      byNetwork.set(provider, currentNetwork + lineRevenue);
 
       const productKey = item.product.id;
       const existingProduct = byProduct.get(productKey) ?? {
@@ -120,9 +129,12 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: { 
         revenue: 0,
         orders: 0,
       };
-      if (order.status === "COMPLETED") {
-        existingProduct.revenue += order.total;
-        existingProduct.orders += 1;
+      if (isCompleted) {
+        existingProduct.revenue += lineRevenue;
+        if (!orderProductIds.has(productKey)) {
+          existingProduct.orders += 1;
+          orderProductIds.add(productKey);
+        }
       }
       byProduct.set(productKey, existingProduct);
     }
@@ -135,7 +147,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: { 
         revenue: 0,
         orders: 0,
       };
-      if (order.status === "COMPLETED") {
+      if (isCompleted) {
         existingAgent.revenue += order.total;
         existingAgent.orders += 1;
       }
@@ -162,9 +174,9 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: { 
   const topProducts = Array.from(byProduct.values()).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
 
   return (
-    <div className="flex-1 space-y-4 px-4 py-6 md:p-8 md:pt-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+    <div className="portal-page flex-1 space-y-4">
+      <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
             Advanced Analytics
             <BarChart2 className="h-5 w-5 text-muted-foreground" />
@@ -173,7 +185,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: { 
             Deep dive into revenue, profit, reliability, and agent performance for your VTU business.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex w-full min-w-0 flex-wrap gap-2 sm:w-auto">
           {[
             { label: "Today", value: "today" },
             { label: "Last 7 days", value: "7d" },
@@ -189,6 +201,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: { 
               <Button
                 variant={range === option.value ? "default" : "outline"}
                 size="sm"
+                className="w-full sm:w-auto"
               >
                 {option.label}
               </Button>
@@ -197,85 +210,31 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: { 
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-        <Card className="bg-gradient-to-br from-slate-100 via-white to-slate-200 border border-slate-200">
+      <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <MetricCard label="Revenue" value={formatGhanaCedis(revenue)} description="Completed orders in selected period" icon={DollarSign} tone="success" />
+        <MetricCard label="Profit" value={formatGhanaCedis(profit)} description="Sum of item-level profit" icon={DollarSign} tone="primary" />
+        <MetricCard label="Orders" value={orders.length} description="All statuses in selected period" icon={Activity} tone="info" />
+        <Card className="border border-border bg-card/95">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs md:text-sm text-primary font-semibold">Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-lg md:text-2xl font-bold text-accent-foreground">{formatGhanaCedis(revenue)}</div>
-            <p className="text-xs md:text-sm text-muted-foreground">Completed orders in selected period</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-white via-slate-100 to-slate-200 border border-slate-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs md:text-sm text-primary font-semibold">Profit</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-lg md:text-2xl font-bold text-accent-foreground">{formatGhanaCedis(profit)}</div>
-            <p className="text-xs md:text-sm text-muted-foreground">Sum of item-level profit</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-slate-100 via-white to-slate-200 border border-slate-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs md:text-sm text-primary font-semibold">Orders</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-lg md:text-2xl font-bold text-accent-foreground">{orders.length}</div>
-            <p className="text-xs md:text-sm text-muted-foreground">All statuses in selected period</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-white via-slate-100 to-slate-200 border border-slate-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs md:text-sm text-primary font-semibold">Success rate</CardTitle>
+            <CardTitle className="text-xs md:text-sm text-foreground font-semibold">Success rate</CardTitle>
             <Percent className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-lg md:text-2xl font-bold text-accent-foreground">{successRate.toFixed(1)}%</div>
-            <p className="text-xs md:text-sm text-muted-foreground">{completed} successful • {failed} failed</p>
+            <div className="text-lg md:text-2xl font-bold text-foreground">{successRate.toFixed(1)}%</div>
+            <p className="text-xs md:text-sm text-muted-foreground">{completed} successful / {failed} failed</p>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-slate-100 via-white to-slate-200 border border-slate-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs md:text-sm text-primary font-semibold">Average order value</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-lg md:text-2xl font-bold text-accent-foreground">{formatGhanaCedis(averageOrderValue)}</div>
-            <p className="text-xs md:text-sm text-muted-foreground">Completed orders only</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-white via-slate-100 to-slate-200 border border-slate-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs md:text-sm text-primary font-semibold">Active customers</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-lg md:text-2xl font-bold text-accent-foreground">{activeCustomerIds.size}</div>
-            <p className="text-xs md:text-sm text-muted-foreground">Placed at least one order in period</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-slate-100 via-white to-slate-200 border border-slate-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs md:text-sm text-primary font-semibold">Active agents</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-lg md:text-2xl font-bold text-accent-foreground">{activeAgentIds.size}</div>
-            <p className="text-xs md:text-sm text-muted-foreground">Agents with at least one order</p>
-          </CardContent>
-        </Card>
+        <MetricCard label="Average Order Value" value={formatGhanaCedis(averageOrderValue)} description="Completed orders only" icon={DollarSign} tone="muted" />
+        <MetricCard label="Active Customers" value={activeCustomerIds.size} description="Placed at least one order in period" icon={Users} tone="primary" />
+        <MetricCard label="Active Agents" value={activeAgentIds.size} description="Agents with at least one order" icon={Users} tone="info" />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-1 lg:col-span-4">
+      <div className="grid min-w-0 gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-1 min-w-0 overflow-hidden lg:col-span-4">
           <CardHeader>
             <CardTitle>Revenue over time</CardTitle>
           </CardHeader>
-          <CardContent className="pl-2">
+          <CardContent className="min-w-0 overflow-hidden pl-2">
             <Overview data={dailySeries} />
           </CardContent>
         </Card>

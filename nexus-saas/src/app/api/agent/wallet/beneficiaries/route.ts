@@ -2,6 +2,8 @@ import { requireAuth, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
 
+export const dynamic = "force-dynamic"
+
 type CandidateUser = {
   id: string
   name: string | null

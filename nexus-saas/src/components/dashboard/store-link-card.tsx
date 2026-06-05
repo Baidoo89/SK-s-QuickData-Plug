@@ -30,18 +30,25 @@ export function StoreLinkCard({ storePath }: StoreLinkCardProps) {
   if (!storePath) return null
 
   return (
-    <Card className="mt-4">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">Your public store link</CardTitle>
-        <CardDescription>Share this link with customers to let them order bundles.</CardDescription>
+    <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
+      <CardHeader className="border-b bg-muted/30 pb-3">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <CardTitle className="text-sm font-semibold">Customer storefront</CardTitle>
+            <CardDescription className="text-xs">Share this link with customers when your launch checks are ready.</CardDescription>
+          </div>
+          <span className="w-fit rounded-md border border-primary/20 bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+            Customer checkout
+          </span>
+        </div>
       </CardHeader>
-      <CardContent className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <CardContent className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center">
         <Input
           readOnly
           value={storePath}
-          className="font-mono text-xs sm:text-sm bg-muted"
+          className="min-w-0 bg-muted font-mono text-xs sm:text-sm"
         />
-        <div className="flex gap-2 justify-end sm:justify-normal">
+        <div className="flex shrink-0 gap-2 justify-end sm:justify-normal">
           <Button type="button" variant="outline" size="icon" onClick={handleCopy} aria-label="Copy store link">
             <Copy className="h-4 w-4" />
           </Button>

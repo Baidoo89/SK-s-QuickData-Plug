@@ -5,13 +5,13 @@ import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import { Copy } from "lucide-react"
 
-export function CopyLinkButton({ slug }: { slug: string }) {
+export function CopyLinkButton({ path }: { path: string }) {
   const { toast } = useToast()
-  const [storeUrl, setStoreUrl] = useState(`/store/${slug}`)
+  const [storeUrl, setStoreUrl] = useState(path)
 
   useEffect(() => {
-    setStoreUrl(`${window.location.origin}/store/${slug}`)
-  }, [slug])
+    setStoreUrl(`${window.location.origin}${path}`)
+  }, [path])
 
   return (
     <div className="flex flex-wrap items-center gap-2">

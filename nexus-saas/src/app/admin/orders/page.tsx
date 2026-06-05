@@ -14,10 +14,8 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
-import { OrderStatusSelect } from "@/components/admin/order-status-select"
-import { RetryDispatchButton } from "@/components/admin/retry-dispatch-button"
+import { OrderTimelineDialog } from "@/components/orders/order-timeline-dialog"
 import { formatGhanaCedis } from "@/lib/currency"
-import { BulkOrderStatusUpdate } from "@/components/admin/bulk-order-status-update"
 
 type OrderFilters = {
   status?: string
@@ -49,7 +47,7 @@ async function getAdminOrders(filters: OrderFilters = {}) {
     if (!session?.user) return []
 
     const role = (session.user as any).role
-    if (role !== "SUBSCRIBER" && role !== "SUPERADMIN") return []
+    if (role !== "SUPERADMIN") return []
 
     const where: any = {}
 
@@ -159,57 +157,69 @@ export default async function AdminOrdersPage({
   const ordersRaw = await getAdminOrders(filters)
   const orders = Array.isArray(ordersRaw) ? ordersRaw : []
 
+  function statusBadgeClass(orderStatus: string) {
+    if (orderStatus === "COMPLETED") return "status-success border"
+    if (orderStatus === "PENDING" || orderStatus === "PROCESSING") return "status-warning border"
+    if (orderStatus === "FAILED" || orderStatus === "PAYMENT_FAILED") return ""
+    return "status-info border"
+  }
+
   return (
-    <div className="flex-1 space-y-6 overflow-x-hidden">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+    <div className="portal-page space-y-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-1">All Orders</h2>
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary">Read-only audit</p>
+          <h2 className="mb-1 text-2xl font-bold tracking-tight md:text-3xl">Order Activity</h2>
           <p className="text-muted-foreground max-w-xl">
-            Platform-wide view of every order across all subscribers.
+            Platform-wide visibility into tenant order flow. Subscriber admins handle fulfillment status changes from their own dashboard.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Link href="/admin/orders/manual">
-            <Button variant="outline" className="text-xs">Open Manual Queue</Button>
+        <div className="grid w-full gap-2 sm:grid-cols-2 md:w-auto">
+          <Link href="/admin/orders?dispatch=MANUAL">
+            <Button variant="outline" className="w-full text-xs">Manual Dispatch</Button>
           </Link>
-          <Link href="/api/admin/orders/manual/export">
-            <Button variant="outline" className="text-xs">Export Manual CSV</Button>
+          <Link href="/admin/orders?dispatch=API">
+            <Button variant="outline" className="w-full text-xs">API Dispatch</Button>
           </Link>
         </div>
       </div>
 
-      <BulkOrderStatusUpdate />
+      <div className="status-info rounded-md border px-4 py-3 text-sm">
+        Superadmin order pages are intentionally read-only. Use them to audit tenant activity, spot risk, and verify queue health without operating tenant orders directly.
+      </div>
 
-      <Card className="hover:shadow-lg transition-shadow">
+      <Card className="border border-border bg-card/95 shadow-sm">
         <CardHeader>
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="flex flex-col gap-4">
             <div>
-              <CardTitle className="text-lg md:text-xl font-bold text-primary">Recent Orders</CardTitle>
+              <CardTitle className="text-lg md:text-xl font-bold">Order Audit</CardTitle>
               <p className="text-muted-foreground text-xs md:text-sm">
                 Filter by status, date range, organization, or search term.
               </p>
             </div>
-            <form className="flex flex-wrap gap-2 md:gap-3 items-end justify-start md:justify-end" method="GET">
+            <form className="grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-[auto_auto_minmax(12rem,1fr)_auto_auto_auto_auto]" method="GET">
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground mb-1">Status</span>
                 <select
                   name="status"
                   defaultValue={status || "ALL"}
-                  className="h-9 rounded-md border border-input bg-background px-3 text-xs md:text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs md:text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
                   <option value="ALL">All</option>
                   <option value="COMPLETED">Completed</option>
                   <option value="PENDING">Pending</option>
+                  <option value="PENDING_PAYMENT">Awaiting Payment</option>
+                  <option value="PAYMENT_FAILED">Payment Failed</option>
                   <option value="FAILED">Failed</option>
                 </select>
               </div>
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground mb-1">From</span>
-                <Input type="date" name="from" defaultValue={from} className="h-9 text-xs md:text-sm" />
+                <Input type="date" name="from" defaultValue={from} className="h-9 w-full text-xs md:text-sm" />
               </div>
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground mb-1">To</span>
-                <Input type="date" name="to" defaultValue={to} className="h-9 text-xs md:text-sm" />
+                <Input type="date" name="to" defaultValue={to} className="h-9 w-full text-xs md:text-sm" />
               </div>
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground mb-1">Search</span>
@@ -218,7 +228,7 @@ export default async function AdminOrdersPage({
                   name="q"
                   placeholder="Org, name, email, phone, agent"
                   defaultValue={q}
-                  className="h-9 w-32 md:w-48 lg:w-64 text-xs md:text-sm"
+                  className="h-9 w-full text-xs md:text-sm"
                 />
               </div>
               <div className="flex flex-col">
@@ -226,7 +236,7 @@ export default async function AdminOrdersPage({
                 <select
                   name="dispatch"
                   defaultValue={dispatch || "ALL"}
-                  className="h-9 rounded-md border border-input bg-background px-3 text-xs md:text-sm"
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs md:text-sm"
                 >
                   <option value="ALL">All</option>
                   <option value="API">API</option>
@@ -238,7 +248,7 @@ export default async function AdminOrdersPage({
                 <select
                   name="network"
                   defaultValue={network || "ALL"}
-                  className="h-9 rounded-md border border-input bg-background px-3 text-xs md:text-sm"
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs md:text-sm"
                 >
                   <option value="ALL">All</option>
                   <option value="MTN">MTN</option>
@@ -263,21 +273,68 @@ export default async function AdminOrdersPage({
               <div className="px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                 Orders table
               </div>
-              <div className="w-full max-w-full overflow-x-auto rounded-md border bg-background">
-          <Table className="min-w-[900px] text-xs md:text-sm">
+              <div className="grid gap-3 xl:hidden lg:grid-cols-2">
+                {orders.map((order) => {
+                  const buyerName = order.customer?.name || "Guest Customer"
+                  const orgName = order.organization?.name || "-"
+                  const itemLabel = order.items
+                    .map((item: AdminOrderItemRow) => item.product.name.match(/\b\d+(?:\.\d+)?\s?(?:GB|MB|KB|TB)\b/i)?.[0].replace(/\s+/g, "").toUpperCase() ?? item.product.name)
+                    .join(", ")
+                  return (
+                    <div key={order.id} className="rounded-md border bg-background p-3 text-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-mono text-xs font-semibold">#{order.id.slice(-8)}</p>
+                          <p className="truncate font-medium">{orgName}</p>
+                          <p className="text-xs text-muted-foreground">{format(order.createdAt, "MMM d, yyyy")}</p>
+                        </div>
+                        <Badge
+                          variant={order.status === "COMPLETED" ? "secondary" : order.status === "FAILED" ? "destructive" : "outline"}
+                          className={statusBadgeClass(order.status)}
+                        >
+                          {order.status}
+                        </Badge>
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                        <div>
+                          <p className="truncate font-medium text-foreground">{buyerName}</p>
+                          <p>Buyer</p>
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">{order.phoneNumber || "N/A"}</p>
+                          <p>Phone</p>
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">{order.dispatch?.network || "-"}</p>
+                          <p>Network</p>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground">{formatGhanaCedis(order.total)}</p>
+                          <p>Total</p>
+                        </div>
+                      </div>
+                      {itemLabel ? <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{itemLabel}</p> : null}
+                      <div className="mt-3">
+                        <OrderTimelineDialog orderId={order.id} endpointBase="/api/admin/orders" />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div className="table-scroll hidden rounded-md border bg-background xl:block">
+          <Table className="min-w-[860px] text-xs md:text-sm">
             <TableHeader className="bg-muted/40">
               <TableRow>
-                <TableHead className="text-primary">Order ID</TableHead>
+                <TableHead>Order ID</TableHead>
                 <TableHead>Date</TableHead>
-                <TableHead className="hidden sm:table-cell">Organization</TableHead>
+                <TableHead>Organization</TableHead>
                 <TableHead>Buyer</TableHead>
                 <TableHead>Phone</TableHead>
-                <TableHead className="hidden md:table-cell">Network</TableHead>
-                <TableHead className="hidden md:table-cell">Dispatch</TableHead>
+                <TableHead>Network</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell">Actions</TableHead>
-                <TableHead className="hidden sm:table-cell">Items</TableHead>
-                <TableHead className="text-right text-primary">Total</TableHead>
+                <TableHead>Timeline</TableHead>
+                <TableHead className="text-right">Total</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -289,7 +346,7 @@ export default async function AdminOrdersPage({
                   <TableRow key={order.id} className="hover:bg-muted/20">
                     <TableCell className="font-medium">{order.id.slice(-8)}</TableCell>
                     <TableCell>{format(order.createdAt, "MMM d, yyyy")}</TableCell>
-                    <TableCell className="hidden sm:table-cell">{orgName}</TableCell>
+                    <TableCell>{orgName}</TableCell>
                     <TableCell>
                       {buyerName}
                       {agentTag && (
@@ -297,31 +354,19 @@ export default async function AdminOrdersPage({
                       )}
                     </TableCell>
                     <TableCell>{order.phoneNumber || "N/A"}</TableCell>
-                    <TableCell className="hidden md:table-cell">{order.dispatch?.network || "-"}</TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <Badge variant={(order.dispatch?.mode || "MANUAL") === "API" ? "default" : "secondary"}>
-                        {(order.dispatch?.mode || "MANUAL")}
+                    <TableCell>{order.dispatch?.network || "-"}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={order.status === "COMPLETED" ? "secondary" : order.status === "FAILED" ? "destructive" : "outline"}
+                        className={statusBadgeClass(order.status)}
+                      >
+                        {order.status}
                       </Badge>
-                      <div className="text-[11px] text-muted-foreground">{order.dispatch?.provider || "Manual Queue"}</div>
                     </TableCell>
                     <TableCell>
-                      <OrderStatusSelect orderId={order.id} initialStatus={order.status} />
+                      <OrderTimelineDialog orderId={order.id} endpointBase="/api/admin/orders" />
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {(order.dispatch?.mode || "MANUAL") === "API" && order.status !== "COMPLETED" ? (
-                        <RetryDispatchButton orderId={order.id} />
-                      ) : (
-                        <span className="text-[11px] text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      {order.items.map((item: AdminOrderItemRow) => (
-                        <div key={item.id} className="text-xs md:text-sm text-muted-foreground">
-                          {item.product.name.match(/\b\d+(?:\.\d+)?\s?(?:GB|MB|KB|TB)\b/i)?.[0].replace(/\s+/g, "").toUpperCase() ?? item.product.name}
-                        </div>
-                      ))}
-                    </TableCell>
-                    <TableCell className="text-right font-bold text-primary">
+                    <TableCell className="text-right font-bold">
                       {formatGhanaCedis(order.total)}
                     </TableCell>
                   </TableRow>

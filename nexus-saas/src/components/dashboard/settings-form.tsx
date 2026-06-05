@@ -54,15 +54,15 @@ export function SettingsForm({ initialName }: SettingsFormProps) {
 
   return (
     <form onSubmit={onSubmit}>
-      <Card>
-        <CardHeader>
-          <CardTitle>Organization Name</CardTitle>
+      <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
+        <CardHeader className="border-b bg-muted/30 pb-3">
+          <CardTitle className="text-sm font-semibold">Organization Name</CardTitle>
           <CardDescription>
-            This is your organization's visible name. It will also update your store URL.
+            This is your organization&apos;s visible name on dashboards and storefront pages.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-2">
+        <CardContent className="p-4">
+          <div className="grid gap-2 sm:max-w-md">
             <Label htmlFor="name">Name</Label>
             <Input
               id="name"
@@ -72,7 +72,7 @@ export function SettingsForm({ initialName }: SettingsFormProps) {
             />
           </div>
         </CardContent>
-        <CardFooter className="border-t px-6 py-4">
+        <CardFooter className="border-t bg-muted/20 px-4 py-3">
           <Button type="submit" disabled={loading}>
             {loading ? "Saving..." : "Save"}
           </Button>

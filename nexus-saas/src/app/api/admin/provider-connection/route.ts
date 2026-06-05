@@ -1,8 +1,10 @@
 import { z } from "zod"
 
-import { requireOrgManager, isAuthError } from "@/lib/auth-guard"
+import { requireAdmin, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { getStoredProviderConnection, upsertProviderConnection } from "@/lib/provider-connection"
+
+export const dynamic = "force-dynamic"
 
 const providerConnectionSchema = z.object({
   providerName: z.string().min(1).default("Primary Provider"),
@@ -12,7 +14,7 @@ const providerConnectionSchema = z.object({
 
 export async function GET() {
   try {
-    const authResult = await requireOrgManager()
+    const authResult = await requireAdmin()
     if (isAuthError(authResult)) {
       return authResult
     }
@@ -37,7 +39,7 @@ export async function GET() {
 
 export async function PUT(req: Request) {
   try {
-    const authResult = await requireOrgManager()
+    const authResult = await requireAdmin()
     if (isAuthError(authResult)) {
       return authResult
     }

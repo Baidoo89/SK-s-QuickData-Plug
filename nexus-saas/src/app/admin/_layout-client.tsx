@@ -3,18 +3,24 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import {
   LayoutDashboard,
   ShoppingCart,
   Users,
-  Tag,
+  UserCheck,
+  CreditCard,
   Wallet,
   Wrench,
   ServerCog,
   Settings,
   CircleUser,
+  Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,84 +30,128 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-function NavLink({ href, label, icon: Icon }: { href: string; label: string; icon: React.ComponentType<{ className?: string }> }) {
+function NavLink({ href, label, icon: Icon, closeOnClick = false }: { href: string; label: string; icon: React.ComponentType<{ className?: string }>; closeOnClick?: boolean }) {
   const pathname = usePathname();
   const active = pathname === href;
-  return (
+  const link = (
     <Link
       href={href}
+      title={label}
       className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
         active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-primary hover:bg-muted"
       }`}
     >
       <Icon className="h-4 w-4" />
-      <span>{label}</span>
+      <span className="portal-sidebar-label">{label}</span>
     </Link>
   );
+
+  return closeOnClick ? <SheetClose asChild>{link}</SheetClose> : link;
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+  const renderNavigation = (mobile = false) => (
+    <>
+      <div>
+        <p className="portal-sidebar-section px-3 pb-1 text-xs font-semibold uppercase text-muted-foreground">Control Center</p>
+        <NavLink href="/admin" label="Tenant Control" icon={LayoutDashboard} closeOnClick={mobile} />
+      </div>
+
+      <div>
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-xs font-semibold uppercase text-muted-foreground">Tenant Governance</p>
+        <NavLink href="/admin/users" label="User Directory" icon={Users} closeOnClick={mobile} />
+        <NavLink href="/admin/approvals" label="Signup Approvals" icon={UserCheck} closeOnClick={mobile} />
+      </div>
+
+      <div>
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-xs font-semibold uppercase text-muted-foreground">SaaS Billing</p>
+        <NavLink href="/admin/subscriptions" label="Plans & Subscriptions" icon={CreditCard} closeOnClick={mobile} />
+      </div>
+
+      <div>
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-xs font-semibold uppercase text-muted-foreground">Financial Audit</p>
+        <NavLink href="/admin/payments" label="Storefront Payment Audit" icon={CreditCard} closeOnClick={mobile} />
+        <NavLink href="/admin/wallet" label="Wallet Audit" icon={Wallet} closeOnClick={mobile} />
+        <NavLink href="/admin/withdrawals" label="Withdrawal Oversight" icon={Wallet} closeOnClick={mobile} />
+      </div>
+
+      <div>
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-xs font-semibold uppercase text-muted-foreground">Operations Audit</p>
+        <NavLink href="/admin/orders" label="Order Audit" icon={ShoppingCart} closeOnClick={mobile} />
+      </div>
+
+      <div>
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-xs font-semibold uppercase text-muted-foreground">Platform Diagnostics</p>
+        <NavLink href="/admin/tools" label="Diagnostics" icon={Wrench} closeOnClick={mobile} />
+      </div>
+
+      <div>
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-xs font-semibold uppercase text-muted-foreground">System</p>
+        <NavLink href="/admin/system" label="System Health" icon={ServerCog} closeOnClick={mobile} />
+      </div>
+
+      <div>
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-xs font-semibold uppercase text-muted-foreground">Settings</p>
+        <NavLink href="/admin/settings" label="Platform Settings" icon={Settings} closeOnClick={mobile} />
+      </div>
+    </>
+  );
+
   return (
-    <div className="grid min-h-screen w-full grid-cols-[220px_1fr] lg:grid-cols-[260px_1fr] bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.14),transparent_30%),linear-gradient(to_bottom,hsl(var(--background)),hsl(var(--background)))]">
-      <aside className="sticky top-0 h-screen border-r border-border/70 bg-[hsl(var(--blue-ice))]/85 backdrop-blur-xl">
-        <div className="flex h-[60px] items-center border-b border-border/70 px-4">
-          <div className="flex flex-col">
-            <span className="text-xs font-semibold uppercase text-muted-foreground">Admin Portal</span>
-            <span className="text-sm font-bold tracking-tight">Operations Console</span>
+    <div className="app-shell-bg min-h-screen w-full max-w-full overflow-x-hidden">
+      <aside data-collapsed={sidebarCollapsed} className={`portal-sidebar app-sidebar hidden border-r border-border/70 backdrop-blur-xl md:fixed md:left-0 md:top-0 md:z-30 md:block md:h-screen ${sidebarCollapsed ? "md:w-[72px]" : "md:w-[220px] xl:w-[260px]"}`}>
+        <div className={`flex h-[60px] items-center border-b border-border/70 px-4 ${sidebarCollapsed ? "justify-center" : ""}`}>
+          <div className="portal-sidebar-label flex flex-col">
+            <span className="text-xs font-semibold uppercase text-muted-foreground">Superadmin</span>
+            <span className="text-sm font-bold tracking-tight">Platform Control</span>
           </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className={sidebarCollapsed ? "h-8 w-8" : "ml-auto h-8 w-8"}
+            onClick={() => setSidebarCollapsed((value) => !value)}
+            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+            <span className="sr-only">{sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}</span>
+          </Button>
         </div>
         <div className="flex h-[calc(100vh-60px)] flex-col gap-4 overflow-y-auto px-3 py-4">
-          <div>
-            <p className="px-3 pb-1 text-xs font-semibold uppercase text-muted-foreground">Dashboard</p>
-            <NavLink href="/admin" label="Overview" icon={LayoutDashboard} />
-          </div>
-
-          <div>
-            <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase text-muted-foreground">Orders</p>
-            <NavLink href="/admin/orders" label="All Orders" icon={ShoppingCart} />
-            <NavLink href="/admin/orders/manual" label="Manual Queue" icon={ShoppingCart} />
-          </div>
-
-          <div>
-            <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase text-muted-foreground">Users</p>
-            <NavLink href="/admin/users" label="Users & Agents" icon={Users} />
-          </div>
-
-          <div>
-            <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase text-muted-foreground">Pricing</p>
-            <NavLink href="/admin/pricing" label="Pricing Controls" icon={Tag} />
-          </div>
-
-          <div>
-            <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase text-muted-foreground">Wallet</p>
-            <NavLink href="/admin/wallet" label="Wallet & Balances" icon={Wallet} />
-          </div>
-
-          <div>
-            <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase text-muted-foreground">Platform Tools</p>
-            <NavLink href="/admin/tools" label="Forms & Tools" icon={Wrench} />
-          </div>
-
-          <div>
-            <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase text-muted-foreground">System</p>
-            <NavLink href="/admin/system" label="System Health" icon={ServerCog} />
-          </div>
-
-          <div>
-            <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase text-muted-foreground">Settings</p>
-            <NavLink href="/admin/settings" label="Admin Settings" icon={Settings} />
-          </div>
+          {renderNavigation()}
         </div>
       </aside>
 
-      <div className="flex flex-col">
-        <header className="sticky top-0 z-20 flex h-[60px] items-center justify-between border-b border-border/70 bg-[hsl(var(--blue-ice))]/70 px-4 backdrop-blur-xl">
-          <div>
-            <h1 className="text-lg font-semibold tracking-tight">Admin Portal</h1>
-            <p className="text-xs text-muted-foreground">Core controls for daily platform operations.</p>
+      <div className={`flex min-h-screen min-w-0 flex-col ${sidebarCollapsed ? "md:pl-[72px]" : "md:pl-[220px] xl:pl-[260px]"}`}>
+        <header className={`app-topbar fixed left-0 right-0 top-0 z-40 flex h-14 items-center justify-between gap-3 border-b border-border/70 px-3 backdrop-blur-xl sm:px-4 lg:h-[60px] lg:px-6 ${sidebarCollapsed ? "md:left-[72px]" : "md:left-[220px] xl:left-[260px]"}`}>
+          <div className="flex min-w-0 items-center gap-3">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="h-9 w-9 shrink-0 md:hidden">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Open navigation</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="app-sidebar w-[min(88vw,320px)] border-r border-border/70 p-0 backdrop-blur-xl">
+                <div className="flex h-14 items-center border-b border-border/70 px-4">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-semibold uppercase text-muted-foreground">Superadmin</span>
+                    <span className="text-sm font-bold tracking-tight">Platform Control</span>
+                  </div>
+                </div>
+                <nav className="flex max-h-[calc(100vh-3.5rem)] flex-col gap-4 overflow-y-auto px-3 py-4 text-sm">
+                  {renderNavigation(true)}
+                </nav>
+              </SheetContent>
+            </Sheet>
+            <div className="min-w-0">
+            <h1 className="text-lg font-semibold tracking-tight">Superadmin Control</h1>
+              <p className="hidden truncate text-xs text-muted-foreground sm:block">Platform governance, audits, subscriptions, and system health.</p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">Operations View</Button>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button variant="outline" size="sm" className="hidden sm:inline-flex">Oversight View</Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="secondary" size="icon" className="rounded-full">
@@ -110,20 +160,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Admin</DropdownMenuLabel>
+                <DropdownMenuLabel>Superadmin</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/admin/settings">Admin Settings</Link>
+                  <Link href="/admin/settings">Platform Settings</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/login">Logout</Link>
+                <DropdownMenuItem
+                  className="text-red-600"
+                  onSelect={(event) => {
+                    event.preventDefault();
+                    void signOut({ callbackUrl: "/login" });
+                  }}
+                >
+                  Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto bg-[linear-gradient(to_bottom,rgba(255,255,255,0.0),rgba(255,255,255,0.4))] p-4 md:p-6 dark:bg-[linear-gradient(to_bottom,rgba(15,23,42,0.0),rgba(15,23,42,0.32))]">
+        <main className="content-sheen min-w-0 flex-1 overflow-x-hidden px-3 py-4 pt-16 sm:px-4 md:p-6 md:pt-[76px]">
           {children}
         </main>
       </div>

@@ -31,11 +31,11 @@ function NewPasswordForm() {
       return
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Password must be at least 6 characters.",
+        description: "Password must be at least 8 characters.",
       })
       return
     }
@@ -50,8 +50,8 @@ function NewPasswordForm() {
       })
 
       if (!response.ok) {
-        const msg = await response.text()
-        throw new Error(msg)
+        const body = await response.json().catch(() => null)
+        throw new Error(body?.error?.message || body?.message || "Could not update password")
       }
 
       toast({
@@ -63,7 +63,7 @@ function NewPasswordForm() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Something went wrong",
+        description: error instanceof Error ? error.message : "Something went wrong",
       })
     } finally {
       setIsLoading(false)
@@ -71,9 +71,9 @@ function NewPasswordForm() {
   }
 
   return (
-    <Card className="w-full max-w-sm bg-[hsl(var(--blue-ice))]/80 backdrop-blur-xl border-[hsl(var(--blue-ice))]/40 shadow-lg">
+    <Card className="w-full border border-border/80 bg-card/95 shadow-xl backdrop-blur-xl">
       <CardHeader>
-        <CardTitle className="text-2xl">Reset Password</CardTitle>
+        <CardTitle className="text-2xl">Set a new TechDalt password</CardTitle>
         <CardDescription>
           Enter your new password below.
         </CardDescription>

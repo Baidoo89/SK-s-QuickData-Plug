@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -29,7 +29,13 @@ interface Product {
   id: string
   name: string
   provider: string
+  category?: string
   price: number
+  basePrice?: number
+  parentCost?: number
+  profilePrice?: number
+  effectiveDefaultPrice?: number | null
+  blockedByStrictProfile?: boolean
 }
 
 interface ResellerMetrics {
@@ -48,6 +54,23 @@ interface RecentOrder {
   status: string
   total: number
   createdAt: string
+}
+
+interface PricingProfile {
+  id: string
+  name: string
+  tag?: string | null
+  itemCount: number
+  assignmentCount: number
+}
+
+interface PricingProfileRow {
+  productId: string
+  productName: string
+  network: string
+  category?: string
+  parentCost: number
+  profilePrice: number
 }
 
 export default function ResellerDetailPage({ params }: { params: { id: string } }) {
@@ -72,11 +95,19 @@ export default function ResellerDetailPage({ params }: { params: { id: string } 
   const [resellerPrices, setResellerPrices] = useState<Record<string, number>>({})
   const [savingPrices, setSavingPrices] = useState(false)
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null)
+  const [profiles, setProfiles] = useState<PricingProfile[]>([])
+  const [assignedProfileId, setAssignedProfileId] = useState("")
+  const [strictPricing, setStrictPricing] = useState(false)
+  const [selectedProfileId, setSelectedProfileId] = useState("")
+  const [profileRows, setProfileRows] = useState<PricingProfileRow[]>([])
+  const [newProfileName, setNewProfileName] = useState("")
+  const [savingProfile, setSavingProfile] = useState(false)
 
   // Get unique providers from products
   const providers = Array.from(new Set(products.map((p) => p.provider))).sort()
   const activeProvider = selectedProvider && providers.includes(selectedProvider) ? selectedProvider : providers[0]
   const filteredProducts = activeProvider ? products.filter((p) => p.provider === activeProvider) : products
+  const filteredProfileRows = activeProvider ? profileRows.filter((row) => row.network === activeProvider) : profileRows
 
   const loadDetails = async () => {
     try {
@@ -99,16 +130,6 @@ export default function ResellerDetailPage({ params }: { params: { id: string } 
       setMetrics(payload?.metrics ?? null)
       setRecentOrders(Array.isArray(payload?.recentOrders) ? payload.recentOrders : [])
 
-      const productsRes = await fetch("/api/products")
-      if (productsRes.ok) {
-        const productsData = await productsRes.json()
-        const rows = Array.isArray(productsData?.data)
-          ? productsData.data
-          : Array.isArray(productsData)
-            ? productsData
-            : []
-        setProducts(rows)
-      }
     } catch (error) {
       console.error("Failed to load:", error)
       setDetailsError("Could not load details")
@@ -132,17 +153,198 @@ export default function ResellerDetailPage({ params }: { params: { id: string } 
         return
       }
       const response = await res.json()
-      const data = response.data || []
+      const payload = response.data || []
+      const data = Array.isArray(payload) ? payload : payload.prices || []
       const map: Record<string, number> = {}
       data.forEach((p: any) => {
         map[p.productId] = p.price
       })
       setResellerPrices(map)
+      if (!Array.isArray(payload) && Array.isArray(payload.products)) {
+        setProducts(payload.products)
+      }
+      if (!Array.isArray(payload) && payload.assignment) {
+        const profileId = payload.assignment.pricingProfileId || ""
+        setAssignedProfileId(profileId)
+        setStrictPricing(Boolean(payload.assignment.strictPricing))
+        if (profileId) setSelectedProfileId((current) => current || profileId)
+      }
     }
     loadPrices()
   }, [resellerId])
 
+  useEffect(() => {
+    async function loadProfiles() {
+      if (!resellerId) return
+      const res = await fetch(`/api/agent/pricing/profiles?resellerId=${resellerId}`)
+      if (!res.ok) return
+      const response = await res.json()
+      const payload = response.data || {}
+      const list = Array.isArray(payload.profiles) ? payload.profiles : []
+      const assignment = payload.assignment || null
+      const profileId = assignment?.pricingProfileId || ""
+
+      setProfiles(list)
+      setAssignedProfileId(profileId)
+      setStrictPricing(Boolean(assignment?.strictPricing))
+      setSelectedProfileId((current) => current || profileId || list[0]?.id || "")
+    }
+
+    loadProfiles()
+  }, [resellerId])
+
+  useEffect(() => {
+    async function loadProfileDetails() {
+      if (!selectedProfileId) {
+        setProfileRows([])
+        return
+      }
+
+      const res = await fetch(`/api/agent/pricing/profiles/${selectedProfileId}`)
+      if (!res.ok) {
+        setProfileRows([])
+        return
+      }
+
+      const response = await res.json()
+      const payload = response.data || {}
+      setProfileRows(Array.isArray(payload.rows) ? payload.rows : [])
+    }
+
+    loadProfileDetails()
+  }, [selectedProfileId])
+
+  const reloadProfileList = async (nextSelectedId?: string) => {
+    const res = await fetch(`/api/agent/pricing/profiles?resellerId=${resellerId}`)
+    if (!res.ok) return
+    const response = await res.json()
+    const payload = response.data || {}
+    const list = Array.isArray(payload.profiles) ? payload.profiles : []
+    const assignment = payload.assignment || null
+
+    setProfiles(list)
+    setAssignedProfileId(assignment?.pricingProfileId || "")
+    setStrictPricing(Boolean(assignment?.strictPricing))
+    if (nextSelectedId) setSelectedProfileId(nextSelectedId)
+  }
+
+  const createProfile = async () => {
+    const name = newProfileName.trim()
+    if (name.length < 2) {
+      toast({ variant: "destructive", title: "Profile name required", description: "Use at least 2 characters." })
+      return
+    }
+
+    setSavingProfile(true)
+    try {
+      const res = await fetch("/api/agent/pricing/profiles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      })
+      const response = await res.json().catch(() => null)
+      if (!res.ok) {
+        throw new Error(response?.error?.message || response?.message || "Could not create profile")
+      }
+
+      const profile = response.data
+      setNewProfileName("")
+      await reloadProfileList(profile?.id)
+      toast({ title: "Pricing profile created" })
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Could not create profile",
+      })
+    } finally {
+      setSavingProfile(false)
+    }
+  }
+
+  const assignProfile = async (profileId: string | null = assignedProfileId) => {
+    setSavingProfile(true)
+    try {
+      const res = await fetch("/api/agent/pricing/profiles/assign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resellerId, profileId: profileId || null, strictPricing }),
+      })
+      const response = await res.json().catch(() => null)
+      if (!res.ok) {
+        throw new Error(response?.error?.message || response?.message || "Could not assign profile")
+      }
+
+      await reloadProfileList(profileId || undefined)
+      const prices = await fetch(`/api/reseller-prices?resellerId=${resellerId}`)
+      if (prices.ok) {
+        const priceResponse = await prices.json()
+        const payload = priceResponse.data || {}
+        if (Array.isArray(payload.products)) setProducts(payload.products)
+      }
+      toast({ title: profileId ? "Pricing profile assigned" : "Pricing profile cleared" })
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Could not assign profile",
+      })
+    } finally {
+      setSavingProfile(false)
+    }
+  }
+
+  const saveProfilePrice = async (productId: string, price: number) => {
+    if (!selectedProfileId) return
+    const row = profileRows.find((item) => item.productId === productId)
+    const parentCost = row?.parentCost ?? 0
+    if (price < parentCost) {
+      toast({
+        variant: "destructive",
+        title: "Price below cost",
+        description: `Profile price must be at least ${formatGhanaCedis(parentCost)}.`,
+      })
+      return
+    }
+
+    setSavingProfile(true)
+    try {
+      const res = await fetch(`/api/agent/pricing/profiles/${selectedProfileId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId, price }),
+      })
+      const response = await res.json().catch(() => null)
+      if (!res.ok) {
+        throw new Error(response?.error?.message || response?.message || "Could not update profile price")
+      }
+
+      setProfileRows((prev) => prev.map((item) => item.productId === productId ? { ...item, profilePrice: price } : item))
+      setProducts((prev) => prev.map((item) => item.id === productId ? { ...item, profilePrice: price } : item))
+      toast({ title: "Profile price updated" })
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Could not update profile price",
+      })
+    } finally {
+      setSavingProfile(false)
+    }
+  }
+
   const savePrice = async (productId: string, price: number) => {
+    const product = products.find((item) => item.id === productId)
+    const parentCost = product?.parentCost ?? product?.price ?? 0
+    if (price < parentCost) {
+      toast({
+        variant: "destructive",
+        title: "Price below cost",
+        description: `Reseller price must be at least ${formatGhanaCedis(parentCost)}.`,
+      })
+      return
+    }
+
     setSavingPrices(true)
     try {
       const res = await fetch("/api/reseller-prices", {
@@ -158,6 +360,24 @@ export default function ResellerDetailPage({ params }: { params: { id: string } 
     } finally {
       setSavingPrices(false)
     }
+  }
+
+  const pricingSummary = useMemo(() => {
+    const configured = products.filter((product) => resellerPrices[product.id] !== undefined).length
+    const profileDefaults = products.filter((product) => product.profilePrice !== undefined).length
+    const margins = products.map((product) => {
+      const parentCost = product.parentCost ?? product.price
+      const defaultPrice = product.effectiveDefaultPrice ?? product.profilePrice ?? parentCost
+      const sellingPrice = resellerPrices[product.id] ?? defaultPrice
+      return Math.max(sellingPrice - parentCost, 0)
+    })
+    const averageMargin = margins.length ? margins.reduce((sum, value) => sum + value, 0) / margins.length : 0
+    return { configured, profileDefaults, total: products.length, averageMargin }
+  }, [products, resellerPrices])
+
+  const marginPercent = (sellingPrice: number, costPrice: number) => {
+    if (sellingPrice <= 0) return 0
+    return (Math.max(sellingPrice - costPrice, 0) / sellingPrice) * 100
   }
 
   if (loadingDetails) {
@@ -186,7 +406,7 @@ export default function ResellerDetailPage({ params }: { params: { id: string } 
   }
 
   return (
-    <div className="space-y-6">
+    <div className="portal-page space-y-6">
       <div className="flex items-center gap-2">
         <Button variant="outline" size="sm" onClick={() => router.push("/agent/resellers")}>
           <ArrowLeft className="mr-1 h-3 w-3" /> Back
@@ -199,7 +419,7 @@ export default function ResellerDetailPage({ params }: { params: { id: string } 
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid min-w-0 gap-4 md:grid-cols-2">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-medium text-muted-foreground">Email</CardTitle>
@@ -217,8 +437,8 @@ export default function ResellerDetailPage({ params }: { params: { id: string } 
               className={[
                 "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
                 reseller.active !== false
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "bg-red-50 text-red-600",
+                  ? "bg-primary/10 text-primary"
+                  : "bg-destructive/10 text-destructive",
               ].join(" ")}
             >
               {reseller.active !== false ? "Active" : "Inactive"}
@@ -227,7 +447,7 @@ export default function ResellerDetailPage({ params }: { params: { id: string } 
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid min-w-0 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-medium text-muted-foreground">Wallet balance</CardTitle>
@@ -339,7 +559,7 @@ export default function ResellerDetailPage({ params }: { params: { id: string } 
                   </div>
                 ))}
               </div>
-              <div className="hidden overflow-x-auto md:block -mx-6 px-6">
+              <div className="table-scroll hidden md:block">
                 <Table className="min-w-[560px]">
               <TableHeader>
                 <TableRow>
@@ -368,10 +588,208 @@ export default function ResellerDetailPage({ params }: { params: { id: string } 
 
       <Card className="overflow-hidden">
         <CardHeader>
+          <CardTitle className="text-sm font-semibold">Reseller pricing profile</CardTitle>
+          <CardDescription className="text-xs">
+            Assign a reusable default price sheet to this reseller. Use individual overrides below only for special exceptions.
+          </CardDescription>
+          <div className="grid min-w-0 gap-3 pt-3 lg:grid-cols-[1fr_1fr]">
+            <div className="rounded-md border bg-muted/30 p-3">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Create profile</p>
+              <div className="mt-2 flex min-w-0 flex-col gap-2 sm:flex-row">
+                <Input
+                  value={newProfileName}
+                  onChange={(e) => setNewProfileName(e.target.value)}
+                  placeholder="Example: Retail reseller"
+                  className="h-9 text-xs"
+                />
+                <Button type="button" size="sm" onClick={createProfile} disabled={savingProfile} className="h-9 shrink-0">
+                  Create
+                </Button>
+              </div>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                New profiles start with your current agent cost as the reseller buy price.
+              </p>
+            </div>
+            <div className="rounded-md border bg-muted/30 p-3">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Assigned to this reseller</p>
+              <div className="mt-2 grid min-w-0 gap-2 sm:grid-cols-[1fr_auto]">
+                <select
+                  value={assignedProfileId}
+                  onChange={(e) => {
+                    setAssignedProfileId(e.target.value)
+                    if (e.target.value) setSelectedProfileId(e.target.value)
+                  }}
+                  className="h-9 min-w-0 rounded-md border border-input bg-background px-3 text-xs"
+                >
+                  <option value="">No assigned profile</option>
+                  {profiles.map((profile) => (
+                    <option key={profile.id} value={profile.id}>{profile.name}</option>
+                  ))}
+                </select>
+                <Button type="button" size="sm" onClick={() => assignProfile()} disabled={savingProfile} className="h-9">
+                  Save assignment
+                </Button>
+              </div>
+              <label className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={strictPricing}
+                  onChange={(e) => setStrictPricing(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-input"
+                />
+                <span>
+                  Profile only. Products missing from the profile will be hidden for this reseller until added to the profile.
+                </span>
+              </label>
+              {assignedProfileId && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => assignProfile(null)}
+                  disabled={savingProfile}
+                  className="mt-3 h-8 text-xs"
+                >
+                  Clear assignment
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {profiles.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No reseller pricing profiles yet. Create one above, assign it to this reseller, then adjust the prices here.
+            </p>
+          ) : (
+            <>
+              <div className="mb-4 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold">Edit profile prices</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    These prices become the reseller&apos;s default buy prices unless an override below is saved.
+                  </p>
+                </div>
+                <select
+                  value={selectedProfileId}
+                  onChange={(e) => setSelectedProfileId(e.target.value)}
+                  className="h-9 min-w-0 rounded-md border border-input bg-background px-3 text-xs sm:w-64"
+                >
+                  {profiles.map((profile) => (
+                    <option key={profile.id} value={profile.id}>
+                      {profile.name} ({profile.itemCount})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {filteredProfileRows.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No products available in this profile for {activeProvider}.</p>
+              ) : (
+                <>
+                  <div className="space-y-3 md:hidden">
+                    {filteredProfileRows.map((row) => {
+                      const profit = Math.max(row.profilePrice - row.parentCost, 0)
+                      return (
+                        <div key={row.productId} className="rounded-lg border bg-background p-3 shadow-sm">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-semibold">{row.productName}</p>
+                              <p className="text-[11px] text-muted-foreground">{row.network}</p>
+                            </div>
+                            <p className="text-xs text-muted-foreground">Cost: {formatGhanaCedis(row.parentCost)}</p>
+                          </div>
+                          <div className="mt-2">
+                            <p className="text-[11px] text-muted-foreground">Profile reseller buy price</p>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min={row.parentCost}
+                              className="mt-1 h-8 text-xs"
+                              defaultValue={row.profilePrice}
+                              onBlur={(e) => {
+                                const val = parseFloat(e.currentTarget.value)
+                                if (Number.isNaN(val) || Math.abs(val - row.profilePrice) < 0.0001) return
+                                saveProfilePrice(row.productId, val)
+                              }}
+                            />
+                          </div>
+                          <div className="mt-3 rounded-md bg-muted/40 p-2 text-xs">
+                            <p className="font-medium">{formatGhanaCedis(profit)}</p>
+                            <p className="text-muted-foreground">Default profit per order</p>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="table-scroll hidden md:block">
+                    <Table className="min-w-full text-xs">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Product</TableHead>
+                          <TableHead>Network</TableHead>
+                          <TableHead className="text-right">Agent cost</TableHead>
+                          <TableHead className="text-right">Profile price</TableHead>
+                          <TableHead className="text-right">Default profit</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredProfileRows.map((row) => {
+                          const profit = Math.max(row.profilePrice - row.parentCost, 0)
+                          return (
+                            <TableRow key={row.productId}>
+                              <TableCell className="font-medium text-xs">{row.productName}</TableCell>
+                              <TableCell className="text-xs">{row.network}</TableCell>
+                              <TableCell className="text-right text-xs">{formatGhanaCedis(row.parentCost)}</TableCell>
+                              <TableCell className="text-right">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min={row.parentCost}
+                                  className="ml-auto h-7 w-28 text-right text-xs"
+                                  defaultValue={row.profilePrice}
+                                  onBlur={(e) => {
+                                    const val = parseFloat(e.currentTarget.value)
+                                    if (Number.isNaN(val) || Math.abs(val - row.profilePrice) < 0.0001) return
+                                    saveProfilePrice(row.productId, val)
+                                  }}
+                                />
+                              </TableCell>
+                              <TableCell className="text-right text-xs">{formatGhanaCedis(profit)}</TableCell>
+                            </TableRow>
+                          )
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
+              )}
+              {savingProfile && <p className="mt-2 text-xs text-muted-foreground">Saving profile changes...</p>}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="overflow-hidden">
+        <CardHeader>
           <CardTitle className="text-sm font-semibold">Pricing overrides</CardTitle>
           <CardDescription className="text-xs">
-            Set custom prices for this reseller by network. Leave blank to use base pricing.
+            Set one-off reseller buy prices only where this reseller should differ from the assigned profile.
           </CardDescription>
+          <div className="grid min-w-0 gap-3 pt-3 md:grid-cols-3">
+            <div className="rounded-md border bg-muted/30 p-3">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Overrides</p>
+              <p className="mt-1 text-lg font-semibold">{pricingSummary.configured}/{pricingSummary.total}</p>
+            </div>
+            <div className="rounded-md border bg-muted/30 p-3">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Profile defaults</p>
+              <p className="mt-1 text-lg font-semibold">{pricingSummary.profileDefaults}/{pricingSummary.total}</p>
+            </div>
+            <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-primary">Rule</p>
+              <p className="mt-1 text-xs text-muted-foreground">Override prices must stay equal to or above your agent cost.</p>
+            </div>
+          </div>
           {providers.length > 1 && (
             <div className="flex flex-wrap gap-2 pt-3">
               {providers.map((provider) => (
@@ -396,70 +814,114 @@ export default function ResellerDetailPage({ params }: { params: { id: string } 
             <>
               <div className="space-y-3 md:hidden">
                 {filteredProducts.map((product) => {
-                  const current = resellerPrices[product.id]
-                  const base = product.price
+                  const parentCost = product.parentCost ?? product.price
+                  const hasOverride = resellerPrices[product.id] !== undefined
+                  const defaultPrice = product.effectiveDefaultPrice ?? product.profilePrice ?? parentCost
+                  const current = hasOverride ? resellerPrices[product.id] : defaultPrice
+                  const sourceLabel = hasOverride
+                    ? "Override"
+                    : product.blockedByStrictProfile
+                      ? "Profile required"
+                      : product.profilePrice !== undefined
+                        ? "Profile default"
+                        : "Parent cost"
+                  const profit = Math.max(current - parentCost, 0)
                   return (
                     <div key={product.id} className="rounded-lg border bg-background p-3 shadow-sm">
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-sm font-semibold">{product.name}</p>
-                          <p className="text-[11px] text-muted-foreground">{product.provider}</p>
+                          <p className="text-[11px] text-muted-foreground">{product.provider} · {sourceLabel}</p>
                         </div>
-                        <p className="text-xs text-muted-foreground">Base: GH₵ {base.toFixed(2)}</p>
+                        <p className="text-xs text-muted-foreground">Cost: {formatGhanaCedis(parentCost)}</p>
                       </div>
                       <div className="mt-2 space-y-1">
-                        <p className="text-[11px] text-muted-foreground">Reseller price</p>
+                        <p className="text-[11px] text-muted-foreground">Reseller buy price</p>
                         <Input
                           type="number"
                           step="0.01"
-                          min="0"
+                          min={parentCost}
                           className="h-8 text-xs"
-                          defaultValue={current ?? base}
+                          defaultValue={current}
+                          disabled={product.blockedByStrictProfile}
                           onBlur={(e) => {
                             const val = parseFloat(e.currentTarget.value)
                             if (Number.isNaN(val)) return
-                            const previous = current ?? base
+                            const previous = current
                             if (Math.abs(val - previous) < 0.0001) return
                             savePrice(product.id, val)
                           }}
                         />
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 gap-2 rounded-md bg-muted/40 p-2 text-xs">
+                        <div>
+                          <p className="font-semibold text-foreground">{formatGhanaCedis(profit)}</p>
+                          <p className="text-muted-foreground">Profit/order</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-primary">{marginPercent(current, parentCost).toFixed(1)}%</p>
+                          <p className="text-muted-foreground">Margin</p>
+                        </div>
                       </div>
                     </div>
                   )
                 })}
               </div>
-              <div className="hidden overflow-x-auto md:block -mx-6 px-6">
+              <div className="table-scroll hidden md:block">
                 <Table className="min-w-full text-xs">
               <TableHeader>
                 <TableRow>
                   <TableHead>Product</TableHead>
-                  <TableHead className="text-right">Base Price</TableHead>
-                  <TableHead className="text-right">Reseller Price</TableHead>
+                  <TableHead className="text-right">Parent cost</TableHead>
+                  <TableHead className="text-right">Reseller buy price</TableHead>
+                  <TableHead className="text-right">Profit</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredProducts.map((product) => {
-                  const current = resellerPrices[product.id]
-                  const base = product.price
+                  const parentCost = product.parentCost ?? product.price
+                  const hasOverride = resellerPrices[product.id] !== undefined
+                  const defaultPrice = product.effectiveDefaultPrice ?? product.profilePrice ?? parentCost
+                  const current = hasOverride ? resellerPrices[product.id] : defaultPrice
+                  const sourceLabel = hasOverride
+                    ? "Override"
+                    : product.blockedByStrictProfile
+                      ? "Profile required"
+                      : product.profilePrice !== undefined
+                        ? "Profile default"
+                        : "Parent cost"
+                  const profit = Math.max(current - parentCost, 0)
                   return (
                     <TableRow key={product.id} className="hover:bg-muted/50 transition">
-                      <TableCell className="font-medium text-xs">{product.name}</TableCell>
-                      <TableCell className="text-right text-xs">GH₵ {base.toFixed(2)}</TableCell>
+                      <TableCell className="font-medium text-xs">
+                        <div>
+                          <p>{product.name}</p>
+                          <p className="text-[11px] font-normal text-muted-foreground">{sourceLabel}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right text-xs">{formatGhanaCedis(parentCost)}</TableCell>
                       <TableCell className="text-right">
                         <Input
                           type="number"
                           step="0.01"
-                          min="0"
+                          min={parentCost}
                           className="h-7 text-xs w-28 text-right ml-auto"
-                          defaultValue={current ?? base}
+                          defaultValue={current}
+                          disabled={product.blockedByStrictProfile}
                           onBlur={(e) => {
                             const val = parseFloat(e.currentTarget.value)
                             if (Number.isNaN(val)) return
-                            const previous = current ?? base
+                            const previous = current
                             if (Math.abs(val - previous) < 0.0001) return
                             savePrice(product.id, val)
                           }}
                         />
+                      </TableCell>
+                      <TableCell className="text-right text-xs">
+                        <div>
+                          <p className="font-medium">{formatGhanaCedis(profit)}</p>
+                          <p className="text-[11px] text-muted-foreground">{marginPercent(current, parentCost).toFixed(1)}%</p>
+                        </div>
                       </TableCell>
                     </TableRow>
                   )
@@ -469,9 +931,10 @@ export default function ResellerDetailPage({ params }: { params: { id: string } 
               </div>
             </>
           )}
-          {savingPrices && <p className="mt-2 text-xs text-muted-foreground">Saving overrides…</p>}
+          {savingPrices && <p className="mt-2 text-xs text-muted-foreground">Saving overrides...</p>}
         </CardContent>
       </Card>
     </div>
   )
 }
+

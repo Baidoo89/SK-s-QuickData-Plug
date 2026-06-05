@@ -1,6 +1,8 @@
 import { db } from "@/lib/db"
 import { requireAuth, hasRole, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors } from "@/lib/api-response"
+import { requireActiveSubscription } from "@/lib/subscription-access"
+import { resolveOrderDispatch } from "@/lib/order-dispatch"
 
 const NETWORK_PREFIXES: Record<string, string[]> = {
   MTN: ["024", "025", "053", "054", "055", "059"],
@@ -55,6 +57,9 @@ export async function POST(req: Request) {
 
     const organizationId = user.organizationId
 
+    const subscriptionError = await requireActiveSubscription(organizationId)
+    if (subscriptionError) return subscriptionError
+
     // Fetch full user record including agent/parent agent IDs
     const fullUser = await db.user.findUnique({
       where: { id: user.id },
@@ -103,7 +108,29 @@ export async function POST(req: Request) {
       resolvedAgentId = fullUser.parentAgentId ?? null
     }
 
-    if (resolvedAgentId) {
+    const assignedProfile = await db.userPricingProfileAssignment.findFirst({
+      where: { organizationId, userId: user.id },
+      select: { pricingProfileId: true, strictPricing: true },
+    })
+
+    const profileItem = assignedProfile
+      ? await db.pricingProfileItem.findUnique({
+          where: {
+            pricingProfileId_productId: {
+              pricingProfileId: assignedProfile.pricingProfileId,
+              productId: product.id,
+            },
+          },
+          select: { price: true },
+        })
+      : null
+
+    if (assignedProfile?.strictPricing) {
+      if (!profileItem) {
+        return ApiErrors.BAD_REQUEST("No profile price is configured for this bundle. Update the assigned pricing profile first.")
+      }
+      chargePrice = profileItem.price
+    } else if (resolvedAgentId) {
       const agent = await db.agent.findFirst({
         where: { id: resolvedAgentId, organizationId, active: true },
       })
@@ -123,8 +150,22 @@ export async function POST(req: Request) {
       resolvedAgentId = agent.id
     }
 
+    if (fullUser.role === "RESELLER") {
+      const resellerPrice = await db.resellerPrice.findFirst({
+        where: { resellerId: user.id, productId: product.id, organizationId },
+        select: { price: true },
+      })
+
+      if (!assignedProfile?.strictPricing && resellerPrice) {
+        chargePrice = resellerPrice.price
+      } else if (profileItem) {
+        chargePrice = profileItem.price
+      }
+    } else if (!resolvedAgentId && profileItem) {
+      chargePrice = profileItem.price
+    }
+
     const unitPrice = chargePrice
-    const profitPerUnit = unitPrice - basePrice
     const total = unitPrice * quantity
 
     const order = await db.$transaction(async (tx) => {
@@ -176,21 +217,66 @@ export async function POST(req: Request) {
           total,
           status: "PENDING",
           phoneNumber: normalizedPhone,
+          source: "DASHBOARD_BUY",
+          sellerRole: fullUser.role,
+          sellerUserId: user.id,
+          sellerAgentId: resolvedAgentId ?? undefined,
+          customerType: "DASHBOARD_USER",
+          paymentOwner: "WALLET",
+          paymentStatus: "PAID",
+          fulfillmentMode: "MANUAL",
           items: {
             create: {
               productId: product.id,
               quantity,
               price: unitPrice,
-              profit: profitPerUnit * quantity,
+              profit: 0,
             },
           },
         },
       })
 
+      await tx.auditLog.create({
+        data: {
+          action: "DASHBOARD_BUY_CREATED",
+          targetType: "ORDER",
+          targetId: newOrder.id,
+          organizationId,
+          meta: JSON.stringify({
+            channel: "DASHBOARD_BUY",
+            role: fullUser.role,
+            buyPrice: unitPrice,
+            sourceCost: basePrice,
+            profitPolicy: "ZERO_SELF_PURCHASE",
+          }),
+        },
+      })
+
       return newOrder
+    }, { maxWait: 10000, timeout: 20000 })
+
+    const dispatch = await resolveOrderDispatch({
+      orderId: order.id,
+      organizationId,
+      productId: product.id,
+      network: product.provider,
+      phone: normalizedPhone,
+      quantity,
+      amount: order.total,
     })
 
-    return apiSuccess(order, undefined, 201)
+    return apiSuccess(
+      {
+        ...order,
+        status: dispatch.finalStatus,
+        dispatchMode: dispatch.dispatchMode,
+        dispatchProvider: dispatch.dispatchProvider,
+        dispatchReason: dispatch.dispatchReason,
+        network: product.provider,
+      },
+      undefined,
+      201
+    )
   } catch (error) {
     if (error instanceof Error && error.message === "INSUFFICIENT_FUNDS") {
       return ApiErrors.BAD_REQUEST("Insufficient wallet balance. Please top up before placing this order.")

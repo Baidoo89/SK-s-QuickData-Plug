@@ -29,6 +29,15 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.log
+*.tmp
+.tmp_*
+build-output.log
+build_output.log
+build-readiness.log
+dev-server.log
+dev-server.err.log
+admin@example.com
 
 # env files (can opt-in for committing if needed)
 .env*

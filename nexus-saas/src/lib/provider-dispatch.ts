@@ -49,7 +49,7 @@ export async function dispatchOrderToProvider(
       accepted: false,
       immediateStatus: "PENDING",
       externalRef: null,
-      message: "Provider URL not configured. Order kept in API queue.",
+      message: "Provider URL not configured. Order kept pending for manual handling.",
     }
   }
 

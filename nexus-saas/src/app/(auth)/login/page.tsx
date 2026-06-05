@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { signIn, useSession } from "next-auth/react"
+import { signIn } from "next-auth/react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,12 +16,19 @@ export default function LoginPage() {
   const router = useRouter()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
+  const [isResendingVerification, setIsResendingVerification] = useState(false)
+  const [verifyRequiredNotice, setVerifyRequiredNotice] = useState(false)
 
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   })
   const [showPassword, setShowPassword] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    setVerifyRequiredNotice(params.get("verify") === "required")
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target
@@ -43,8 +50,10 @@ export default function LoginPage() {
       if (result?.error) {
         toast({
           variant: "destructive",
-          title: "Error",
-          description: "Invalid email or password",
+          title: "Cannot sign in",
+          description: verifyRequiredNotice
+            ? "Please verify your email before signing in."
+            : "Invalid credentials, unverified email, or account still waiting for approval.",
         })
       } else if (result?.ok) {
         toast({
@@ -53,21 +62,10 @@ export default function LoginPage() {
         })
         // Refresh session and redirect based on role
         router.refresh()
-        // Wait a tiny bit for session to update then redirect
+        // Wait a tiny bit for session to update then redirect through tenant-aware landing.
         setTimeout(async () => {
-          const session = await fetch("/api/auth/session").then(r => r.json())
-          const role = (session?.user as any)?.role
-          if (role === "SUPERADMIN") {
-            router.push("/admin")
-          } else if (role === "SUBSCRIBER") {
-            router.push("/dashboard")
-          } else if (role === "AGENT") {
-            router.push("/agent")
-          } else if (role === "RESELLER") {
-            router.push("/reseller")
-          } else {
-            router.push("/dashboard")
-          }
+          const landing = await fetch("/api/auth/landing").then((r) => r.json()).catch(() => null)
+          router.push(landing?.data?.path || "/dashboard")
         }, 100)
       }
     } catch (error) {
@@ -81,14 +79,56 @@ export default function LoginPage() {
     }
   }
 
+  const handleResendVerification = async () => {
+    const normalizedEmail = formData.email.trim().toLowerCase()
+    if (!normalizedEmail) {
+      toast({ variant: "destructive", title: "Email required", description: "Enter your email first." })
+      return
+    }
+
+    setIsResendingVerification(true)
+    try {
+      const response = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalizedEmail }),
+      })
+      const body = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(body?.error?.message || "Could not send verification email")
+      toast({
+        title: body?.data?.emailDelivery === "FAILED" ? "Verification token created" : "Check your email",
+        description:
+          body?.data?.emailDelivery === "FAILED" && body?.data?.devVerificationPath
+            ? "Email delivery failed locally. Open /dev/verification to verify this account."
+            : "If verification is needed, a new email has been sent.",
+      })
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Could not send verification email",
+      })
+    } finally {
+      setIsResendingVerification(false)
+    }
+  }
+
   return (
-    <Card className="w-[350px] bg-[hsl(var(--blue-ice))]/80 backdrop-blur-xl border-[hsl(var(--blue-ice))]/40 shadow-lg">
+    <Card className="min-w-0 w-full overflow-hidden border border-border/80 bg-card/95 shadow-xl backdrop-blur-xl">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">Sign in</CardTitle>
+        <CardTitle className="text-center text-2xl font-bold">Sign in to TechDalt</CardTitle>
         <CardDescription className="text-center">
-          Enter your email and password to access your account
+          Access the right portal for your role.
         </CardDescription>
       </CardHeader>
+      {verifyRequiredNotice ? (
+        <div className="mx-6 mb-4 space-y-2 rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-sm">
+          <p>Check your email and verify your account before signing in.</p>
+          <Button type="button" size="sm" variant="outline" className="h-8 bg-background text-xs" onClick={handleResendVerification} disabled={isResendingVerification}>
+            {isResendingVerification ? "Sending..." : "Resend verification email"}
+          </Button>
+        </div>
+      ) : null}
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">

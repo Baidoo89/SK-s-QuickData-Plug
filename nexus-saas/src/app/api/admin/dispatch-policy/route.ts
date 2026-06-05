@@ -1,8 +1,9 @@
-import { requireOrgManager, isAuthError } from "@/lib/auth-guard"
+import { requireAdmin, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
-import { getEffectiveDispatchPolicy } from "@/lib/dispatch-policy"
-import { db } from "@/lib/db"
+import { getEffectiveDispatchPolicy, saveDispatchPolicy } from "@/lib/dispatch-policy"
 import { z } from "zod"
+
+export const dynamic = "force-dynamic"
 
 const updatePolicySchema = z.object({
   mode: z.enum(["MANUAL_ONLY", "API_ONLY", "HYBRID"]),
@@ -12,12 +13,16 @@ const updatePolicySchema = z.object({
 
 export async function GET() {
   try {
-    const authResult = await requireOrgManager()
+    const authResult = await requireAdmin()
     if (isAuthError(authResult)) {
       return authResult
     }
 
-    const organizationId = authResult.user.organizationId!
+    if (!authResult.user.organizationId) {
+      return ApiErrors.FORBIDDEN()
+    }
+
+    const organizationId = authResult.user.organizationId
     const policy = await getEffectiveDispatchPolicy(organizationId)
     return apiSuccess(policy)
   } catch (error) {
@@ -28,12 +33,16 @@ export async function GET() {
 
 export async function PUT(req: Request) {
   try {
-    const authResult = await requireOrgManager()
+    const authResult = await requireAdmin()
     if (isAuthError(authResult)) {
       return authResult
     }
 
-    const organizationId = authResult.user.organizationId!
+    if (!authResult.user.organizationId) {
+      return ApiErrors.FORBIDDEN()
+    }
+
+    const organizationId = authResult.user.organizationId
     const body = await req.json()
     const parsed = updatePolicySchema.safeParse(body)
 
@@ -41,22 +50,13 @@ export async function PUT(req: Request) {
       return ApiErrors.VALIDATION_ERROR(parsed.error.flatten().fieldErrors)
     }
 
-    const payload = {
+    const payload = await saveDispatchPolicy({
+      organizationId,
+      actorId: authResult.user.id,
+      actorName: authResult.user.email,
       mode: parsed.data.mode,
-      apiEnabledNetworks: parsed.data.apiEnabledNetworks.map((n) => n.trim().toUpperCase()).filter(Boolean),
-      providerName: parsed.data.providerName.trim(),
-    }
-
-    await db.auditLog.create({
-      data: {
-        actorId: authResult.user.id,
-        actorName: authResult.user.email,
-        action: "DISPATCH_POLICY_SET",
-        targetType: "SYSTEM_CONFIG",
-        targetId: "dispatch-policy",
-        organizationId,
-        meta: JSON.stringify(payload),
-      },
+      apiEnabledNetworks: parsed.data.apiEnabledNetworks,
+      providerName: parsed.data.providerName,
     })
 
     return apiSuccess(payload, "Dispatch policy updated")

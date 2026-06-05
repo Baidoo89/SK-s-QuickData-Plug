@@ -1,0 +1,303 @@
+import { NextResponse } from "next/server"
+import { ApiErrors, logApiError } from "@/lib/api-response"
+import { db } from "@/lib/db"
+import { getBaseUrl } from "@/lib/mail"
+import { getOrganizationPaymentSettings } from "@/lib/organization-payment-settings"
+import { resolveOrderDispatch } from "@/lib/order-dispatch"
+
+export const dynamic = "force-dynamic"
+
+type StorefrontPaymentRow = {
+  id: string
+  organizationId: string
+  reference: string
+  amount: number
+  status: string
+  orderIds: string
+  metadata: string | null
+}
+
+function parseJsonArray(value: string | null | undefined) {
+  if (!value) return []
+  try {
+    const parsed = JSON.parse(value)
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : []
+  } catch {
+    return []
+  }
+}
+
+function parseJsonObject(value: string | null | undefined) {
+  if (!value) return {}
+  try {
+    const parsed = JSON.parse(value)
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {}
+  } catch {
+    return {}
+  }
+}
+
+function resolveReturnPath(meta: Record<string, unknown>, payment: StorefrontPaymentRow | null) {
+  const rawReturnPath = typeof meta.returnPath === "string" ? meta.returnPath : ""
+  if (
+    (rawReturnPath.startsWith("/shop/") || rawReturnPath.startsWith("/store/")) &&
+    !rawReturnPath.startsWith("//") &&
+    !rawReturnPath.includes("\\") &&
+    !rawReturnPath.includes("\n") &&
+    !rawReturnPath.includes("\r")
+  ) {
+    return rawReturnPath
+  }
+
+  const parsedPaymentMeta = parseJsonObject(payment?.metadata)
+  const subscriberSlug =
+    typeof meta.subscriberSlug === "string"
+      ? meta.subscriberSlug
+      : typeof parsedPaymentMeta.subscriberSlug === "string"
+        ? parsedPaymentMeta.subscriberSlug
+        : ""
+  const agentId =
+    typeof meta.agentId === "string"
+      ? meta.agentId
+      : typeof parsedPaymentMeta.agentId === "string"
+        ? parsedPaymentMeta.agentId
+        : ""
+  const resellerId =
+    typeof meta.resellerId === "string"
+      ? meta.resellerId
+      : typeof parsedPaymentMeta.resellerId === "string"
+        ? parsedPaymentMeta.resellerId
+        : ""
+
+  if (!subscriberSlug) return "/"
+  if (resellerId) return `/store/${encodeURIComponent(subscriberSlug)}/reseller/${encodeURIComponent(resellerId)}`
+  if (agentId) return `/store/${encodeURIComponent(subscriberSlug)}/agent/${encodeURIComponent(agentId)}`
+  return `/store/${encodeURIComponent(subscriberSlug)}`
+}
+
+async function findStorefrontPayment(reference: string) {
+  const rows = await db.$queryRaw<StorefrontPaymentRow[]>`
+    SELECT
+      "id",
+      "organizationId",
+      "reference",
+      "amount",
+      "status",
+      "orderIds",
+      "metadata"
+    FROM "StorefrontPayment"
+    WHERE "reference" = ${reference}
+    LIMIT 1
+  `
+
+  return rows[0] ?? null
+}
+
+export async function GET(req: Request) {
+  const baseUrl = getBaseUrl()
+
+  try {
+    if (!baseUrl) {
+      return ApiErrors.INTERNAL_ERROR({ reason: "App URL not configured" })
+    }
+
+    const { searchParams } = new URL(req.url)
+    const reference = searchParams.get("reference")
+    const organizationId = searchParams.get("organizationId")
+
+    if (!reference) {
+      return ApiErrors.BAD_REQUEST("Missing reference")
+    }
+
+    if (!organizationId) {
+      return ApiErrors.BAD_REQUEST("Missing organization")
+    }
+
+    const paymentSettings = await getOrganizationPaymentSettings(organizationId)
+    if (!paymentSettings.paystackConnected || !paymentSettings.paystackSecretKey) {
+      return ApiErrors.BAD_REQUEST("Subscriber Paystack is not connected")
+    }
+
+    const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
+      headers: {
+        Authorization: `Bearer ${paymentSettings.paystackSecretKey}`,
+      },
+    })
+
+    if (!response.ok) {
+      logApiError("PAYSTACK_STOREFRONT_VERIFY_ERROR", await response.text())
+      return ApiErrors.BAD_REQUEST("Payment verification failed")
+    }
+
+    const data = await response.json().catch(() => null)
+    const meta = (data?.data?.metadata || {}) as Record<string, unknown>
+    const payment = await findStorefrontPayment(reference)
+    const returnPath = resolveReturnPath(meta, payment)
+
+    if (!payment || payment.organizationId !== organizationId) {
+      return NextResponse.redirect(`${baseUrl}${returnPath}?checkout=failed`)
+    }
+
+    if (!data?.status || data.data?.status !== "success") {
+      await db.$executeRaw`
+        UPDATE "StorefrontPayment"
+        SET "status" = 'FAILED', "updatedAt" = NOW()
+        WHERE "reference" = ${reference}
+      `
+
+      const paymentMeta = parseJsonObject(payment.metadata)
+      const serviceRequestIds = Array.isArray(paymentMeta.serviceRequestIds)
+        ? paymentMeta.serviceRequestIds.filter((item): item is string => typeof item === "string")
+        : []
+
+      await db.$transaction(async (tx) => {
+        await tx.order.updateMany({
+          where: {
+            id: { in: parseJsonArray(payment.orderIds) },
+            organizationId,
+            status: "PENDING_PAYMENT",
+          },
+          data: { status: "PAYMENT_FAILED", paymentStatus: "FAILED" },
+        })
+
+        if (serviceRequestIds.length > 0) {
+          await tx.serviceRequest.updateMany({
+            where: {
+              id: { in: serviceRequestIds },
+              organizationId,
+              status: "PENDING_PAYMENT",
+            },
+            data: { status: "PAYMENT_FAILED", paymentStatus: "FAILED" },
+          })
+        }
+      })
+
+      return NextResponse.redirect(`${baseUrl}${returnPath}?checkout=failed`)
+    }
+
+    const metadataOrganizationId = typeof meta.organizationId === "string" ? meta.organizationId : undefined
+    if (metadataOrganizationId !== organizationId) {
+      return NextResponse.redirect(`${baseUrl}${returnPath}?checkout=failed`)
+    }
+
+    const orderIdsFromMeta = Array.isArray(meta.orderIds)
+      ? meta.orderIds.filter((item): item is string => typeof item === "string")
+      : []
+    const orderIds = orderIdsFromMeta.length > 0 ? orderIdsFromMeta : parseJsonArray(payment.orderIds)
+    const paymentMeta = parseJsonObject(payment.metadata)
+    const serviceRequestIdsFromMeta = Array.isArray(meta.serviceRequestIds)
+      ? meta.serviceRequestIds.filter((item): item is string => typeof item === "string")
+      : []
+    const serviceRequestIdsFromPayment = Array.isArray(paymentMeta.serviceRequestIds)
+      ? paymentMeta.serviceRequestIds.filter((item): item is string => typeof item === "string")
+      : []
+    const serviceRequestIds = serviceRequestIdsFromMeta.length > 0 ? serviceRequestIdsFromMeta : serviceRequestIdsFromPayment
+
+    if (orderIds.length === 0 && serviceRequestIds.length === 0) {
+      return NextResponse.redirect(`${baseUrl}${returnPath}?checkout=failed`)
+    }
+
+    const amountFromResponse = typeof data.data?.amount === "number" ? data.data.amount / 100 : 0
+    if (amountFromResponse < payment.amount) {
+      return NextResponse.redirect(`${baseUrl}${returnPath}?checkout=failed`)
+    }
+
+    await db.$transaction(async (tx) => {
+      await tx.$executeRaw`
+        UPDATE "StorefrontPayment"
+        SET "status" = 'SUCCESS', "paidAt" = NOW(), "updatedAt" = NOW()
+        WHERE "reference" = ${reference}
+      `
+
+      if (orderIds.length > 0) {
+        await tx.order.updateMany({
+          where: {
+            id: { in: orderIds },
+            organizationId,
+            status: "PENDING_PAYMENT",
+          },
+          data: { status: "PENDING", paymentStatus: "PAID" },
+        })
+      }
+
+      if (serviceRequestIds.length > 0) {
+        await tx.serviceRequest.updateMany({
+          where: {
+            id: { in: serviceRequestIds },
+            organizationId,
+            status: "PENDING_PAYMENT",
+          },
+          data: { status: "PENDING_REVIEW", paymentStatus: "PAID", paymentReference: reference },
+        })
+      }
+
+      const auditRows = [
+        ...orderIds.map((orderId) => ({
+          action: "STOREFRONT_PAYMENT_SUCCESS",
+          targetType: "ORDER",
+          targetId: orderId,
+          organizationId,
+          meta: JSON.stringify({
+            reference,
+            amountGHS: payment.amount,
+            paymentOwner: "subscriber",
+          }),
+        })),
+        ...serviceRequestIds.map((requestId) => ({
+          action: "SERVICE_REQUEST_PAYMENT_SUCCESS",
+          targetType: "SERVICE_REQUEST",
+          targetId: requestId,
+          organizationId,
+          meta: JSON.stringify({
+            reference,
+            amountGHS: payment.amount,
+            paymentOwner: "subscriber",
+          }),
+        })),
+      ]
+
+      if (auditRows.length > 0) {
+        await tx.auditLog.createMany({ data: auditRows })
+      }
+    })
+
+    const paidOrders = await db.order.findMany({
+      where: {
+        id: { in: orderIds },
+        organizationId,
+        status: "PENDING",
+      },
+      include: {
+        items: {
+          include: { product: true },
+          take: 1,
+        },
+      },
+    })
+
+    for (const order of paidOrders) {
+      const item = order.items[0]
+      if (!item?.product || !order.phoneNumber) continue
+
+      try {
+        await resolveOrderDispatch({
+          orderId: order.id,
+          organizationId,
+          productId: item.product.id,
+          network: item.product.provider,
+          phone: order.phoneNumber,
+          quantity: item.quantity,
+          amount: order.total,
+        })
+      } catch (dispatchError) {
+        logApiError("[STORE_PAYSTACK_DISPATCH]", dispatchError)
+      }
+    }
+
+    const successCount = orderIds.length + serviceRequestIds.length
+    return NextResponse.redirect(`${baseUrl}${returnPath}?checkout=success&orders=${successCount}`)
+  } catch (error) {
+    logApiError("[STORE_PAYSTACK_VERIFY]", error)
+    return NextResponse.redirect(`${baseUrl || ""}/?checkout=failed`)
+  }
+}

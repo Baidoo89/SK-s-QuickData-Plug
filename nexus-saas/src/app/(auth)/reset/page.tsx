@@ -25,18 +25,19 @@ export default function ResetPage() {
       })
 
       if (!response.ok) {
-        throw new Error("Something went wrong")
+        const body = await response.json().catch(() => null)
+        throw new Error(body?.error?.message || "Something went wrong")
       }
 
       toast({
-        title: "Email sent",
-        description: "Check your email for a reset link.",
+        title: "Check your email",
+        description: "If that account exists, a reset link has been sent.",
       })
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Something went wrong",
+        description: error instanceof Error ? error.message : "Something went wrong",
       })
     } finally {
       setIsLoading(false)
@@ -44,11 +45,11 @@ export default function ResetPage() {
   }
 
   return (
-    <Card className="w-full max-w-sm bg-[hsl(var(--blue-ice))]/80 backdrop-blur-xl border-[hsl(var(--blue-ice))]/40 shadow-lg">
+    <Card className="w-full border border-border/80 bg-card/95 shadow-xl backdrop-blur-xl">
       <CardHeader>
-        <CardTitle className="text-2xl">Forgot Password</CardTitle>
+        <CardTitle className="text-2xl">Reset your TechDalt password</CardTitle>
         <CardDescription>
-          Enter your email below to reset your password.
+          Enter your email below. If the account exists, we will send a reset link.
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>

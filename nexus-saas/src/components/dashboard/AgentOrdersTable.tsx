@@ -1,12 +1,16 @@
+"use client";
+
 import React, { useEffect, useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
+
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { formatGhanaCedis } from "@/lib/currency";
 
 export default function AgentOrdersTable({ agentId }: { agentId: string }) {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchOrders() {                               
+    async function fetchOrders() {
       setLoading(true);
       try {
         const res = await fetch(`/api/orders?role=agent&id=${agentId}`);
@@ -22,9 +26,9 @@ export default function AgentOrdersTable({ agentId }: { agentId: string }) {
   }, [agentId]);
 
   return (
-    <Card className="shadow-sm border">
+    <Card className="border shadow-sm">
       <CardHeader>
-        <CardTitle className="text-lg md:text-xl font-semibold">Recent Orders</CardTitle>
+        <CardTitle className="text-lg font-semibold md:text-xl">Recent Orders</CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -32,10 +36,10 @@ export default function AgentOrdersTable({ agentId }: { agentId: string }) {
         ) : orders.length === 0 ? (
           <div className="text-muted-foreground">No orders found for this agent.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full border text-xs md:text-sm">
+          <div className="table-scroll rounded-md border">
+            <table className="min-w-[520px] text-xs md:text-sm">
               <thead>
-                <tr className="bg-gray-50">
+                <tr className="bg-muted/40">
                   <th className="border px-3 py-2 text-left font-semibold">Order ID</th>
                   <th className="border px-3 py-2 text-left font-semibold">Amount</th>
                   <th className="border px-3 py-2 text-left font-semibold">Status</th>
@@ -46,9 +50,11 @@ export default function AgentOrdersTable({ agentId }: { agentId: string }) {
                 {orders.slice(0, 10).map((order) => (
                   <tr key={order.id}>
                     <td className="border px-3 py-2 font-mono">{order.id}</td>
-                    <td className="border px-3 py-2">₵{order.total?.toFixed(2) ?? '-'}</td>
+                    <td className="border px-3 py-2">{formatGhanaCedis(order.total ?? 0)}</td>
                     <td className="border px-3 py-2">{order.status}</td>
-                    <td className="border px-3 py-2">{order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '-'}</td>
+                    <td className="border px-3 py-2">
+                      {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "-"}
+                    </td>
                   </tr>
                 ))}
               </tbody>

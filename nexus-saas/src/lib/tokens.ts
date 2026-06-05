@@ -1,20 +1,22 @@
-import { v4 as uuidv4 } from "uuid";
+import crypto from "crypto";
 import { db } from "@/lib/db";
+
+function randomToken() {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+function randomNumericCode() {
+  return crypto.randomInt(100000, 1000000).toString();
+}
 
 export const generatePasswordResetToken = async (email: string) => {
   const normalizedEmail = email.trim().toLowerCase();
-  const token = uuidv4();
+  const token = randomToken();
   const expires = new Date(new Date().getTime() + 3600 * 1000); // 1 hour
 
-  const existingToken = await db.passwordResetToken.findFirst({
-    where: { email: normalizedEmail }
+  await db.passwordResetToken.deleteMany({
+    where: { email: normalizedEmail },
   });
-
-  if (existingToken) {
-    await db.passwordResetToken.delete({
-      where: { id: existingToken.id }
-    });
-  }
 
   const passwordResetToken = await db.passwordResetToken.create({
     data: {
@@ -25,4 +27,42 @@ export const generatePasswordResetToken = async (email: string) => {
   });
 
   return passwordResetToken;
+};
+
+export const generateEmailVerificationToken = async (email: string) => {
+  const normalizedEmail = email.trim().toLowerCase();
+  const token = randomToken();
+  const expires = new Date(Date.now() + 24 * 3600 * 1000);
+
+  await db.verificationToken.deleteMany({
+    where: { identifier: normalizedEmail, type: "EMAIL" },
+  });
+
+  return db.verificationToken.create({
+    data: {
+      identifier: normalizedEmail,
+      token,
+      type: "EMAIL",
+      expires,
+    },
+  });
+};
+
+export const generatePhoneVerificationToken = async (phoneNumber: string) => {
+  const normalizedPhone = phoneNumber.replace(/\D/g, "");
+  const token = randomNumericCode();
+  const expires = new Date(Date.now() + 15 * 60 * 1000);
+
+  await db.verificationToken.deleteMany({
+    where: { identifier: normalizedPhone, type: "PHONE" },
+  });
+
+  return db.verificationToken.create({
+    data: {
+      identifier: normalizedPhone,
+      token,
+      type: "PHONE",
+      expires,
+    },
+  });
 };

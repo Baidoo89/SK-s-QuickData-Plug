@@ -1,5 +1,7 @@
 import { db } from "@/lib/db"
 import { apiSuccess, ApiErrors } from "@/lib/api-response"
+import { isSubscriptionActive } from "@/lib/subscription-access"
+import { getAgentStorefrontPrices, mapStorefrontPrices } from "@/lib/storefront-pricing"
 
 interface Params {
   params: {
@@ -15,7 +17,6 @@ export async function GET(_req: Request, { params }: Params) {
     const organization = await db.organization.findUnique({
       where: { slug: tenantSlug },
       include: {
-        // Subscriptions are ignored for now; include kept for future use.
         subscription: true,
         agents: true,
       },
@@ -30,9 +31,12 @@ export async function GET(_req: Request, { params }: Params) {
       return ApiErrors.NOT_FOUND("Agent")
     }
 
-    // For now, treat the shop as active based solely on organization.active.
     if (!organization.active) {
       return ApiErrors.FORBIDDEN()
+    }
+
+    if (!isSubscriptionActive(organization.subscription)) {
+      return ApiErrors.SUBSCRIPTION_REQUIRED()
     }
 
     const products = await db.product.findMany({
@@ -50,10 +54,13 @@ export async function GET(_req: Request, { params }: Params) {
       orderBy: { createdAt: "desc" },
     })
 
+    const storefrontPriceMap = mapStorefrontPrices(await getAgentStorefrontPrices(agent.id, organization.id))
+
     const payload = products.map((product: any) => {
       const basePrice = product.basePrices?.[0]?.price ?? product.price
       const agentPrice = product.agentPrices?.[0]?.price
-      const effectivePrice = agentPrice ?? basePrice
+      const agentBuyPrice = agentPrice ?? product.price
+      const effectivePrice = storefrontPriceMap.get(product.id) ?? agentBuyPrice
 
       return {
         id: product.id,
@@ -62,8 +69,10 @@ export async function GET(_req: Request, { params }: Params) {
         provider: product.provider,
         bundleType: product.bundleType,
         category: product.category,
+        serviceForm: product.serviceForm,
         stock: product.stock,
         basePrice,
+        agentBuyPrice,
         price: effectivePrice,
       }
     })

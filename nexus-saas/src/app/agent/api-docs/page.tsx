@@ -1,107 +1,131 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { BadgeCheck, Code2, KeyRound, ShoppingCart, Wallet } from "lucide-react"
 
-export default function AgentApiDocsPage() {
+import { auth } from "@/auth"
+import { db } from "@/lib/db"
+import { PortalAccessMessage } from "@/components/access/portal-access-message"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { MetricCard } from "@/components/ui/metric-card"
+import { getOrCreateAgentStorefrontLink } from "@/lib/storefront-links"
+
+export default async function AgentApiDocsPage() {
+  const session = await auth()
+  if (!session?.user?.email) {
+    return <PortalAccessMessage title="Login required" description="Sign in with an approved agent account to view integration details." />
+  }
+
+  const user = await db.user.findUnique({
+    where: { email: session.user.email },
+    select: {
+      id: true,
+      role: true,
+      name: true,
+      email: true,
+      active: true,
+      signupStatus: true,
+      organizationId: true,
+      agentId: true,
+      organization: { select: { slug: true, apiKeys: { select: { id: true } } } },
+    },
+  })
+
+  if (!user || user.role !== "AGENT" || !user.organizationId) {
+    return <PortalAccessMessage title="Agent access required" description="This documentation is only available to approved agent accounts." />
+  }
+
+  const [orderCount, walletCount, resellerCount] = await Promise.all([
+    user.agentId ? db.order.count({ where: { organizationId: user.organizationId, agentId: user.agentId } }) : Promise.resolve(0),
+    db.walletTransaction.count({ where: { userId: user.id, status: "success" } }),
+    user.agentId ? db.user.count({ where: { organizationId: user.organizationId, role: "RESELLER", parentAgentId: user.agentId } }) : Promise.resolve(0),
+  ])
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://your-domain.com"
+  const agentStorePath = user.organization?.slug && user.agentId
+    ? await getOrCreateAgentStorefrontLink({
+        organizationId: user.organizationId,
+        organizationSlug: user.organization.slug,
+        agentId: user.agentId,
+        agentName: user.name || user.email || "Agent Store",
+      })
+    : null
+  const active = user.active && user.signupStatus === "APPROVED"
+
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-6">
+    <div className="portal-page mx-auto w-full max-w-5xl space-y-6">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">API Docs</h1>
-        <p className="text-sm text-muted-foreground max-w-2xl">
-          Agent integration guide for your organization queue. Orders created from your systems are accepted in-app,
-          then processed through your operational flow to Admin.
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">API Docs</h1>
+        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+          Agent integration guide for creating wallet-backed VTU orders, reading wallet state, and managing reseller operations inside your organization.
         </p>
+      </div>
+
+      <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard label="Access" value={active ? "Active" : "Restricted"} description={`Signup status: ${user.signupStatus}`} icon={BadgeCheck} tone={active ? "success" : "warning"} />
+        <MetricCard label="Agent Orders" value={orderCount} description="Orders attributed to your agent profile" icon={ShoppingCart} tone="info" />
+        <MetricCard label="Wallet Records" value={walletCount} description="Successful wallet movements" icon={Wallet} tone="success" />
+        <MetricCard label="Resellers" value={resellerCount} description="Accounts under your agent profile" icon={KeyRound} tone="primary" />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Security model (current backend)</CardTitle>
-          <CardDescription className="text-xs">
-            Endpoints are protected with authenticated sessions and role guards.
-          </CardDescription>
+          <CardTitle>Security Model</CardTitle>
+          <CardDescription>Endpoints are protected with authenticated sessions and role guards.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
-          <ul className="text-xs space-y-1 list-disc pl-4">
-            <li>Only authenticated users can call protected endpoints.</li>
-            <li>Only AGENT and RESELLER roles can create VTU orders.</li>
-            <li>Requests are org-scoped; users cannot place orders for another organization.</li>
-            <li>Wallet balance is validated before order creation and debit happens transactionally.</li>
+          <ul className="list-disc space-y-1 pl-4 text-xs">
+            <li>Only authenticated AGENT and RESELLER users can create VTU orders.</li>
+            <li>Requests are organization-scoped; agents cannot place orders for another tenant.</li>
+            <li>Wallet balance is validated before order creation and debited transactionally.</li>
+            <li>Orders enter the pending manual fulfillment workflow after successful wallet debit.</li>
           </ul>
-          <div className="flex flex-wrap gap-2 text-xs mt-1">
-            <Badge variant="outline">requireAuth()</Badge>
+          <div className="flex flex-wrap gap-2 text-xs">
+            <Badge variant="outline">Session auth</Badge>
             <Badge variant="outline">Role guard</Badge>
             <Badge variant="outline">Org scoped</Badge>
-            <Badge variant="outline">Transactional debit</Badge>
+            <Badge variant="outline">Transactional wallet debit</Badge>
           </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Order flow policy</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <p>
-            Your queue model is:
-            <span className="font-medium text-foreground"> Reseller -&gt; Agent -&gt; Admin</span>.
-          </p>
-          <p className="text-xs">
-            Integrations should submit into your platform queue only. Do not connect directly to external providers from
-            reseller/agent systems in a way that bypasses your internal controls.
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Core endpoints</CardTitle>
+          <CardTitle>Core Endpoints</CardTitle>
+          <CardDescription>These are the stable operational endpoints your agent portal uses today.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
-          <ul className="text-xs space-y-1 list-disc pl-4">
-            <li><span className="font-medium text-foreground">POST /api/vtu/order</span> - Create single or bulk VTU order (quantity controls batch size).</li>
-            <li><span className="font-medium text-foreground">GET /api/agent/orders</span> - List organization orders.</li>
-            <li><span className="font-medium text-foreground">GET /api/agent/wallet</span> - Read wallet balance and top ups.</li>
+          <ul className="list-disc space-y-1 pl-4 text-xs">
+            <li><span className="font-medium text-foreground">POST /api/vtu/order</span> - Create a single wallet-backed VTU order.</li>
+            <li><span className="font-medium text-foreground">GET /api/agent/orders</span> - List orders visible to your agent account.</li>
+            <li><span className="font-medium text-foreground">GET /api/agent/wallet</span> - Read your wallet balance and recent credits.</li>
             <li><span className="font-medium text-foreground">GET /api/resellers</span> - List resellers owned by the current agent.</li>
-            <li><span className="font-medium text-foreground">POST /api/resellers</span> - Create reseller account + invite link + email attempt.</li>
-            <li><span className="font-medium text-foreground">GET /api/resellers/:id</span> - Get reseller profile (agent-owned only).</li>
-            <li><span className="font-medium text-foreground">PUT /api/resellers/:id</span> - Update reseller name or active status.</li>
-            <li><span className="font-medium text-foreground">DELETE /api/resellers/:id</span> - Remove reseller account.</li>
-            <li><span className="font-medium text-foreground">GET /api/reseller-prices?resellerId=:id</span> - Read reseller price overrides.</li>
-            <li><span className="font-medium text-foreground">POST /api/reseller-prices</span> - Upsert reseller price override.</li>
+            <li><span className="font-medium text-foreground">POST /api/resellers</span> - Create reseller account and invite link.</li>
+            <li><span className="font-medium text-foreground">GET /api/shop/{user.organization?.slug ?? "tenant"}/agent/{user.agentId ?? "agentId"}/products</span> - Fetch public products in agent context.</li>
           </ul>
-          <p className="text-[11px] text-muted-foreground">
-            Invite links are always returned in response data. If email delivery fails, copy the link from the portal and send manually.
-          </p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Example: create VTU order</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Code2 className="h-4 w-4 text-primary" />
+            Example VTU Order
+          </CardTitle>
+          <CardDescription>Use this body from a trusted browser session or internal tool.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2 text-xs text-muted-foreground">
+        <CardContent className="space-y-3 text-xs text-muted-foreground">
           <p>Endpoint: <span className="font-mono">POST /api/vtu/order</span></p>
-          <pre className="overflow-x-auto rounded-md bg-muted/60 p-2 text-[11px]">
+          <pre className="table-scroll rounded-md border bg-muted/50 p-3">
 {`{
   "productId": "prod_xxx",
   "phoneNumber": "0244000000",
   "quantity": 1
 }`}
           </pre>
-          <p>For bulk, keep one representative phone number and set a higher quantity to create one batch order.</p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Recommended queue statuses</CardTitle>
-          <CardDescription className="text-xs">Use these in downstream dashboards/reports for clarity.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-1 text-xs text-muted-foreground">
-          <p><span className="font-medium text-foreground">QUEUED</span> - Accepted in platform queue</p>
-          <p><span className="font-medium text-foreground">FORWARDED_TO_AGENT</span> - Routed to agent stage</p>
-          <p><span className="font-medium text-foreground">FORWARDED_TO_ADMIN</span> - Escalated to admin stage</p>
-          <p><span className="font-medium text-foreground">COMPLETED</span> - Fulfilled successfully</p>
-          <p><span className="font-medium text-foreground">FAILED</span> - Processing failed</p>
+          {agentStorePath ? (
+            <pre className="table-scroll rounded-md border bg-muted/50 p-3">
+{`curl "${baseUrl}${agentStorePath}"`}
+            </pre>
+          ) : null}
         </CardContent>
       </Card>
     </div>

@@ -1,26 +1,31 @@
 import { NextResponse } from "next/server"
 import { ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
+import { ensureDefaultSaasPlan, getNextBillingDate, refreshOrganizationSubscriptionStatus } from "@/lib/subscription-access"
+import { getSubscriptionPaystackSecret } from "@/lib/paystack"
+import { getBaseUrl } from "@/lib/mail"
 
-const PLANS: Record<string, { name: string; priceGHS: number; maxProducts: number; maxAgents: number }> = {
-  starter: { name: "Starter", priceGHS: 99, maxProducts: 10, maxAgents: 5 },
-  professional: { name: "Professional", priceGHS: 299, maxProducts: 50, maxAgents: 20 },
-  enterprise: { name: "Enterprise", priceGHS: 799, maxProducts: 999999, maxAgents: 999999 },
-}
+export const dynamic = "force-dynamic"
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
     const reference = searchParams.get("reference")
+    const baseUrl = getBaseUrl()
 
     if (!reference) {
       return ApiErrors.BAD_REQUEST("Missing reference")
     }
 
+    const secret = getSubscriptionPaystackSecret()
+    if (!secret) {
+      return ApiErrors.INTERNAL_ERROR({ reason: "Paystack subscription billing is not configured" })
+    }
+
     // Verify transaction with Paystack
     const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
       headers: {
-        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        Authorization: `Bearer ${secret}`,
       },
     })
 
@@ -31,33 +36,47 @@ export async function GET(req: Request) {
     const data = await response.json()
 
     if (!data.status || data.data.status !== "success") {
-      return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/pricing?error=payment_failed`)
+      return NextResponse.redirect(`${baseUrl}/pricing?error=payment_failed`)
     }
 
     const { organizationId, planId } = data.data.metadata
 
-    if (!organizationId || !planId || !PLANS[planId]) {
+    if (!organizationId) {
       return ApiErrors.BAD_REQUEST("Invalid payment metadata")
     }
 
-    const plan = PLANS[planId]
+    const existingPayment = await db.payment.findUnique({ where: { paystackRef: reference } })
+    if (existingPayment) {
+      return NextResponse.redirect(`${baseUrl}/dashboard/subscription?subscription=active`)
+    }
+
+    const plan = planId
+      ? await db.plan.findUnique({ where: { id: planId } })
+      : await ensureDefaultSaasPlan()
+
+    if (!plan) {
+      return ApiErrors.BAD_REQUEST("Invalid payment metadata")
+    }
+
+    const existingSubscription = await refreshOrganizationSubscriptionStatus(organizationId)
+    const nextBillingAt = getNextBillingDate(existingSubscription?.nextBillingAt)
 
     // Create or update subscription in DB
     const subscription = await db.subscription.upsert({
       where: { organizationId },
       update: {
-        planId,
+        planId: plan.id,
         status: "ACTIVE",
         paystackRef: reference,
-        nextBillingAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        nextBillingAt,
         updatedAt: new Date(),
       },
       create: {
         organizationId,
-        planId,
+        planId: plan.id,
         status: "ACTIVE",
         paystackRef: reference,
-        nextBillingAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        nextBillingAt,
       },
     })
 
@@ -73,7 +92,7 @@ export async function GET(req: Request) {
     })
 
     // Redirect to dashboard on success
-    return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/dashboard?subscription=active`)
+    return NextResponse.redirect(`${baseUrl}/dashboard/subscription?subscription=active`)
   } catch (error) {
     logApiError("[PAYSTACK_VERIFY]", error)
     return ApiErrors.INTERNAL_ERROR()

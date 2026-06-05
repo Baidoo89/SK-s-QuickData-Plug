@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const STATUS_VALUES = ["ALL", "COMPLETED", "PENDING", "FAILED"] as const;
+const STATUS_VALUES = ["ALL", "PENDING", "PROCESSING", "COMPLETED", "PENDING_PAYMENT", "PAYMENT_FAILED", "FAILED"] as const;
 
 type StatusValue = (typeof STATUS_VALUES)[number];
 
@@ -34,11 +34,14 @@ export function OrdersStatusTabs({ currentStatus }: OrdersStatusTabsProps) {
   }
 
   return (
-    <Tabs value={normalized} onValueChange={handleChange} className="w-full">
-      <TabsList className="w-full justify-start overflow-x-auto">
+    <Tabs value={normalized} onValueChange={handleChange} className="min-w-0 max-w-full">
+      <TabsList className="max-w-full justify-start overflow-x-auto overflow-y-hidden">
         <TabsTrigger value="ALL">All</TabsTrigger>
-        <TabsTrigger value="COMPLETED">Delivered</TabsTrigger>
         <TabsTrigger value="PENDING">Pending</TabsTrigger>
+        <TabsTrigger value="PROCESSING">Processing</TabsTrigger>
+        <TabsTrigger value="COMPLETED">Delivered</TabsTrigger>
+        <TabsTrigger value="PENDING_PAYMENT">Awaiting Payment</TabsTrigger>
+        <TabsTrigger value="PAYMENT_FAILED">Payment Failed</TabsTrigger>
         <TabsTrigger value="FAILED">Failed</TabsTrigger>
       </TabsList>
     </Tabs>

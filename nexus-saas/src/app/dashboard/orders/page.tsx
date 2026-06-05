@@ -1,26 +1,24 @@
 import { auth } from "@/auth"
 import { db } from "@/lib/db"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state"
+import { MetricCard } from "@/components/ui/metric-card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { OrdersStatusTabs } from "@/components/dashboard/orders-status-tabs"
-import { OrderStatusSelect } from "@/components/admin/order-status-select"
-import { format } from "date-fns"
+import { DashboardOrdersWorkspace, type DashboardOrderRow } from "@/components/dashboard/orders-workspace"
 import { formatGhanaCedis } from "@/lib/currency"
+import { getDispatchMetaByOrderIds } from "@/lib/admin-order-dispatch"
+import { getOrderSourceLogMap, ORDER_SOURCE_LABELS, resolveOrderSource, type OrderSource } from "@/lib/order-source"
+import { Activity, CheckCircle2, Clock, Download, ListFilter, ShoppingCart } from "lucide-react"
 
 type OrderFilters = {
   status?: string
   from?: string
   to?: string
   q?: string
+  source?: string
 }
 
 async function getOrders(filters: OrderFilters = {}) {
@@ -64,7 +62,7 @@ async function getOrders(filters: OrderFilters = {}) {
       ]
     }
 
-    return db.order.findMany({
+    const orders = await db.order.findMany({
       where,
       include: {
         items: {
@@ -74,11 +72,31 @@ async function getOrders(filters: OrderFilters = {}) {
         },
         customer: true,
         agent: true,
+        user: true,
       },
       orderBy: {
         createdAt: "desc",
       },
     })
+
+    const orderIds = orders.map((order) => order.id)
+    const sourceMap = await getOrderSourceLogMap(orderIds)
+    const dispatchMap = await getDispatchMetaByOrderIds(orderIds)
+    let enriched = orders.map((order) => ({
+      ...order,
+      source: resolveOrderSource(order, sourceMap),
+      dispatch: dispatchMap.get(order.id) || {
+        mode: order.fulfillmentMode === "API" ? "API" as const : "MANUAL" as const,
+        provider: order.fulfillmentMode === "API" ? "API" : "Manual",
+        network: "",
+      },
+    }))
+
+    if (filters.source && filters.source !== "ALL") {
+      enriched = enriched.filter((order) => order.source === filters.source)
+    }
+
+    return enriched
   } catch (error) {
     console.error("Error loading orders", error)
     return []
@@ -94,8 +112,9 @@ export default async function OrdersPage({
   const from = typeof searchParams?.from === "string" ? searchParams.from : undefined
   const to = typeof searchParams?.to === "string" ? searchParams.to : undefined
   const q = typeof searchParams?.q === "string" ? searchParams.q : undefined
+  const source = typeof searchParams?.source === "string" ? searchParams.source : undefined
 
-  const filters: OrderFilters = { status, from, to, q }
+  const filters: OrderFilters = { status, from, to, q, source }
 
   const ordersRaw = await getOrders(filters)
   const orders = Array.isArray(ordersRaw) ? ordersRaw : []
@@ -105,55 +124,169 @@ export default async function OrdersPage({
   if (from) query.set("from", from)
   if (to) query.set("to", to)
   if (q) query.set("q", q)
+  if (source) query.set("source", source)
   query.set("format", "csv")
   const downloadUrl = `/api/orders?${query.toString()}`
+  const hasFilters = Boolean(status || from || to || q || source)
+  const apiOrders = orders.filter((order) => order.source === "API")
+  const sourceCounts = orders.reduce<Record<OrderSource, number>>(
+    (acc, order) => {
+      acc[order.source] += 1
+      return acc
+    },
+    { API: 0, STOREFRONT: 0, AGENT: 0, RESELLER: 0, DASHBOARD: 0 },
+  )
+  const apiRevenue = apiOrders.reduce((sum, order) => sum + order.total, 0)
+  const apiPending = apiOrders.filter((order) => ["PENDING", "PROCESSING"].includes(order.status)).length
+  const filteredRevenue = orders.reduce((sum, order) => sum + order.total, 0)
+  const filteredProfit = orders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.profit, 0), 0)
+  const pendingWork = orders.filter((order) => ["PENDING", "PROCESSING"].includes(order.status)).length
+  const completedVisible = orders.filter((order) => order.status === "COMPLETED").length
+  const workspaceRows: DashboardOrderRow[] = orders.map((order) => {
+    const bundle = order.items
+      .map((item) => item.product.name.match(/\b\d+(?:\.\d+)?\s?(?:GB|MB|KB|TB)\b/i)?.[0].replace(/\s+/g, "").toUpperCase() ?? item.product.name)
+      .join(", ")
+    const profit = order.items.reduce((sum, item) => sum + item.profit, 0)
+    const fulfillmentMode = order.dispatch.mode || order.fulfillmentMode || "MANUAL"
+
+    return {
+      id: order.id,
+      createdAt: order.createdAt.toISOString(),
+      buyerName: order.customer?.name || "Guest Customer",
+      phoneNumber: order.phoneNumber || "",
+      bundle,
+      network: order.dispatch.network || "",
+      sourceLabel: ORDER_SOURCE_LABELS[order.source],
+      sellerRole: order.sellerRole || "SUBSCRIBER",
+      sellerName: order.agent?.name || order.user?.name || "Direct",
+      provider: order.dispatch.provider || (fulfillmentMode === "API" ? "API" : "Manual"),
+      paymentOwner: order.paymentOwner,
+      paymentStatus: order.paymentStatus,
+      fulfillmentMode,
+      status: order.status,
+      total: order.total,
+      profit,
+      actionable: order.paymentStatus === "PAID"
+        && fulfillmentMode === "MANUAL"
+        && ["PENDING", "PROCESSING"].includes(order.status),
+    }
+  })
 
   return (
-    <div className="flex-1 space-y-6 overflow-x-hidden px-4 py-6 md:p-8 md:pt-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-        <div>
+    <div className="portal-page flex-1 space-y-6">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-1">Orders</h2>
           <p className="text-muted-foreground max-w-xl">
             Track and manage all customer orders. View order status, buyer, and revenue at a glance.
           </p>
         </div>
-        <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-3">
+        <div className="grid w-full min-w-0 gap-2 sm:grid-cols-2 lg:w-auto">
           <a href={downloadUrl}>
-            <Button variant="outline" className="w-full justify-center md:w-auto">
+            <Button variant="outline" className="w-full justify-center whitespace-nowrap lg:w-auto">
+              <Download className="mr-2 h-4 w-4" />
               Download CSV
             </Button>
           </a>
           <a href="/api/dashboard/orders/manual/export">
-            <Button variant="outline" className="w-full justify-center md:w-auto">
-              Export Manual CSV
-            </Button>
-          </a>
-          <a href="/dashboard/orders/manual">
-            <Button variant="outline" className="w-full justify-center md:w-auto">
-              Open Manual Queue
+            <Button variant="outline" className="w-full justify-center whitespace-nowrap lg:w-auto">
+              <Download className="mr-2 h-4 w-4" />
+              Export Work CSV
             </Button>
           </a>
         </div>
       </div>
-      <Card className="hover:shadow-lg transition-shadow">
-        <CardHeader>
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-              <div>
-                <CardTitle>Recent Orders</CardTitle>
+      <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
+        <MetricCard
+          label="Visible Orders"
+          value={orders.length}
+          description={hasFilters ? "Matching the active filters" : "All tenant orders"}
+          icon={ListFilter}
+          tone="primary"
+        />
+        <MetricCard
+          label="Visible Revenue"
+          value={formatGhanaCedis(filteredRevenue)}
+          description="Gross value in the current view"
+          icon={ShoppingCart}
+          tone="success"
+        />
+        <MetricCard
+          label="Visible Profit"
+          value={formatGhanaCedis(filteredProfit)}
+          description="Withdrawable/customer-sale profit only"
+          icon={Activity}
+          tone={filteredProfit > 0 ? "primary" : "info"}
+        />
+        <MetricCard
+          label="Pending Work"
+          value={pendingWork}
+          description="Pending and processing orders"
+          icon={Clock}
+          tone={pendingWork > 0 ? "warning" : "success"}
+        />
+        <MetricCard
+          label="Completed"
+          value={completedVisible}
+          description="Delivered orders in this view"
+          icon={CheckCircle2}
+          tone="info"
+        />
+      </div>
+
+      <Card className="min-w-0 max-w-full overflow-hidden border border-border bg-card/95 shadow-sm">
+        <CardContent className="grid min-w-0 gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div>
+            <p className="text-sm font-semibold text-foreground">Channel mix</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              API {sourceCounts.API} / Storefront {sourceCounts.STOREFRONT} / Agent {sourceCounts.AGENT} / Reseller {sourceCounts.RESELLER} / Dashboard {sourceCounts.DASHBOARD}
+            </p>
+          </div>
+          <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap lg:justify-end">
+            <Badge variant="outline" className="min-w-0 justify-center px-3 py-1">
+              <Activity className="mr-1.5 h-3.5 w-3.5" />
+              API: {apiOrders.length} ({formatGhanaCedis(apiRevenue)})
+            </Badge>
+            <Badge variant={apiPending > 0 ? "secondary" : "outline"} className="justify-center px-3 py-1">
+              API pending: {apiPending}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="min-w-0 max-w-full overflow-hidden border border-border bg-card/95 shadow-sm">
+        <CardHeader className="min-w-0 max-w-full overflow-hidden">
+          <div className="flex min-w-0 flex-col gap-4">
+            <div className="flex min-w-0 flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div className="min-w-0">
+                <CardTitle>Orders Workspace</CardTitle>
                 <p className="text-muted-foreground text-sm">
-                  Filter orders by status, date range, or search term. Use the download button to export the current view.
+                  Filter, inspect, pick, copy, claim, deliver, or fail eligible orders from one place.
                 </p>
               </div>
-              <form className="flex flex-wrap gap-3 items-end justify-start md:justify-end" method="GET">
+              <form className="grid w-full min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[auto_auto_auto_minmax(14rem,1fr)_auto_auto] 2xl:items-end" method="GET">
               {status ? <input type="hidden" name="status" value={status} /> : null}
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground mb-1">From</span>
-                <Input type="date" name="from" defaultValue={from} className="h-9" />
+                <Input type="date" name="from" defaultValue={from} className="h-9 w-full" />
               </div>
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground mb-1">To</span>
-                <Input type="date" name="to" defaultValue={to} className="h-9" />
+                <Input type="date" name="to" defaultValue={to} className="h-9 w-full" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground mb-1">Source</span>
+                <select
+                  name="source"
+                  defaultValue={source || "ALL"}
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs"
+                >
+                  <option value="ALL">All sources</option>
+                  <option value="API">API</option>
+                  <option value="STOREFRONT">Storefront</option>
+                  <option value="AGENT">Agent</option>
+                  <option value="RESELLER">Reseller</option>
+                  <option value="DASHBOARD">Dashboard</option>
+                </select>
               </div>
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground mb-1">Search</span>
@@ -162,13 +295,13 @@ export default async function OrdersPage({
                   name="q"
                   placeholder="Name, email, phone"
                   defaultValue={q}
-                  className="h-9 w-44 md:w-52"
+                  className="h-9 w-full"
                 />
               </div>
-              <Button type="submit" className="h-9 w-full md:w-auto">
+              <Button type="submit" className="h-9 w-full">
                 Apply
               </Button>
-              <Button asChild type="button" variant="outline" className="h-9 w-full md:w-auto">
+              <Button asChild type="button" variant="outline" className="h-9 w-full">
                 <a href="/dashboard/orders">Reset</a>
               </Button>
               </form>
@@ -176,66 +309,21 @@ export default async function OrdersPage({
             <OrdersStatusTabs currentStatus={status} />
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="max-w-full overflow-hidden p-3 sm:p-6">
           {orders.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">No orders found.</p>
+            <EmptyState
+              icon={ShoppingCart}
+              title={hasFilters ? "No orders match these filters" : "No orders yet"}
+              description={
+                hasFilters
+                  ? "Adjust the status, date range, or search term to widen the order list."
+                  : "Orders will appear here after customers buy from your storefront, agents sell, or internal VTU orders are placed."
+              }
+              action={hasFilters ? { label: "Reset Filters", href: "/dashboard/orders" } : { label: "Open Storefront Setup", href: "/dashboard/setup" }}
+              secondaryAction={hasFilters ? undefined : { label: "Manage Products", href: "/dashboard/products" }}
+            />
           ) : (
-            <div className="space-y-2">
-              <div className="px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                Orders table
-              </div>
-              <div className="w-full max-w-full overflow-x-auto rounded-md border bg-background">
-                <Table className="min-w-[720px] text-sm">
-                  <TableHeader className="bg-muted/40">
-              <TableRow>
-                <TableHead>Order ID</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Buyer</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Items</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-              </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {orders.map((order) => {
-                      const buyerName = order.customer?.name || "Guest Customer"
-                      const agentTag = order.agent ? ` (Agent: ${order.agent.name})` : ""
-                      return (
-                        <TableRow key={order.id} className="hover:bg-muted/20">
-                          <TableCell className="font-medium">{order.id.slice(-8)}</TableCell>
-                          <TableCell>{format(order.createdAt, "MMM d, yyyy")}</TableCell>
-                          <TableCell>
-                            {buyerName}
-                            {agentTag && (
-                              <span className="text-xs text-muted-foreground">{agentTag}</span>
-                            )}
-                          </TableCell>
-                          <TableCell>{order.phoneNumber || "N/A"}</TableCell>
-                          <TableCell>
-                            <OrderStatusSelect
-                              orderId={order.id}
-                              initialStatus={order.status}
-                              endpointBase="/api/dashboard/orders"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            {order.items.map((item) => (
-                              <div key={item.id} className="text-sm text-muted-foreground">
-                                {item.product.name.match(/\b\d+(?:\.\d+)?\s?(?:GB|MB|KB|TB)\b/i)?.[0].replace(/\s+/g, "").toUpperCase() ?? item.product.name}
-                              </div>
-                            ))}
-                          </TableCell>
-                          <TableCell className="text-right font-bold">
-                            {formatGhanaCedis(order.total)}
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
+            <DashboardOrdersWorkspace rows={workspaceRows} />
           )}
         </CardContent>
       </Card>

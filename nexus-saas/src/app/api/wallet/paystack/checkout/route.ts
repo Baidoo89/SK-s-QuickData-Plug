@@ -2,6 +2,7 @@ import { requireAuth, isAuthError } from "@/lib/auth-guard";
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response";
 import { db } from "@/lib/db";
 import { getBaseUrl } from "@/lib/mail";
+import { getOrganizationPaymentSettings } from "@/lib/organization-payment-settings";
 
 interface CheckoutBody {
   amount?: number;
@@ -15,10 +16,9 @@ export async function POST(req: Request) {
       return authResult;
     }
 
-    const secret = process.env.PAYSTACK_SECRET_KEY;
     const baseUrl = getBaseUrl();
-    if (!secret || !baseUrl) {
-      return ApiErrors.INTERNAL_ERROR({ reason: "Paystack not configured" });
+    if (!baseUrl) {
+      return ApiErrors.INTERNAL_ERROR({ reason: "App URL not configured" });
     }
 
     const body = (await req.json().catch(() => null)) as CheckoutBody | null;
@@ -35,6 +35,14 @@ export async function POST(req: Request) {
     if (!user || !user.email) {
       return ApiErrors.NOT_FOUND("User");
     }
+    if (!user.organizationId) {
+      return ApiErrors.INVALID_ORGANIZATION();
+    }
+
+    const paymentSettings = await getOrganizationPaymentSettings(user.organizationId);
+    if (!paymentSettings.paystackConnected || !paymentSettings.paystackSecretKey) {
+      return ApiErrors.BAD_REQUEST("Subscriber Paystack is not connected. Ask the organization owner to connect Paystack in dashboard settings.");
+    }
 
     // Convert GHS to pesewas (1 GHS = 100 pesewas)
     const amountInPesewas = Math.round(rawAmount * 100);
@@ -48,7 +56,7 @@ export async function POST(req: Request) {
     const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${secret}`,
+        Authorization: `Bearer ${paymentSettings.paystackSecretKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -56,13 +64,15 @@ export async function POST(req: Request) {
         amount: amountInPesewas,
         metadata: {
           purpose: "wallet_topup",
+          paymentOwner: "subscriber",
+          organizationId: user.organizationId,
           walletUserId: user.id,
           walletUserEmail: user.email,
           walletUserRole: user.role,
           walletTopupAmountGHS: rawAmount,
           returnPath: safeReturnPath,
         },
-        callback_url: `${baseUrl}/api/wallet/paystack/verify`,
+        callback_url: `${baseUrl}/api/wallet/paystack/verify?organizationId=${encodeURIComponent(user.organizationId)}`,
       }),
     });
 

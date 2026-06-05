@@ -110,13 +110,13 @@ export function ApiKeys({ apiKeys }: ApiKeysProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
+    <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
+      <CardHeader className="border-b bg-muted/30 pb-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle>API Keys</CardTitle>
-            <CardDescription>
-              Manage your API keys for external access.
+            <CardTitle className="text-sm font-semibold">API Keys</CardTitle>
+            <CardDescription className="text-xs">
+              Manage credentials for external sites that submit paid orders into your fulfillment flow.
             </CardDescription>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
@@ -150,8 +150,37 @@ export function ApiKeys({ apiKeys }: ApiKeysProps) {
           </Dialog>
         </div>
       </CardHeader>
-      <CardContent>
-        <Table>
+      <CardContent className="p-4">
+        <div className="grid gap-3 md:hidden">
+          {apiKeys.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">No API keys found.</p>
+          ) : (
+            apiKeys.map((apiKey) => (
+              <div key={apiKey.id} className="rounded-md border bg-background p-3 text-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold">{apiKey.name}</p>
+                    <p className="font-mono text-xs text-muted-foreground">
+                      {apiKey.key.slice(0, 8)}...{apiKey.key.slice(-4)}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">{new Date(apiKey.createdAt).toLocaleDateString()}</p>
+                  </div>
+                  <div className="flex shrink-0 gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => onCopy(apiKey.key)}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => onDelete(apiKey.id)} disabled={isLoading}>
+                      <Trash className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="table-scroll hidden rounded-md border bg-background md:block">
+        <Table className="min-w-[620px]">
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
@@ -200,6 +229,7 @@ export function ApiKeys({ apiKeys }: ApiKeysProps) {
             )}
           </TableBody>
         </Table>
+        </div>
       </CardContent>
     </Card>
   )

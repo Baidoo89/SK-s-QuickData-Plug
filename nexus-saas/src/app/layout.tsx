@@ -6,8 +6,8 @@ import { Toaster } from "@/components/ui/toaster";
 const plusJakartaSans = Plus_Jakarta_Sans({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Nexus SaaS",
-  description: "Modern B2B2C SaaS Platform",
+  title: "TechDalt",
+  description: "Operator-led SaaS for storefront, agent, reseller, and VTU operations.",
 };
 
 export default function RootLayout({

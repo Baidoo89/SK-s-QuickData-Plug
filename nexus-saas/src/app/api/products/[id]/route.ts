@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { requireAuthAndOrg, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors } from "@/lib/api-response"
+import { upsertSubscriberStorefrontPrice } from "@/lib/storefront-pricing"
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   try {
@@ -10,7 +11,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     const organizationId = authResult.user.organizationId!
 
     const body = await req.json()
-    const { name, description, price, basePrice, stock, imageUrl, provider, bundleType, category, active } = body
+    const { name, description, price, basePrice, storefrontPrice, stock, imageUrl, provider, bundleType, category, serviceForm, active } = body
 
     const existing = await db.product.findFirst({
       where: { id: params.id, organizationId },
@@ -22,6 +23,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
     const numericPrice = price !== undefined ? parseFloat(price) : existing.price
     const numericBasePrice = basePrice !== undefined ? parseFloat(basePrice) : existing.price
+    const numericStorefrontPrice = storefrontPrice !== undefined ? parseFloat(storefrontPrice) : numericPrice
 
     const updated = await db.$transaction(async (tx) => {
       const product = await tx.product.update({
@@ -35,6 +37,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
           provider: provider ?? existing.provider,
           bundleType: bundleType ?? existing.bundleType,
           category: category ?? existing.category,
+          serviceForm: serviceForm !== undefined ? serviceForm || null : existing.serviceForm,
         },
       })
 
@@ -52,6 +55,12 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       })
 
       return product
+    })
+
+    await upsertSubscriberStorefrontPrice({
+      productId: updated.id,
+      organizationId,
+      price: numericStorefrontPrice,
     })
 
     return NextResponse.json(updated)
@@ -76,6 +85,9 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
     }
 
     await db.$transaction(async (tx) => {
+      await tx.$executeRaw`DELETE FROM "SubscriberStorefrontPrice" WHERE "productId" = ${existing.id} AND "organizationId" = ${organizationId}`
+      await tx.$executeRaw`DELETE FROM "AgentStorefrontPrice" WHERE "productId" = ${existing.id} AND "organizationId" = ${organizationId}`
+      await tx.$executeRaw`DELETE FROM "ResellerStorefrontPrice" WHERE "productId" = ${existing.id} AND "organizationId" = ${organizationId}`
       await tx.agentPrice.deleteMany({ where: { productId: existing.id, organizationId } })
       await tx.basePrice.deleteMany({ where: { productId: existing.id, organizationId } })
       await tx.customPrice.deleteMany({ where: { productId: existing.id, organizationId } })

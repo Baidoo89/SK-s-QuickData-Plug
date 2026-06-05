@@ -5,10 +5,14 @@ import { useEffect, useState, ChangeEvent, FormEvent } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { MetricCard } from "@/components/ui/metric-card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useToast } from "@/components/ui/use-toast"
 import { formatGhanaCedis } from "@/lib/currency"
+import { Activity, Clock3, WalletCards } from "lucide-react"
 
 interface OrdersSummary {
   totalOrders: number
@@ -141,50 +145,48 @@ export default function AgentWalletPage() {
 
   const estimatedCommission = summary ? summary.totalNumbers * 1 : 0
 
+  function statusBadgeClass(status: string) {
+    if (status === "success") return "status-success border"
+    if (status === "pending") return "status-warning border"
+    if (status === "failed") return ""
+    return "status-info border"
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="portal-page space-y-6">
       <div className="space-y-1 max-w-2xl mx-auto text-center">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Wallet & activity</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Wallet & Activity</h1>
         <p className="text-sm text-muted-foreground">
           Track your VTU balance, commissions, and wallet activity.
         </p>
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Estimated commissions</CardTitle>
-          </CardHeader>
-          <CardContent>
-              <p className="text-2xl font-semibold">{formatGhanaCedis(estimatedCommission)}</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Mock value based on total successful numbers.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Total orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold">{summary?.totalOrders ?? 0}</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Across all single and bulk requests.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Processing vs completed</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm">
-              <span className="font-semibold">{summary?.processing ?? 0}</span> processing ·{" "}
-              <span className="font-semibold">{summary?.completed ?? 0}</span> completed
-            </p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Processing clears automatically after a short period in this demo.</p>
-          </CardContent>
-        </Card>
+      <div className="grid min-w-0 gap-4 md:grid-cols-3">
+        <MetricCard
+          label="Wallet Balance"
+          value={formatGhanaCedis(balance)}
+          description="Available balance for VTU orders and reseller credits."
+          icon={WalletCards}
+          tone="success"
+        />
+        <MetricCard
+          label="Estimated Commissions"
+          value={formatGhanaCedis(estimatedCommission)}
+          description="Estimated from successful fulfilled numbers."
+          icon={Activity}
+          tone="primary"
+        />
+        <MetricCard
+          label="Processing"
+          value={`${summary?.processing ?? 0}/${summary?.completed ?? 0}`}
+          description="Processing vs completed orders."
+          icon={Clock3}
+          tone={(summary?.processing ?? 0) > 0 ? "warning" : "info"}
+        />
       </div>
-      <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
-        <Card>
+      <div className="grid min-w-0 gap-4 md:grid-cols-1 lg:grid-cols-2">
+        <Card id="top-up">
           <CardHeader>
-            <CardTitle className="text-sm font-semibold">Manual wallet credit</CardTitle>
+            <CardTitle className="text-sm font-semibold">Wallet Top Up</CardTitle>
             <CardDescription className="text-xs">
               Credit your own wallet or a linked reseller wallet by email.
             </CardDescription>
@@ -330,7 +332,7 @@ export default function AgentWalletPage() {
                   </div>
                 )}
                 {searchingBeneficiaries && beneficiaryEmail.trim().length >= 2 && beneficiarySuggestions.length === 0 && (
-                  <p className="mt-1 text-[11px] text-muted-foreground">Searching your account and resellers…</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">Searching your account and resellers...</p>
                 )}
                 {!searchingBeneficiaries && beneficiaryEmail.trim().length >= 2 && beneficiarySuggestions.length === 0 && !selectedBeneficiary && (
                   <p className="mt-1 text-[11px] text-muted-foreground">No matching users found.</p>
@@ -381,27 +383,27 @@ export default function AgentWalletPage() {
           </CardContent>
         </Card>
       </div>
-      <Card>
+      <Card id="transactions">
         <CardHeader>
-          <CardTitle className="text-sm font-semibold">Wallet overview</CardTitle>
+          <CardTitle className="text-sm font-semibold">Transactions & activity</CardTitle>
           <CardDescription className="text-xs">
-            This is a preview wallet calculated from your mock agent orders and credits.
+              This appears directly under top up so the flow stays simple and readable.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground mb-2">
-            Once the live backend is connected, this section will show your real VTU balance, commissions per product, and payout history.
+          <p className="mb-2 text-sm text-muted-foreground">
+            This section shows confirmed wallet activity, manual credits, Paystack top-ups, and transfers linked to your agent account.
           </p>
           <p className="text-xs">
-            Current mock wallet balance: <span className="font-semibold">{formatGhanaCedis(balance)}</span>
+            Current wallet balance: <span className="font-semibold">{formatGhanaCedis(balance)}</span>
           </p>
           {topups.length > 0 && (
             <div className="mt-3 space-y-2 text-[11px] text-muted-foreground">
-              <p className="font-semibold text-foreground">Recent top ups</p>
+              <p className="font-semibold text-foreground">Recent Top-Ups</p>
               {topups.slice(0, 5).map((t) => (
                 <div key={t.id} className="flex flex-col gap-0.5 rounded-md border bg-background px-2 py-1 sm:flex-row sm:items-center sm:justify-between">
                   <span className="truncate">
-                    {t.method === "paystack" ? "Paystack" : "Manual"} · {t.beneficiaryEmail}
+                    {t.method === "paystack" ? "Paystack" : "Manual"} | {t.beneficiaryEmail}
                   </span>
                   <span className="font-medium text-foreground">{formatGhanaCedis(t.amount)}</span>
                 </div>
@@ -411,19 +413,19 @@ export default function AgentWalletPage() {
 
           <div className="mt-4 space-y-2">
             <p className="text-xs font-semibold text-foreground">Wallet logs & activities</p>
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
               <Input
                 type="text"
                 value={activityFilter}
                 onChange={(e) => setActivityFilter(e.target.value)}
                 placeholder="Search user/email/method/status"
-                className="h-8 max-w-md text-xs"
+                className="h-8 w-full text-xs lg:max-w-md"
               />
-              <div className="flex items-center gap-2">
+              <div className="grid gap-2 sm:grid-cols-2">
                 <select
                   value={activityMethod}
                   onChange={(e) => setActivityMethod(e.target.value)}
-                  className="h-8 rounded-md border bg-background px-2 text-xs"
+                  className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
                 >
                   <option value="">All methods</option>
                   <option value="manual">Manual</option>
@@ -432,7 +434,7 @@ export default function AgentWalletPage() {
                 <select
                   value={activityStatus}
                   onChange={(e) => setActivityStatus(e.target.value)}
-                  className="h-8 rounded-md border bg-background px-2 text-xs"
+                  className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
                 >
                   <option value="">All status</option>
                   <option value="success">Success</option>
@@ -442,9 +444,15 @@ export default function AgentWalletPage() {
               </div>
             </div>
             {activities.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No wallet activity yet.</p>
+              <EmptyState
+                icon={WalletCards}
+                title="No wallet activity yet"
+                description="Top-ups, reseller credits, and VTU debits will appear here after your first wallet movement."
+                secondaryAction={{ label: "Manage Resellers", href: "/agent/resellers" }}
+                className="py-6"
+              />
             ) : (
-              <div className="w-full max-w-full overflow-x-auto rounded-md border bg-background">
+              <div className="table-scroll rounded-md border bg-background">
                 <Table className="min-w-[920px] text-xs">
                   <TableHeader className="bg-muted/40">
                     <TableRow>
@@ -453,7 +461,7 @@ export default function AgentWalletPage() {
                       <TableHead className="whitespace-nowrap">Method</TableHead>
                       <TableHead className="whitespace-nowrap">Status</TableHead>
                       <TableHead className="whitespace-nowrap">Performed By</TableHead>
-                      <TableHead className="whitespace-nowrap text-right">Amount (GH₵)</TableHead>
+                      <TableHead className="whitespace-nowrap text-right">Amount (GHS)</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -473,14 +481,21 @@ export default function AgentWalletPage() {
                         </TableCell>
                         <TableCell className="whitespace-nowrap">{new Date(activity.createdAt).toLocaleString()}</TableCell>
                         <TableCell className="uppercase">{activity.method}</TableCell>
-                        <TableCell className="uppercase">{activity.status}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={activity.status === "success" ? "secondary" : activity.status === "failed" ? "destructive" : "outline"}
+                            className={statusBadgeClass(activity.status)}
+                          >
+                            {activity.status}
+                          </Badge>
+                        </TableCell>
                         <TableCell>
                           {activity.performedByEmail || "System"}
                           {activity.performedByRole ? (
                             <span className="ml-1 text-[11px] text-muted-foreground">({activity.performedByRole})</span>
                           ) : null}
                         </TableCell>
-                        <TableCell className={`whitespace-nowrap text-right font-semibold ${activity.amount < 0 ? "text-red-600" : "text-emerald-700"}`}>
+                        <TableCell className={`whitespace-nowrap text-right font-semibold ${activity.amount < 0 ? "text-destructive" : "text-primary"}`}>
                           {formatGhanaCedis(activity.amount)}
                         </TableCell>
                       </TableRow>
@@ -492,6 +507,8 @@ export default function AgentWalletPage() {
           </div>
         </CardContent>
       </Card>
+
     </div>
   )
 }
+

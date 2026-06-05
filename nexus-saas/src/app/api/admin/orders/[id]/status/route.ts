@@ -1,18 +1,20 @@
-import { requireOrgManager, isAuthError } from "@/lib/auth-guard"
+import { requireAdmin, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
+import { notifyApiOrderStatus } from "@/lib/api-order-tracking"
 import { reverseOrderProfitIfNeeded, reverseOrderWalletDebitIfNeeded } from "@/lib/order-wallet"
 
-const ALLOWED_STATUSES = ["COMPLETED", "PENDING", "FAILED", "CANCELLED", "REFUNDED"] as const
+const ALLOWED_STATUSES = ["COMPLETED", "PROCESSING", "PENDING", "FAILED", "CANCELLED", "REFUNDED"] as const
 type AllowedStatus = (typeof ALLOWED_STATUSES)[number]
 const REVERSE_STATUSES = new Set(["FAILED", "CANCELLED", "REFUNDED"])
+const PAYMENT_LOCKED_STATUSES = new Set(["PENDING_PAYMENT", "PAYMENT_FAILED", "PAYMENT_INIT_FAILED"])
 
 export async function PATCH(
   req: Request,
   { params }: { params: { id: string } },
 ) {
   try {
-    const authResult = await requireOrgManager()
+    const authResult = await requireAdmin()
     if (isAuthError(authResult)) {
       return authResult
     }
@@ -37,6 +39,10 @@ export async function PATCH(
 
     if (!existing) {
       return ApiErrors.NOT_FOUND("Order")
+    }
+
+    if (PAYMENT_LOCKED_STATUSES.has(existing.status)) {
+      return ApiErrors.BAD_REQUEST("This order has not completed payment and cannot be manually fulfilled.")
     }
 
     const updated = await db.order.update({
@@ -71,6 +77,10 @@ export async function PATCH(
         meta: JSON.stringify({ status }),
       },
     })
+
+    if (existing.status !== updated.status) {
+      await notifyApiOrderStatus(updated.id, updated.status)
+    }
 
     return apiSuccess({ id: updated.id, status: updated.status })
   } catch (error) {

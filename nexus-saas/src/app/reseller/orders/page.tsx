@@ -4,8 +4,14 @@ import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { OrderTimelineDialog } from "@/components/orders/order-timeline-dialog";
+import { getStorefrontPaymentMap } from "@/lib/storefront-payment-map";
+import { PortalAccessMessage } from "@/components/access/portal-access-message";
+import { formatGhanaCedis } from "@/lib/currency";
+import { ShoppingCart } from "lucide-react";
 
 type OrderFilters = {
   status?: string;
@@ -13,6 +19,13 @@ type OrderFilters = {
   to?: string;
   q?: string;
 };
+
+function orderStatusBadgeClass(status: string) {
+  if (status === "COMPLETED") return "status-success border";
+  if (status === "PENDING" || status === "PROCESSING") return "status-warning border";
+  if (status === "FAILED" || status === "PAYMENT_FAILED") return "";
+  return "status-info border";
+}
 
 export default async function ResellerOrdersPage({
   searchParams,
@@ -25,6 +38,7 @@ export default async function ResellerOrdersPage({
   const q = typeof searchParams?.q === "string" ? searchParams.q : undefined;
 
   const filters: OrderFilters = { status, from, to, q };
+  const hasFilters = Boolean(status || from || to || q);
 
   const downloadQuery = new URLSearchParams();
   if (status) downloadQuery.set("status", status);
@@ -36,7 +50,7 @@ export default async function ResellerOrdersPage({
 
   const session = await auth();
   if (!session?.user?.email) {
-    return null;
+    return <PortalAccessMessage title="Login required" description="Sign in with an approved reseller account to view orders." />;
   }
 
   const user = await db.user.findUnique({
@@ -45,7 +59,7 @@ export default async function ResellerOrdersPage({
   });
 
   if (!user || user.role !== "RESELLER" || !user.organizationId) {
-    return null;
+    return <PortalAccessMessage title="Reseller profile unavailable" description="This account is not linked to an approved reseller profile. Ask your agent or subscriber admin to review the account." />;
   }
 
   function formatBundleSize(name: string) {
@@ -95,10 +109,14 @@ export default async function ResellerOrdersPage({
     },
     orderBy: { createdAt: "desc" },
   });
+  const paymentMap = await getStorefrontPaymentMap(orders.map((order) => order.id), user.organizationId);
+  const ordersWithPayment = orders.map((order) => ({
+    ...order,
+    payment: paymentMap.get(order.id) || { owner: "WALLET" as const, status: "PAID", reference: "Wallet/Internal", amount: order.total, paidAt: null },
+  }));
 
   return (
-    <div className="flex flex-1 flex-col items-center">
-      <div className="w-full max-w-4xl space-y-4">
+    <div className="portal-page space-y-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Orders</h1>
@@ -116,37 +134,39 @@ export default async function ResellerOrdersPage({
           <CardHeader>
             <div className="flex flex-col gap-4">
               <CardTitle>Recent orders</CardTitle>
-              <form className="flex flex-wrap gap-2 md:gap-3 items-end" method="GET">
-                <div className="flex w-full flex-col sm:w-auto">
+              <form className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-[auto_auto_auto_minmax(12rem,1fr)_auto_auto] lg:items-end" method="GET">
+                <div className="flex flex-col">
                   <span className="text-xs text-muted-foreground mb-1">Status</span>
                   <select
                     name="status"
                     defaultValue={status || "ALL"}
-                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs sm:w-[140px]"
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs"
                   >
                     <option value="ALL">All</option>
                     <option value="COMPLETED">Completed</option>
                     <option value="PENDING">Pending</option>
                     <option value="PROCESSING">Processing</option>
+                    <option value="PENDING_PAYMENT">Awaiting Payment</option>
+                    <option value="PAYMENT_FAILED">Payment Failed</option>
                     <option value="FAILED">Failed</option>
                   </select>
                 </div>
-                <div className="flex w-full flex-col sm:w-auto">
+                <div className="flex flex-col">
                   <span className="text-xs text-muted-foreground mb-1">From</span>
-                  <Input type="date" name="from" defaultValue={from} className="h-9 w-full text-xs sm:w-[150px]" />
+                  <Input type="date" name="from" defaultValue={from} className="h-9 w-full text-xs" />
                 </div>
-                <div className="flex w-full flex-col sm:w-auto">
+                <div className="flex flex-col">
                   <span className="text-xs text-muted-foreground mb-1">To</span>
-                  <Input type="date" name="to" defaultValue={to} className="h-9 w-full text-xs sm:w-[150px]" />
+                  <Input type="date" name="to" defaultValue={to} className="h-9 w-full text-xs" />
                 </div>
-                <div className="flex w-full flex-col sm:w-auto">
+                <div className="flex flex-col">
                   <span className="text-xs text-muted-foreground mb-1">Search</span>
                   <Input
                     type="text"
                     name="q"
                     placeholder="Name, email, phone"
                     defaultValue={q}
-                    className="h-9 w-full text-xs sm:w-44 md:w-56"
+                    className="h-9 w-full text-xs"
                   />
                 </div>
                 <Button type="submit" className="h-9 w-full text-xs sm:w-auto">Apply</Button>
@@ -157,16 +177,24 @@ export default async function ResellerOrdersPage({
             </div>
           </CardHeader>
           <CardContent>
-            {orders.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                No orders yet. When you start placing VTU orders, they will appear here.
-              </p>
+            {ordersWithPayment.length === 0 ? (
+              <EmptyState
+                icon={ShoppingCart}
+                title={hasFilters ? "No orders match these filters" : "No reseller orders yet"}
+                description={
+                  hasFilters
+                    ? "Adjust the status, date range, or search term to see more reseller orders."
+                    : "Place a VTU order from your reseller workspace. Wallet and storefront orders will appear here after checkout."
+                }
+                action={hasFilters ? { label: "Reset Filters", href: "/reseller/orders" } : { label: "Buy Data", href: "/reseller/buy/single" }}
+                secondaryAction={hasFilters ? undefined : { label: "Open Wallet", href: "/reseller/wallet" }}
+              />
             ) : (
               <div className="space-y-2">
                 <div className="px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                   Orders table
                 </div>
-                <div className="w-full max-w-full overflow-x-auto rounded-md border bg-background">
+                <div className="table-scroll rounded-md border bg-background">
                   <Table className="min-w-[820px] text-xs">
                     <TableHeader className="bg-muted/40">
                       <TableRow>
@@ -174,18 +202,22 @@ export default async function ResellerOrdersPage({
                         <TableHead className="whitespace-nowrap">Customer</TableHead>
                         <TableHead className="whitespace-nowrap">Phone</TableHead>
                         <TableHead className="whitespace-nowrap">Bundle</TableHead>
+                        <TableHead className="whitespace-nowrap">Payment</TableHead>
                         <TableHead className="whitespace-nowrap">Status</TableHead>
-                        <TableHead className="whitespace-nowrap text-right">Amount (GH₵)</TableHead>
+                        <TableHead className="whitespace-nowrap">Timeline</TableHead>
+                        <TableHead className="whitespace-nowrap text-right">Amount (GHS)</TableHead>
+                        <TableHead className="whitespace-nowrap text-right">Profit</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {orders.map((order) => {
+                      {ordersWithPayment.map((order) => {
                         const date = new Date(order.createdAt);
                         const customerName = order.customer?.name || "Guest";
                         const phone = order.phoneNumber || order.customer?.phone || "-";
                         const itemsLabel = order.items
                           .map((item) => formatBundleSize(item.product.name))
                           .join(", ");
+                        const profit = order.items.reduce((sum, item) => sum + item.profit, 0);
 
                         return (
                           <TableRow key={order.id} className="hover:bg-muted/20">
@@ -196,32 +228,38 @@ export default async function ResellerOrdersPage({
                               <span className="line-clamp-2 break-words">{itemsLabel}</span>
                             </TableCell>
                             <TableCell className="text-xs">
+                              <div className="space-y-1">
+                                <Badge variant="outline" className={order.payment.owner === "STOREFRONT" ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted text-muted-foreground"}>
+                                  {order.payment.owner === "STOREFRONT" ? order.payment.status : "WALLET"}
+                                </Badge>
+                                <div className="max-w-[120px] truncate font-mono text-[10px] text-muted-foreground">
+                                  {order.payment.reference}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-xs">
                               <Badge
                                 variant={
                                   order.status === "COMPLETED"
-                                    ? "default"
-                                    : order.status === "PENDING" || order.status === "PROCESSING"
                                     ? "secondary"
+                                    : order.status === "PENDING" || order.status === "PROCESSING"
+                                    ? "outline"
                                     : order.status === "FAILED"
                                     ? "destructive"
                                     : "outline"
                                 }
-                                className={
-                                  order.status === "COMPLETED"
-                                    ? "bg-emerald-500/90"
-                                    : order.status === "PENDING"
-                                    ? "border-amber-500 text-amber-600"
-                                    : order.status === "PROCESSING"
-                                    ? "border-sky-500 text-sky-600"
-                                    : order.status === "FAILED"
-                                    ? ""
-                                    : "border-muted-foreground/40 text-muted-foreground"
-                                }
+                                className={orderStatusBadgeClass(order.status)}
                               >
                                 {order.status}
                               </Badge>
                             </TableCell>
-                            <TableCell className="whitespace-nowrap text-right text-xs font-semibold">{order.total.toFixed(2)}</TableCell>
+                            <TableCell>
+                              <OrderTimelineDialog orderId={order.id} endpointBase="/api/reseller/orders" />
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap text-right text-xs font-semibold">{formatGhanaCedis(order.total)}</TableCell>
+                            <TableCell className={profit > 0 ? "whitespace-nowrap text-right text-xs font-semibold text-primary" : "whitespace-nowrap text-right text-xs text-muted-foreground"}>
+                              {formatGhanaCedis(profit)}
+                            </TableCell>
                           </TableRow>
                         );
                       })}
@@ -232,7 +270,6 @@ export default async function ResellerOrdersPage({
             )}
           </CardContent>
       </Card>
-      </div>
     </div>
   );
 }

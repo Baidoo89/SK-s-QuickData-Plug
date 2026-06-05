@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Copy, ArrowLeft, BadgePercent, MoreVertical } from "lucide-react"
+import { Copy, ArrowLeft, BadgePercent, MoreVertical, Activity, CircleDollarSign, UserCheck } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { MetricCard } from "@/components/ui/metric-card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useToast } from "@/components/ui/use-toast"
 import { formatGhanaCedis } from "@/lib/currency"
@@ -45,6 +46,15 @@ interface AgentPriceRow {
   price: number
 }
 
+function marginAmount(sellingPrice: number, costPrice: number) {
+  return Math.max(sellingPrice - costPrice, 0)
+}
+
+function marginPercent(sellingPrice: number, costPrice: number) {
+  if (sellingPrice <= 0) return 0
+  return (marginAmount(sellingPrice, costPrice) / sellingPrice) * 100
+}
+
 export default function AgentDetailPage({ params }: { params: { id: string } }) {
   const { toast } = useToast()
   const router = useRouter()
@@ -53,7 +63,7 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
   const [agent, setAgent] = useState<Agent | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [agentPrices, setAgentPrices] = useState<Record<string, number>>({})
-  const [storeSlug, setStoreSlug] = useState<string | null>(null)
+  const [agentStorePath, setAgentStorePath] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [savingPrices, setSavingPrices] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
@@ -65,19 +75,12 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
   useEffect(() => {
     async function load() {
       try {
-        const [agentsRes, productsRes, tenantRes] = await Promise.all([
+        const [agentsRes, productsRes] = await Promise.all([
           fetch("/api/agents"),
           fetch("/api/products"),
-          fetch("/api/tenants/current"),
         ])
         if (!agentsRes.ok) throw new Error("Failed to load agents")
         if (!productsRes.ok) throw new Error("Failed to load products")
-
-        if (tenantRes.ok) {
-          const tenantData = await tenantRes.json()
-          const slug = tenantData?.tenant?.slug as string | undefined
-          if (slug) setStoreSlug(slug)
-        }
 
         const responseData = await agentsRes.json()
         const agentsData: Agent[] = responseData.data || responseData || []
@@ -88,6 +91,12 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
           return
         }
         setAgent(found)
+        const linkRes = await fetch(`/api/storefront-links/agent/${agentId}`)
+        if (linkRes.ok) {
+          const linkData = await linkRes.json()
+          const path = linkData?.data?.path as string | undefined
+          if (path) setAgentStorePath(path)
+        }
 
         const productsResponse = await productsRes.json()
         const productsData: Product[] = productsResponse.data || productsResponse || []
@@ -142,6 +151,17 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
   }
 
   const savePrice = async (productId: string, price: number) => {
+    const product = products.find((item) => item.id === productId)
+    const base = product ? product.basePrice ?? product.price : 0
+    if (price < base) {
+      toast({
+        variant: "destructive",
+        title: "Price below cost",
+        description: `Agent price must be at least ${formatGhanaCedis(base)}.`,
+      })
+      return
+    }
+
     setSavingPrices(true)
     try {
       const res = await fetch("/api/agent-prices", {
@@ -181,6 +201,21 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
     return products.filter((product) => (product.provider || "").trim().toUpperCase() === selectedNetwork)
   }, [products, selectedNetwork])
 
+  const pricingSummary = useMemo(() => {
+    const configuredProducts = products.filter((product) => agentPrices[product.id] !== undefined)
+    const margins = products.map((product) => {
+      const cost = product.basePrice ?? product.price
+      const sellingPrice = agentPrices[product.id] ?? product.price
+      return marginAmount(sellingPrice, cost)
+    })
+    const averageMargin = margins.length ? margins.reduce((sum, value) => sum + value, 0) / margins.length : 0
+    return {
+      configured: configuredProducts.length,
+      total: products.length,
+      averageMargin,
+    }
+  }, [agentPrices, products])
+
   useEffect(() => {
     if (selectedNetwork !== "ALL" && !networkOptions.includes(selectedNetwork)) {
       setSelectedNetwork("ALL")
@@ -189,14 +224,14 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
 
   if (!agent) {
     return (
-      <div className="flex-1 px-4 py-6 md:p-8 md:pt-6">
-        <p className="text-sm text-muted-foreground">Loading agent details…</p>
+      <div className="portal-page flex-1">
+        <p className="text-sm text-muted-foreground">Loading agent details...</p>
       </div>
     )
   }
 
   return (
-    <div className="flex-1 space-y-6 px-4 py-6 md:p-8 md:pt-6">
+    <div className="portal-page flex-1 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Button variant="outline" size="sm" onClick={() => router.push("/dashboard/agents")}>
@@ -205,7 +240,7 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
           <div className="space-y-0.5">
             <h1 className="text-xl md:text-2xl font-bold tracking-tight">{agent.name}</h1>
             <p className="text-xs text-muted-foreground">
-              Manage this agent&apos;s status, commissions and storefront pricing.
+              Manage this agent&apos;s status, commissions and assigned buy pricing.
             </p>
           </div>
         </div>
@@ -252,7 +287,7 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
         <span>Created {new Date(agent.createdAt).toLocaleDateString()}</span>
         <span>
-          {stats.orders} orders · {formatGhanaCedis(stats.revenue)} revenue
+          {stats.orders} orders | {formatGhanaCedis(stats.revenue)} revenue
         </span>
       </div>
 
@@ -265,65 +300,36 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
         </Link>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Status</CardTitle>
-          </CardHeader>
-          <CardContent className="flex items-center justify-between gap-2">
-            <span
-              className={[
-                "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold",
-                isActive ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600",
-              ].join(" ")}
-            >
-              {isActive ? "Active" : "Inactive"}
-            </span>
+      <div className="grid min-w-0 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          label="Status"
+          value={isActive ? "Active" : "Inactive"}
+          description={
             <Button
               variant="outline"
               size="sm"
               onClick={handleToggleActive}
               disabled={loading}
-              className="text-[11px]"
+              className="mt-1 h-8 text-[11px]"
             >
               {isActive ? "Deactivate" : "Activate"}
             </Button>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold">{stats.orders}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Completed orders from this agent.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Revenue</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold">{formatGhanaCedis(stats.revenue)}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Gross revenue generated by this agent.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-              <BadgePercent className="h-3 w-3" /> Commission & payout
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold">
-              {stats.commissionPercent.toFixed(1)}% · {formatGhanaCedis(stats.estimatedCommission)}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">Current commission rate and estimated payout.</p>
-          </CardContent>
-        </Card>
+          }
+          icon={UserCheck}
+          tone={isActive ? "success" : "destructive"}
+        />
+        <MetricCard label="Orders" value={stats.orders} description="Completed orders from this agent." icon={Activity} tone="info" />
+        <MetricCard label="Revenue" value={formatGhanaCedis(stats.revenue)} description="Gross revenue generated by this agent." icon={CircleDollarSign} tone="success" />
+        <MetricCard
+          label="Commission & Payout"
+          value={`${stats.commissionPercent.toFixed(1)}%`}
+          description={`Estimated payout: ${formatGhanaCedis(stats.estimatedCommission)}.`}
+          icon={BadgePercent}
+          tone="primary"
+        />
       </div>
 
-      {storeSlug && (
+      {agentStorePath && (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold">Customer storefront link</CardTitle>
@@ -335,8 +341,8 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs text-foreground">
                 {typeof window !== "undefined"
-                  ? `${window.location.origin}/store/${storeSlug}/agent/${agent.id}`
-                  : `/store/${storeSlug}/agent/${agent.id}`}
+                  ? `${window.location.origin}${agentStorePath}`
+                  : agentStorePath}
               </p>
             </div>
             <Button
@@ -347,7 +353,7 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
               onClick={async () => {
                 try {
                   const origin = typeof window !== "undefined" ? window.location.origin : ""
-                  const url = `${origin}/store/${storeSlug}/agent/${agent.id}`
+                  const url = `${origin}${agentStorePath}`
                   await navigator.clipboard.writeText(url)
                   toast({ title: "Copied", description: "Agent storefront link copied." })
                 } catch {
@@ -361,11 +367,42 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
         </Card>
       )}
 
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold">How agent pricing works</CardTitle>
+            <CardDescription className="text-xs">
+              Base cost is your source cost. Agent buy price is what this agent pays when buying inside their dashboard. The difference is your margin on agent dashboard sales.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground">Configured prices</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xl font-semibold">
+              {pricingSummary.configured}/{pricingSummary.total}
+            </p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Products with agent-specific overrides.</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground">Average margin</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xl font-semibold">{formatGhanaCedis(pricingSummary.averageMargin)}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Estimated per-order margin across active products.</p>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle className="text-sm font-semibold">Pricing overrides</CardTitle>
           <CardDescription className="text-xs">
-            Set custom prices for this agent. Filter by network to keep the table readable.
+            Set this agent&apos;s dashboard buy price. The agent sets their own customer storefront prices in the agent portal.
           </CardDescription>
           <div className="flex flex-wrap items-center gap-2 pt-2 text-xs">
             <label className="text-muted-foreground" htmlFor="network-filter">
@@ -389,7 +426,7 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
             </span>
           </div>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent>
           {products.length === 0 && (
             <p className="text-sm text-muted-foreground">No products yet. Add products before configuring agent prices.</p>
           )}
@@ -397,20 +434,76 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
             <p className="text-sm text-muted-foreground">No products match the selected network.</p>
           )}
           {filteredProducts.length > 0 && (
-            <Table className="min-w-[640px] text-xs">
+            <>
+            <div className="grid gap-3 xl:hidden lg:grid-cols-2">
+              {filteredProducts.map((product) => {
+                const base = product.basePrice ?? product.price
+                const current = agentPrices[product.id] ?? product.price
+                const profit = marginAmount(current, base)
+                return (
+                  <div key={product.id} className="rounded-md border bg-background p-3 text-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold">{product.name}</p>
+                        <p className="text-xs uppercase text-muted-foreground">{product.provider}</p>
+                      </div>
+                      <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                        {product.category}
+                      </span>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                      <div>
+                        <p className="font-medium text-foreground">{formatGhanaCedis(base)}</p>
+                        <p>Base cost</p>
+                      </div>
+                      <div>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min={base}
+                          defaultValue={current}
+                          className="h-9 text-right text-xs"
+                          onBlur={(e) => {
+                            const val = parseFloat(e.target.value)
+                            if (Number.isNaN(val)) return
+                            savePrice(product.id, val)
+                          }}
+                        />
+                        <p className="mt-1 text-right">Agent buy price</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 rounded-md bg-muted/40 px-3 py-2 text-xs">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-muted-foreground">Expected profit</span>
+                        <span className="font-semibold text-foreground">{formatGhanaCedis(profit)}</span>
+                      </div>
+                      <div className="mt-1 flex items-center justify-between gap-3">
+                        <span className="text-muted-foreground">Margin</span>
+                        <span className="font-medium text-primary">{marginPercent(current, base).toFixed(1)}%</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="table-scroll hidden rounded-md border bg-background xl:block">
+            <Table className="min-w-[720px] text-xs">
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Network</TableHead>
-                  <TableHead>Base price</TableHead>
-                  <TableHead>Agent price</TableHead>
+                  <TableHead>Base cost</TableHead>
+                  <TableHead>Agent buy price</TableHead>
+                  <TableHead>Profit</TableHead>
                   <TableHead className="text-right">Save</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredProducts.map((product) => {
                   const base = product.basePrice ?? product.price
-                  const current = agentPrices[product.id]
+                  const current = agentPrices[product.id] ?? product.price
+                  const profit = marginAmount(current, base)
                   return (
                     <TableRow key={product.id}>
                       <TableCell className="font-medium">{product.name}</TableCell>
@@ -424,13 +517,20 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
                         <Input
                           type="number"
                           step="0.01"
-                          defaultValue={current ?? base}
+                          min={base}
+                          defaultValue={current}
                           onBlur={(e) => {
                             const val = parseFloat(e.target.value)
                             if (Number.isNaN(val)) return
                             savePrice(product.id, val)
                           }}
                         />
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-0.5">
+                          <p className="font-medium">{formatGhanaCedis(profit)}</p>
+                          <p className="text-[11px] text-muted-foreground">{marginPercent(current, base).toFixed(1)}% margin</p>
+                        </div>
                       </TableCell>
                       <TableCell className="text-right text-[11px] text-muted-foreground">
                         Blur to save
@@ -440,8 +540,10 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
                 })}
               </TableBody>
             </Table>
+            </div>
+            </>
           )}
-          {savingPrices && <p className="mt-2 text-xs text-muted-foreground">Saving overrides…</p>}
+          {savingPrices && <p className="mt-2 text-xs text-muted-foreground">Saving overrides...</p>}
         </CardContent>
       </Card>
 

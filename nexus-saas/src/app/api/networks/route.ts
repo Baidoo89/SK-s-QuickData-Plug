@@ -2,6 +2,8 @@ import { requireAuthAndOrg, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors } from "@/lib/api-response"
 import { db } from "@/lib/db"
 
+export const dynamic = "force-dynamic"
+
 export async function GET(req: Request) {
   try {
     const authResult = await requireAuthAndOrg()

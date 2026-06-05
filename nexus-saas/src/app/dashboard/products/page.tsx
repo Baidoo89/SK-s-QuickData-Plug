@@ -3,23 +3,78 @@
 
 import { useEffect, useState, useMemo } from "react"
 import { AddEditProductDialog } from "@/components/products/add-edit-product-dialog"
-import { Pencil, Trash2, Plus, Loader2 } from "lucide-react"
+import Link from "next/link"
+import { BarChart3, FileText, Layers3, Pencil, Trash2, Plus, Loader2, Package, Percent, Tags } from "lucide-react"
 import { MtnLogo, AirtelTigoLogo, TelecelLogo } from "@/components/products/network-logos"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Input } from "@/components/ui/input"
+import { MetricCard } from "@/components/ui/metric-card"
 import { formatGhanaCedis } from "@/lib/currency"
 import { Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 
 const NETWORKS = [
-  { id: "MTN", name: "MTN", logo: MtnLogo, color: "bg-yellow-50 border-yellow-200" },
-  { id: "AIRTELTIGO", name: "AirtelTigo", logo: AirtelTigoLogo, color: "bg-blue-50 border-blue-200" },
-  { id: "TELECEL", name: "Telecel", logo: TelecelLogo, color: "bg-red-50 border-red-200" },
+  { id: "MTN", name: "MTN", logo: MtnLogo },
+  { id: "AIRTELTIGO", name: "AirtelTigo", logo: AirtelTigoLogo },
+  { id: "TELECEL", name: "Telecel", logo: TelecelLogo },
 ]
 
+type ServiceFormField = {
+  id: string
+  label: string
+  type: "TEXT" | "PHONE" | "DATE" | "NUMBER" | "SELECT" | "TEXTAREA" | "GHANA_CARD"
+  required: boolean
+  placeholder?: string
+  options?: string[]
+}
+
+const DEFAULT_SERVICE_FIELDS: ServiceFormField[] = [
+  { id: "ghanaCardNumber", label: "Ghana Card number", type: "GHANA_CARD", required: true, placeholder: "GHA-000000000-0" },
+  { id: "location", label: "Location / town", type: "TEXT", required: true, placeholder: "e.g. Kumasi" },
+  { id: "dateOfBirth", label: "Date of birth", type: "DATE", required: true },
+]
+
+const FIELD_TYPES: Array<{ value: ServiceFormField["type"]; label: string }> = [
+  { value: "TEXT", label: "Text" },
+  { value: "PHONE", label: "Phone" },
+  { value: "DATE", label: "Date" },
+  { value: "NUMBER", label: "Number" },
+  { value: "SELECT", label: "Selection" },
+  { value: "TEXTAREA", label: "Long text" },
+  { value: "GHANA_CARD", label: "Ghana Card" },
+]
+
+function formatPercent(value: number) {
+  if (!Number.isFinite(value)) return "0.0%"
+  return `${value.toFixed(1)}%`
+}
+
+type PricingProfile = {
+  id: string
+  name: string
+  tag?: string | null
+  targetRole: "AGENT" | "RESELLER" | "BOTH"
+  itemCount: number
+  assignmentCount: number
+}
+
+type PricingProfileRow = {
+  productId: string
+  productName: string
+  network: string
+  basePrice: number
+  profilePrice: number
+}
+
 function BundlePricingContent() {
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get("tab")
+  const activeTab = tabParam === "network_pricing" || tabParam === "pricing_profiles" ? "pricing_profiles" : "bundle_pricing"
+
   const [products, setProducts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedNetwork, setSelectedNetwork] = useState<string>("MTN")
@@ -28,29 +83,191 @@ function BundlePricingContent() {
   const [newBundleName, setNewBundleName] = useState("")
   const [newBundlePrice, setNewBundlePrice] = useState("")
   const [newBundleBasePrice, setNewBundleBasePrice] = useState("")
+  const [newBundleStorefrontPrice, setNewBundleStorefrontPrice] = useState("")
+  const [newServiceName, setNewServiceName] = useState("Registration Service")
+  const [newServiceProvider, setNewServiceProvider] = useState("MTN")
+  const [newServicePrice, setNewServicePrice] = useState("")
+  const [newServiceBasePrice, setNewServiceBasePrice] = useState("")
+  const [newServiceStorefrontPrice, setNewServiceStorefrontPrice] = useState("")
+  const [serviceFields, setServiceFields] = useState<ServiceFormField[]>(DEFAULT_SERVICE_FIELDS)
+
+  const [profiles, setProfiles] = useState<PricingProfile[]>([])
+  const [profilesLoading, setProfilesLoading] = useState(false)
+  const [selectedProfileId, setSelectedProfileId] = useState<string>("")
+  const [profileRows, setProfileRows] = useState<PricingProfileRow[]>([])
+  const [profileRowsLoading, setProfileRowsLoading] = useState(false)
+  const [newProfileName, setNewProfileName] = useState("")
+  const [newProfileTag, setNewProfileTag] = useState("")
+  const [newProfileRole, setNewProfileRole] = useState<"AGENT" | "RESELLER" | "BOTH">("BOTH")
 
   useEffect(() => {
     fetchProducts()
+    fetchProfiles()
   }, [])
+
+  useEffect(() => {
+    if (activeTab === "pricing_profiles") {
+      fetchProfiles()
+    }
+  }, [activeTab])
 
   async function fetchProducts() {
     setLoading(true)
     try {
       const res = await fetch("/api/products")
       const response = await res.json()
-      const productsList = response.data || response || []
+      const productsList = Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response)
+        ? response
+        : []
       setProducts(productsList)
     } finally {
       setLoading(false)
     }
   }
 
+  async function fetchProfiles() {
+    setProfilesLoading(true)
+    try {
+      const res = await fetch("/api/pricing/profiles")
+      if (!res.ok) return
+      const payload = await res.json().catch(() => null as any)
+      const list = payload?.data ?? payload ?? []
+      if (Array.isArray(list)) {
+        setProfiles(list)
+        if (!selectedProfileId && list[0]?.id) {
+          setSelectedProfileId(list[0].id)
+          await fetchProfileDetails(list[0].id)
+        }
+      }
+    } finally {
+      setProfilesLoading(false)
+    }
+  }
+
+  async function fetchProfileDetails(profileId: string) {
+    setProfileRowsLoading(true)
+    try {
+      const res = await fetch(`/api/pricing/profiles/${profileId}`)
+      if (!res.ok) return
+      const payload = await res.json().catch(() => null as any)
+      const data = payload?.data ?? payload
+      const rows = data?.rows ?? []
+      if (Array.isArray(rows)) {
+        setProfileRows(rows)
+      }
+    } finally {
+      setProfileRowsLoading(false)
+    }
+  }
+
+  async function createPricingProfile() {
+    if (!newProfileName.trim()) {
+      alert("Profile name is required")
+      return
+    }
+    const res = await fetch("/api/pricing/profiles", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: newProfileName.trim(),
+        tag: newProfileTag.trim() || null,
+        targetRole: newProfileRole,
+      }),
+    })
+    if (!res.ok) {
+      const payload = await res.json().catch(() => null as any)
+      alert(payload?.error?.message || payload?.message || "Failed to create profile")
+      return
+    }
+    const payload = await res.json().catch(() => null as any)
+    const profile = payload?.data ?? payload
+    setNewProfileName("")
+    setNewProfileTag("")
+    await fetchProfiles()
+    if (profile?.id) {
+      setSelectedProfileId(profile.id)
+      await fetchProfileDetails(profile.id)
+    }
+  }
+
+  async function saveProfilePrice(productId: string, price: number) {
+    if (!selectedProfileId) return
+    if (Number.isNaN(price) || price < 0) {
+      return
+    }
+
+    await fetch(`/api/pricing/profiles/${selectedProfileId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productId, price }),
+    })
+
+    setProfileRows((prev) =>
+      prev.map((row) => (row.productId === productId ? { ...row, profilePrice: price } : row))
+    )
+  }
+
   const networkBundles = useMemo(() => {
     return products.filter(p => p.provider?.toUpperCase() === selectedNetwork && p.category === "DATA_BUNDLE")
   }, [products, selectedNetwork])
 
+  const registrationServices = useMemo(() => {
+    return products.filter(p => p.category === "REGISTRATION_SERVICE" || p.category === "AFA_REGISTRATION")
+  }, [products])
+
   const currentNetwork = NETWORKS.find(n => n.id === selectedNetwork)
   const NetworkLogo = currentNetwork?.logo
+
+  const networkProfileRows = useMemo(() => {
+    return profileRows.filter((row) => row.network?.toUpperCase() === selectedNetwork)
+  }, [profileRows, selectedNetwork])
+
+  const totalActiveBundles = useMemo(() => {
+    return products.filter((product) => product.category === "DATA_BUNDLE" && product.active !== false).length
+  }, [products])
+
+  const totalActiveServices = useMemo(() => {
+    return products.filter((product) => (product.category === "REGISTRATION_SERVICE" || product.category === "AFA_REGISTRATION") && product.active !== false).length
+  }, [products])
+
+  const networkCounts = useMemo(() => {
+    return NETWORKS.reduce<Record<string, number>>((acc, network) => {
+      acc[network.id] = products.filter((product) => product.provider?.toUpperCase() === network.id && product.category === "DATA_BUNDLE").length
+      return acc
+    }, {})
+  }, [products])
+
+  const networksWithBundles = useMemo(() => {
+    return NETWORKS.filter((network) => (networkCounts[network.id] || 0) > 0).length
+  }, [networkCounts])
+
+  const missingNetworks = useMemo(() => {
+    return NETWORKS.filter((network) => (networkCounts[network.id] || 0) === 0).map((network) => network.name)
+  }, [networkCounts])
+
+  const averageMarginPercent = useMemo(() => {
+    const activeBundles = products.filter((product) => product.category === "DATA_BUNDLE" && product.active !== false && Number(product.price) > 0)
+    if (activeBundles.length === 0) return 0
+
+    const totalMargin = activeBundles.reduce((sum, product) => {
+      const price = Number(product.price) || 0
+      const basePrice = Number(product.basePrice ?? product.price) || 0
+      const storefrontPrice = Number(product.storefrontPrice ?? product.price) || 0
+      return sum + (storefrontPrice > 0 ? ((storefrontPrice - basePrice) / storefrontPrice) * 100 : 0)
+    }, 0)
+
+    return totalMargin / activeBundles.length
+  }, [products])
+
+  const selectedNetworkBaseValue = useMemo(() => {
+    return networkBundles.reduce((sum, bundle) => sum + Number(bundle.basePrice ?? bundle.price ?? 0), 0)
+  }, [networkBundles])
+
+  const selectedNetworkRetailValue = useMemo(() => {
+    return networkBundles.reduce((sum, bundle) => sum + Number(bundle.storefrontPrice ?? bundle.price ?? 0), 0)
+  }, [networkBundles])
 
   const handleEdit = (product: any) => {
     setSelectedProduct(product)
@@ -64,20 +281,33 @@ function BundlePricingContent() {
   }
 
   const handleAddBundle = async () => {
-    if (!newBundleName.trim() || !newBundlePrice.trim() || !newBundleBasePrice.trim()) {
-      alert("Bundle name, current price, and base price are required")
+    if (!newBundleName.trim() || !newBundlePrice.trim() || !newBundleBasePrice.trim() || !newBundleStorefrontPrice.trim()) {
+      alert("Bundle name, source cost, subscriber buy price, and storefront price are required")
       return
     }
 
     const price = parseFloat(newBundlePrice)
     const basePrice = parseFloat(newBundleBasePrice)
+    const storefrontPrice = parseFloat(newBundleStorefrontPrice)
     
     if (isNaN(price) || price < 0) {
-      alert("Please enter a valid current price")
+      alert("Please enter a valid subscriber buy price")
       return
     }
     if (isNaN(basePrice) || basePrice < 0) {
-      alert("Please enter a valid base price")
+      alert("Please enter a valid source cost")
+      return
+    }
+    if (isNaN(storefrontPrice) || storefrontPrice < 0) {
+      alert("Please enter a valid storefront price")
+      return
+    }
+    if (price < basePrice) {
+      alert("Subscriber buy price should not be below source cost")
+      return
+    }
+    if (storefrontPrice < basePrice) {
+      alert("Storefront price should not be below source cost")
       return
     }
 
@@ -91,6 +321,7 @@ function BundlePricingContent() {
           category: "DATA_BUNDLE",
           price,
           basePrice,
+          storefrontPrice,
           active: true,
         }),
       })
@@ -100,39 +331,537 @@ function BundlePricingContent() {
       setNewBundleName("")
       setNewBundlePrice("")
       setNewBundleBasePrice("")
+      setNewBundleStorefrontPrice("")
       await fetchProducts()
     } catch (error) {
       alert("Error creating bundle")
     }
   }
 
+  const handleAddRegistrationService = async () => {
+    if (!newServiceName.trim() || !newServicePrice.trim() || !newServiceBasePrice.trim() || !newServiceStorefrontPrice.trim()) {
+      alert("Service name, provider, source cost, subscriber buy price, and storefront price are required")
+      return
+    }
+
+    const price = parseFloat(newServicePrice)
+    const basePrice = parseFloat(newServiceBasePrice)
+    const storefrontPrice = parseFloat(newServiceStorefrontPrice)
+
+    if (isNaN(price) || price < 0 || isNaN(basePrice) || basePrice < 0 || isNaN(storefrontPrice) || storefrontPrice < 0) {
+      alert("Enter valid prices for the registration service")
+      return
+    }
+
+    if (price < basePrice) {
+      alert("Subscriber buy price should not be below source cost")
+      return
+    }
+
+    if (storefrontPrice < basePrice) {
+      alert("Storefront price should not be below source cost")
+      return
+    }
+
+    try {
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newServiceName.trim(),
+          description: "Registration service requiring full name, phone number, Ghana Card number, location, and date of birth.",
+          provider: newServiceProvider,
+          category: "REGISTRATION_SERVICE",
+          bundleType: "SERVICE",
+          serviceForm: JSON.stringify({ version: 1, fields: serviceFields }),
+          price,
+          basePrice,
+          storefrontPrice,
+          active: true,
+        }),
+      })
+
+      if (!res.ok) throw new Error("Failed to create registration service")
+
+      setNewServiceName("Registration Service")
+      setNewServiceProvider("MTN")
+      setNewServicePrice("")
+      setNewServiceBasePrice("")
+      setNewServiceStorefrontPrice("")
+      setServiceFields(DEFAULT_SERVICE_FIELDS)
+      await fetchProducts()
+    } catch (error) {
+      alert("Error creating registration service")
+    }
+  }
+
+  const addServiceField = () => {
+    const id = `field_${Date.now()}`
+    setServiceFields((fields) => [
+      ...fields,
+      { id, label: "New field", type: "TEXT", required: true, placeholder: "" },
+    ])
+  }
+
+  const updateServiceField = (index: number, updates: Partial<ServiceFormField>) => {
+    setServiceFields((fields) => fields.map((field, i) => (i === index ? { ...field, ...updates } : field)))
+  }
+
+  const removeServiceField = (index: number) => {
+    setServiceFields((fields) => fields.filter((_, i) => i !== index))
+  }
+
+  if (activeTab === "pricing_profiles") {
+    return (
+      <div className="portal-page flex-1 space-y-6">
+        <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Network Pricing Profiles</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Create named pricing tags for agents and resellers, then assign them from user detail pages.
+            </p>
+          </div>
+          <div className="grid w-full min-w-0 gap-2 sm:grid-cols-2 lg:w-auto">
+            <Button asChild variant="outline">
+              <Link href="/dashboard/products">Bundle Pricing</Link>
+            </Button>
+            <Button asChild>
+              <Link href="/dashboard/products?tab=pricing_profiles">Pricing Profiles</Link>
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard label="Profiles" value={profiles.length} description="Reusable price lists." icon={Tags} tone="primary" />
+          <MetricCard label="Profile Rows" value={profileRows.length} description="Bundle prices in the selected profile." icon={Package} tone="info" />
+          <MetricCard label="Active Bundles" value={totalActiveBundles} description="Available products for assignment." icon={Layers3} tone="success" />
+          <MetricCard label="Network Coverage" value={`${networksWithBundles}/${NETWORKS.length}`} description={missingNetworks.length ? `Missing ${missingNetworks.join(", ")}` : "All networks have bundles."} icon={BarChart3} tone={missingNetworks.length ? "warning" : "success"} />
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Create Pricing Profile</CardTitle>
+            <CardDescription>Save a reusable pricing setup with a name and tag.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-4">
+            <Input
+              placeholder="Profile name (e.g. Small Agent)"
+              value={newProfileName}
+              onChange={(e) => setNewProfileName(e.target.value)}
+            />
+            <Input
+              placeholder="Tag (optional)"
+              value={newProfileTag}
+              onChange={(e) => setNewProfileTag(e.target.value)}
+            />
+            <select
+              className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+              value={newProfileRole}
+              onChange={(e) => setNewProfileRole(e.target.value as "AGENT" | "RESELLER" | "BOTH")}
+            >
+              <option value="BOTH">Both</option>
+              <option value="AGENT">Agents</option>
+              <option value="RESELLER">Resellers</option>
+            </select>
+            <Button onClick={createPricingProfile}>Create Profile</Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Saved Profiles</CardTitle>
+            <CardDescription>Select a profile and edit prices by network.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {profilesLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : profiles.length === 0 ? (
+              <EmptyState
+                icon={Plus}
+                title="No pricing profiles yet"
+                description="Create a reusable price list for agents and resellers, then assign it from their detail pages."
+                className="py-6"
+              />
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {profiles.map((profile) => (
+                  <Button
+                    key={profile.id}
+                    variant={selectedProfileId === profile.id ? "default" : "outline"}
+                    onClick={async () => {
+                      setSelectedProfileId(profile.id)
+                      await fetchProfileDetails(profile.id)
+                    }}
+                    className="text-xs"
+                  >
+                    {profile.name}
+                    {profile.tag ? ` (${profile.tag})` : ""}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-3">
+          {NETWORKS.map(network => (
+            <button
+              key={network.id}
+              onClick={() => setSelectedNetwork(network.id)}
+              className={`rounded-md border p-4 text-left transition-colors ${
+                selectedNetwork === network.id
+                  ? "border-primary bg-primary/5 shadow-sm"
+                  : "border-border bg-card hover:border-primary/30 hover:bg-muted/40"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <network.logo className="w-8 h-8" />
+                <div className="text-left">
+                <div className="font-bold text-lg">{network.name}</div>
+                <div className="text-xs text-muted-foreground">
+                    {profileRows.filter((r) => r.network?.toUpperCase() === network.id).length} bundles
+                  </div>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{currentNetwork?.name} Profile Prices</CardTitle>
+            <CardDescription>These values are what assigned users will be charged.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {profileRowsLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : !selectedProfileId ? (
+              <p className="text-sm text-muted-foreground">Select a profile first.</p>
+            ) : networkProfileRows.length === 0 ? (
+              <EmptyState
+                icon={Plus}
+                title="No bundles in this profile"
+                description="Add bundles under Bundle Pricing first, then return here to set profile-specific prices."
+                secondaryAction={{ label: "Open Bundle Pricing", href: "/dashboard/products" }}
+                className="py-6"
+              />
+            ) : (
+              <>
+              <div className="grid gap-3 xl:hidden lg:grid-cols-2">
+                {networkProfileRows.map((row) => (
+                  <div key={row.productId} className="rounded-md border bg-background p-3 text-sm">
+                    <p className="font-semibold">{row.productName}</p>
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                      <div>
+                        <p className="font-medium text-foreground">{formatGhanaCedis(row.basePrice)}</p>
+                        <p>Base price</p>
+                      </div>
+                      <div>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          defaultValue={row.profilePrice}
+                          className="h-9 text-right text-xs"
+                          onBlur={(e) => {
+                            const val = Number(e.target.value)
+                            if (Number.isNaN(val) || val < 0) return
+                            if (val === row.profilePrice) return
+                            saveProfilePrice(row.productId, val)
+                          }}
+                        />
+                        <p className="mt-1 text-right">Profile price</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="table-scroll hidden rounded-md border bg-background xl:block">
+                <Table className="min-w-[640px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Bundle</TableHead>
+                      <TableHead className="text-right">Base Price</TableHead>
+                      <TableHead className="text-right">Profile Price</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {networkProfileRows.map((row) => (
+                      <TableRow key={row.productId}>
+                        <TableCell className="font-medium">{row.productName}</TableCell>
+                        <TableCell className="text-right">{formatGhanaCedis(row.basePrice)}</TableCell>
+                        <TableCell className="text-right">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            defaultValue={row.profilePrice}
+                            className="w-28 ml-auto text-right"
+                            onBlur={(e) => {
+                              const val = Number(e.target.value)
+                              if (Number.isNaN(val) || val < 0) return
+                              if (val === row.profilePrice) return
+                              saveProfilePrice(row.productId, val)
+                            }}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
-    <div className="flex-1 space-y-8 px-4 py-6 md:p-8">
+    <div className="portal-page flex-1 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Bundle Pricing</h1>
-        <p className="text-sm text-muted-foreground mt-1">Select a network and manage your data bundle prices</p>
+        <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="min-w-0">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Bundle Pricing</h1>
+          <p className="text-sm text-muted-foreground mt-1">Create bundles and separate source cost, dashboard buy price, and storefront customer price.</p>
+          </div>
+          <div className="grid w-full min-w-0 gap-2 sm:grid-cols-2 lg:w-auto">
+            <Button asChild>
+              <Link href="/dashboard/products">Bundle Pricing</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/dashboard/products?tab=pricing_profiles">Pricing Profiles</Link>
+            </Button>
+          </div>
+        </div>
+
+      <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <MetricCard label="Active Bundles" value={totalActiveBundles} description="Available in storefront and buyer flows." icon={Package} tone="success" />
+        <MetricCard label="Registration Services" value={totalActiveServices} description="Storefront service requests." icon={FileText} tone="info" />
+        <MetricCard label="Network Coverage" value={`${networksWithBundles}/${NETWORKS.length}`} description={missingNetworks.length ? `Missing ${missingNetworks.join(", ")}` : "All networks have bundles."} icon={BarChart3} tone={missingNetworks.length ? "warning" : "success"} />
+        <MetricCard label="Average Storefront Margin" value={formatPercent(averageMarginPercent)} description="Storefront price against source cost." icon={Percent} tone={averageMarginPercent > 0 ? "primary" : "warning"} />
+        <MetricCard label="Pricing Profiles" value={profiles.length} description="Reusable agent/reseller price lists." icon={Tags} tone="primary" />
       </div>
 
+      <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
+        <CardContent className="grid min-w-0 gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground">Catalog readiness</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {missingNetworks.length
+                ? `Add bundles for ${missingNetworks.join(", ")} before pushing all-network sales.`
+                : "Your catalog covers MTN, Telecel, and AirtelTigo. Keep matching bundle sizes where possible."}
+            </p>
+          </div>
+          <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap">
+            <Badge variant="outline" className="justify-center px-3 py-1">
+              {currentNetwork?.name}: {networkBundles.length} bundles
+            </Badge>
+            <Badge variant="outline" className="justify-center px-3 py-1">
+              Storefront {formatGhanaCedis(selectedNetworkRetailValue)} / Source {formatGhanaCedis(selectedNetworkBaseValue)}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            <div>
+              <CardTitle>Registration Services</CardTitle>
+              <CardDescription>Create registration and documentation services for storefront requests.</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="rounded-md border bg-muted/20 p-4 space-y-4">
+            <h3 className="font-semibold flex items-center gap-2">
+              <Plus className="w-4 h-4" /> Add Registration Service
+            </h3>
+            <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
+              <Input
+                placeholder="Service name (e.g. customer registration)"
+                value={newServiceName}
+                onChange={(e) => setNewServiceName(e.target.value)}
+              />
+              <select
+                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                value={newServiceProvider}
+                onChange={(e) => setNewServiceProvider(e.target.value)}
+              >
+                {NETWORKS.map((network) => (
+                  <option key={network.id} value={network.id}>
+                    {network.name}
+                  </option>
+                ))}
+                <option value="SERVICE">Other Service</option>
+              </select>
+              <Input
+                placeholder="Source cost (GHS)"
+                type="number"
+                min="0"
+                step="0.01"
+                value={newServiceBasePrice}
+                onChange={(e) => setNewServiceBasePrice(e.target.value)}
+              />
+              <Input
+                placeholder="Subscriber buy price (GHS)"
+                type="number"
+                min="0"
+                step="0.01"
+                value={newServicePrice}
+                onChange={(e) => setNewServicePrice(e.target.value)}
+              />
+              <Input
+                placeholder="Storefront price (GHS)"
+                type="number"
+                min="0"
+                step="0.01"
+                value={newServiceStorefrontPrice}
+                onChange={(e) => setNewServiceStorefrontPrice(e.target.value)}
+              />
+              <Button onClick={handleAddRegistrationService} className="w-full">
+                Add Service
+              </Button>
+            </div>
+              <p className="text-xs text-muted-foreground">
+              Registration services are separate from data orders. Customers provide full name, phone number, Ghana Card number, location, and date of birth, then the request appears under Service Requests after payment.
+            </p>
+            <div className="space-y-3 rounded-md border bg-background p-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Service form fields</p>
+                  <p className="text-xs text-muted-foreground">Customer name and phone are always collected. Add the extra fields this service needs.</p>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={addServiceField}>
+                  <Plus className="mr-2 h-4 w-4" /> Add Field
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {serviceFields.map((field, index) => (
+                  <div key={field.id} className="grid min-w-0 gap-2 rounded-md border bg-muted/20 p-2 md:grid-cols-[minmax(0,1.1fr)_140px_minmax(0,1fr)_96px_40px] md:items-center">
+                    <Input
+                      value={field.label}
+                      onChange={(event) => updateServiceField(index, { label: event.target.value })}
+                      placeholder="Field label"
+                      className="h-9"
+                    />
+                    <select
+                      className="h-9 rounded-md border border-input bg-background px-3 text-xs"
+                      value={field.type}
+                      onChange={(event) => updateServiceField(index, { type: event.target.value as ServiceFormField["type"] })}
+                    >
+                      {FIELD_TYPES.map((type) => (
+                        <option key={type.value} value={type.value}>{type.label}</option>
+                      ))}
+                    </select>
+                    <Input
+                      value={field.type === "SELECT" ? (field.options || []).join(", ") : field.placeholder || ""}
+                      onChange={(event) =>
+                        updateServiceField(
+                          index,
+                          field.type === "SELECT"
+                            ? { options: event.target.value.split(",").map((option) => option.trim()).filter(Boolean) }
+                            : { placeholder: event.target.value },
+                        )
+                      }
+                      placeholder={field.type === "SELECT" ? "Options: One, Two, Three" : "Placeholder"}
+                      className="h-9"
+                    />
+                    <label className="flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-xs">
+                      <input
+                        type="checkbox"
+                        checked={field.required}
+                        onChange={(event) => updateServiceField(index, { required: event.target.checked })}
+                      />
+                      Required
+                    </label>
+                    <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => removeServiceField(index)} title="Remove field">
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                ))}
+                {serviceFields.length === 0 ? (
+                  <p className="rounded-md border border-dashed p-3 text-xs text-muted-foreground">
+                    No extra fields. The storefront will collect only customer name and phone number for this service.
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          </div>
+
+          {registrationServices.length === 0 ? (
+            <EmptyState
+              icon={FileText}
+              title="No registration service yet"
+              description="Add a registration service above to make it available on storefronts."
+            />
+          ) : (
+            <div className="grid gap-3 lg:grid-cols-2">
+              {registrationServices.map((service) => (
+                <div key={service.id} className="rounded-md border bg-background p-3 text-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold">{service.name}</p>
+                      <p className="text-xs text-muted-foreground">{service.provider || "Service"} registration service</p>
+                    </div>
+                    <Badge variant={service.active ? "default" : "outline"} className={service.active ? "status-success border" : ""}>
+                      {service.active ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+                    <div>
+                      <p className="font-medium text-foreground">{formatGhanaCedis(service.basePrice ?? service.price)}</p>
+                      <p>Source</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground">{formatGhanaCedis(service.price)}</p>
+                      <p>Buy</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-primary">{formatGhanaCedis(service.storefrontPrice ?? service.price)}</p>
+                      <p>Storefront</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex justify-end gap-1">
+                    <Button size="sm" variant="ghost" onClick={() => handleEdit(service)} title="Edit">
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => handleDelete(service)} title="Delete">
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Network Selector */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-3">
         {NETWORKS.map(network => (
           <button
             key={network.id}
             onClick={() => setSelectedNetwork(network.id)}
-            className={`p-6 rounded-lg border-2 transition-all ${
-              selectedNetwork === network.id
-                ? `${network.color} border-current`
-                : "bg-muted border-muted-foreground/20 hover:border-muted-foreground/40"
-            }`}
-          >
-            <div className="flex items-center gap-3 mb-3">
-              {NetworkLogo && selectedNetwork === network.id && <NetworkLogo className="w-8 h-8" />}
-              {!NetworkLogo && selectedNetwork !== network.id && <network.logo className="w-8 h-8 opacity-50" />}
-              {NetworkLogo && selectedNetwork !== network.id && <network.logo className="w-8 h-8 opacity-50" />}
+          className={`rounded-md border p-4 text-left transition-colors ${
+            selectedNetwork === network.id
+              ? "border-primary bg-primary/5 shadow-sm"
+              : "border-border bg-card hover:border-primary/30 hover:bg-muted/40"
+          }`}
+        >
+            <div className="flex items-center gap-3">
+              <network.logo className={`w-8 h-8 ${selectedNetwork === network.id ? "" : "opacity-50"}`} />
               <div className="text-left">
                 <div className="font-bold text-lg">{network.name}</div>
-                <div className="text-xs text-muted-foreground">{networkBundles.filter(b => b.provider?.toUpperCase() === network.id).length} bundles</div>
+                <div className="text-xs text-muted-foreground">{products.filter(b => b.provider?.toUpperCase() === network.id && b.category === "DATA_BUNDLE").length} bundles</div>
               </div>
             </div>
           </button>
@@ -146,17 +875,17 @@ function BundlePricingContent() {
             {NetworkLogo && <NetworkLogo className="w-6 h-6" />}
             <div>
               <CardTitle>{currentNetwork?.name} Bundles</CardTitle>
-              <CardDescription>Manage pricing for {currentNetwork?.name} data bundles</CardDescription>
+              <CardDescription>Manage source cost, subscriber buy price, and storefront prices for {currentNetwork?.name}</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Add New Bundle Form */}
-          <div className="border rounded-lg p-4 bg-muted/30 space-y-4">
+          <div className="rounded-md border bg-muted/20 p-4 space-y-4">
             <h3 className="font-semibold flex items-center gap-2">
               <Plus className="w-4 h-4" /> Add New Bundle
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
               <Input
                 placeholder="Bundle name (e.g., 1GB Data)"
                 value={newBundleName}
@@ -164,7 +893,7 @@ function BundlePricingContent() {
                 onKeyPress={(e) => e.key === "Enter" && handleAddBundle()}
               />
               <Input
-                placeholder="Base price (GH₵)"
+                placeholder="Source cost (GHS)"
                 type="number"
                 min="0"
                 step="0.01"
@@ -173,7 +902,7 @@ function BundlePricingContent() {
                 onKeyPress={(e) => e.key === "Enter" && handleAddBundle()}
               />
               <Input
-                placeholder="Current price (GH₵)"
+                placeholder="Subscriber buy price (GHS)"
                 type="number"
                 min="0"
                 step="0.01"
@@ -181,11 +910,23 @@ function BundlePricingContent() {
                 onChange={(e) => setNewBundlePrice(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleAddBundle()}
               />
+              <Input
+                placeholder="Storefront price (GHS)"
+                type="number"
+                min="0"
+                step="0.01"
+                value={newBundleStorefrontPrice}
+                onChange={(e) => setNewBundleStorefrontPrice(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleAddBundle()}
+              />
               <Button onClick={handleAddBundle} className="w-full">
                 Add Bundle
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">Base price: wholesale/cost for agents. Current price: retail price you display.</p>
+            <p className="text-xs text-muted-foreground">Source cost is your provider cost. Subscriber buy price is what you pay in your dashboard. Storefront price is what public customers pay.</p>
+            <div className="rounded-md border bg-background px-3 py-2 text-xs text-muted-foreground">
+              Recommended: create MTN, Telecel, and AirtelTigo bundles with matching sizes, then use pricing profiles only when agents or resellers need special prices.
+            </div>
           </div>
 
           {/* Bundles List */}
@@ -194,20 +935,66 @@ function BundlePricingContent() {
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
           ) : networkBundles.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No bundles yet</p>
-              <p className="text-sm text-muted-foreground">Add your first bundle above</p>
-            </div>
+            <EmptyState
+              icon={Plus}
+              title={`No ${currentNetwork?.name ?? "network"} bundles yet`}
+              description="Add the first data bundle above with source cost, subscriber buy price, and storefront price. Active bundles appear in storefronts and buyer flows."
+              secondaryAction={{ label: "Review Launch Setup", href: "/dashboard/setup" }}
+            />
           ) : (
             <div className="space-y-3">
               <h3 className="font-semibold text-sm">Current Bundles ({networkBundles.length})</h3>
-              <div className="overflow-x-auto">
-                <Table>
+              <div className="grid gap-3 xl:hidden lg:grid-cols-2">
+                {networkBundles.map(bundle => (
+                  <div key={bundle.id} className="rounded-md border bg-background p-3 text-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold">{bundle.name}</p>
+                        <p className="text-xs text-muted-foreground">{currentNetwork?.name}</p>
+                      </div>
+                      <Badge variant={bundle.active ? "default" : "outline"} className={bundle.active ? "status-success border" : ""}>
+                        {bundle.active ? "Active" : "Inactive"}
+                      </Badge>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                      <div>
+                        <p className="font-medium text-foreground">{formatGhanaCedis(bundle.basePrice ?? bundle.price)}</p>
+                        <p>Source cost</p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">{formatGhanaCedis(bundle.price)}</p>
+                        <p>Buy price</p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-primary">{formatGhanaCedis(bundle.storefrontPrice ?? bundle.price)}</p>
+                        <p>Storefront</p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">{formatGhanaCedis(Math.max(Number(bundle.storefrontPrice ?? bundle.price) - Number(bundle.basePrice ?? bundle.price), 0))}</p>
+                        <p>Profit</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex justify-end gap-1">
+                      <Button size="sm" variant="ghost" onClick={() => handleEdit(bundle)} title="Edit">
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => handleDelete(bundle)} title="Delete">
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="table-scroll hidden rounded-md border bg-background xl:block">
+                <Table className="min-w-[720px]">
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
                       <TableHead>Bundle Name</TableHead>
-                      <TableHead className="text-right">Base Price</TableHead>
-                      <TableHead className="text-right">Current Price</TableHead>
+                      <TableHead className="text-right">Source Cost</TableHead>
+                      <TableHead className="text-right">Subscriber Buy</TableHead>
+                      <TableHead className="text-right">Storefront</TableHead>
+                      <TableHead className="text-right">Profit</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -218,8 +1005,10 @@ function BundlePricingContent() {
                         <TableCell className="font-medium">{bundle.name}</TableCell>
                         <TableCell className="text-right text-sm">{formatGhanaCedis(bundle.basePrice ?? bundle.price)}</TableCell>
                         <TableCell className="text-right font-semibold">{formatGhanaCedis(bundle.price)}</TableCell>
+                        <TableCell className="text-right font-semibold text-primary">{formatGhanaCedis(bundle.storefrontPrice ?? bundle.price)}</TableCell>
+                        <TableCell className="text-right text-sm">{formatGhanaCedis(Math.max(Number(bundle.storefrontPrice ?? bundle.price) - Number(bundle.basePrice ?? bundle.price), 0))}</TableCell>
                         <TableCell>
-                          <Badge variant={bundle.active ? "default" : "outline"} className={bundle.active ? "bg-green-50 text-green-700" : ""}>
+                          <Badge variant={bundle.active ? "default" : "outline"} className={bundle.active ? "status-success border" : ""}>
                             {bundle.active ? "Active" : "Inactive"}
                           </Badge>
                         </TableCell>

@@ -1,21 +1,24 @@
-import { requireOrgManager, isAuthError } from "@/lib/auth-guard"
+import { requireAdmin, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
+import { notifyApiOrderStatus } from "@/lib/api-order-tracking"
 import { reverseOrderProfitIfNeeded, reverseOrderWalletDebitIfNeeded } from "@/lib/order-wallet"
 import { z } from "zod"
 
 const rowSchema = z.object({
   orderId: z.string().min(1),
-  status: z.enum(["PENDING", "COMPLETED", "FAILED", "CANCELLED", "REFUNDED"]),
+  status: z.enum(["PENDING", "PROCESSING", "COMPLETED", "FAILED", "CANCELLED", "REFUNDED"]),
 })
 
 const schema = z.object({
   rows: z.array(rowSchema).min(1),
 })
 
+const IMPORTABLE_CURRENT_STATUSES = new Set(["PENDING", "PROCESSING"])
+
 export async function POST(req: Request) {
   try {
-    const authResult = await requireOrgManager()
+    const authResult = await requireAdmin()
     if (isAuthError(authResult)) {
       return authResult
     }
@@ -43,6 +46,11 @@ export async function POST(req: Request) {
         })
 
         if (!existing) {
+          failed++
+          continue
+        }
+
+        if (!IMPORTABLE_CURRENT_STATUSES.has(existing.status)) {
           failed++
           continue
         }
@@ -78,6 +86,10 @@ export async function POST(req: Request) {
             meta: JSON.stringify({ status: row.status }),
           },
         })
+
+        if (existing.status !== row.status) {
+          await notifyApiOrderStatus(row.orderId, row.status)
+        }
 
         updated++
       } catch {

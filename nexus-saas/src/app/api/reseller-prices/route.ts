@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { requireAuth, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors } from "@/lib/api-response"
+import { getResellerPricingProfileContext, resolveResellerBuyPrice } from "@/lib/reseller-pricing"
 import { z } from "zod"
 
 const createPriceSchema = z.object({
@@ -57,16 +58,24 @@ export async function POST(req: Request) {
       return ApiErrors.NOT_FOUND("Reseller not found")
     }
 
-    // Verify product exists
     const product = await db.product.findFirst({
       where: { id: productId, organizationId },
-      select: { id: true },
+      include: {
+        agentPrices: {
+          where: { agentId, organizationId },
+          select: { price: true },
+        },
+      },
     })
     if (!product) {
       return ApiErrors.NOT_FOUND("Product not found")
     }
 
-    // Upsert price override
+    const parentCost = product.agentPrices?.[0]?.price ?? product.price
+    if (price < parentCost) {
+      return ApiErrors.BAD_REQUEST(`Reseller price cannot be below the parent agent cost (${parentCost}).`)
+    }
+
     const result = await db.resellerPrice.upsert({
       where: { resellerId_productId: { resellerId, productId } },
       create: {
@@ -143,7 +152,58 @@ export async function GET(req: Request) {
       select: { id: true, resellerId: true, productId: true, price: true },
     })
 
-    return apiSuccess(prices)
+    const [products, pricingProfile] = await Promise.all([
+      db.product.findMany({
+        where: { organizationId, active: true },
+        include: {
+          basePrices: {
+            where: { organizationId },
+            select: { price: true },
+          },
+          agentPrices: {
+            where: { agentId, organizationId },
+            select: { price: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      getResellerPricingProfileContext(organizationId, resellerId),
+    ])
+
+    const overrideMap = new Map(prices.map((price) => [price.productId, price.price]))
+
+    const productPricing = products.map((product) => {
+      const basePrice = product.basePrices?.[0]?.price ?? product.price
+      const parentCost = product.agentPrices?.[0]?.price ?? product.price
+      const profilePrice = pricingProfile.profilePriceMap.get(product.id)
+      const effectiveDefaultPrice = resolveResellerBuyPrice({
+        overridePrice: overrideMap.get(product.id),
+        profilePrice,
+        parentCost,
+        strictPricing: pricingProfile.strictPricing,
+      })
+      return {
+        id: product.id,
+        name: product.name,
+        provider: product.provider,
+        category: product.category,
+        price: effectiveDefaultPrice ?? parentCost,
+        basePrice,
+        parentCost,
+        profilePrice,
+        effectiveDefaultPrice,
+        blockedByStrictProfile: effectiveDefaultPrice === null,
+      }
+    })
+
+    return apiSuccess({
+      prices,
+      products: productPricing,
+      assignment: {
+        pricingProfileId: pricingProfile.pricingProfileId,
+        strictPricing: pricingProfile.strictPricing,
+      },
+    })
   } catch (error) {
     console.error("[RESELLER_PRICES_GET]", error)
     return ApiErrors.INTERNAL_ERROR()

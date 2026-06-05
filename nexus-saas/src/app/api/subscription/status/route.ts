@@ -1,6 +1,9 @@
 import { requireAuthAndOrg, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
+import { refreshOrganizationSubscriptionStatus } from "@/lib/subscription-access"
+
+export const dynamic = "force-dynamic"
 
 export async function GET() {
   try {
@@ -9,11 +12,19 @@ export async function GET() {
       return authResult
     }
 
+    await refreshOrganizationSubscriptionStatus(authResult.user.organizationId!)
+
     const org = await db.organization.findUnique({
       where: { id: authResult.user.organizationId! },
       include: {
         subscription: {
-          include: { plan: true },
+          include: {
+            plan: true,
+            payments: {
+              orderBy: { createdAt: "desc" },
+              take: 10,
+            },
+          },
         },
       },
     })

@@ -1,9 +1,9 @@
-﻿import { redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import DashboardLayoutClient from "./_layout-client";
+import { getRoleLandingPath } from "@/lib/role-landing";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  // Check authentication
   const session = await auth();
   if (!session || !session.user) {
     redirect("/login");
@@ -11,9 +11,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const role = (session.user as { role?: string }).role;
 
-  // Check for SUBSCRIBER role (organization owner/admin)
   if (role !== "SUBSCRIBER") {
-    redirect("/");
+    redirect(getRoleLandingPath(role));
   }
 
   return <DashboardLayoutClient>{children}</DashboardLayoutClient>;

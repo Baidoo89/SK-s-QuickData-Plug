@@ -1,6 +1,5 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { DispatchPolicyCard } from "@/components/admin/dispatch-policy-card";
 import { DispatchHealthCard } from "@/components/admin/dispatch-health-card";
 
 function EnvCard({ label, envKey, description }: { label: string; envKey: string; description: string }) {
@@ -12,7 +11,7 @@ function EnvCard({ label, envKey, description }: { label: string; envKey: string
           {label}
           <Badge
             variant="secondary"
-            className={isSet ? "bg-green-100 text-green-800 text-xs" : "bg-red-100 text-red-800 text-xs"}
+            className={isSet ? "status-success border text-xs" : "text-xs"}
           >
             {isSet ? "Set" : "Missing"}
           </Badge>
@@ -29,12 +28,15 @@ function EnvCard({ label, envKey, description }: { label: string; envKey: string
 export default function AdminSettingsPage() {
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
-      <p className="text-sm text-muted-foreground">
-        Configure API settings and core system behaviour for the platform.
-      </p>
+      <div className="max-w-3xl space-y-1">
+        <p className="text-xs font-semibold uppercase tracking-wide text-primary">Platform configuration</p>
+        <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
+        <p className="text-sm text-muted-foreground">
+          Superadmin-owned platform configuration for auth, SaaS billing, email, encryption, and optional provider automation.
+        </p>
+      </div>
 
-      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Environment Variables</h3>
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Launch Critical</h3>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <EnvCard
           label="Auth Secret"
@@ -52,10 +54,19 @@ export default function AdminSettingsPage() {
           description="Connection string for the production PostgreSQL database."
         />
         <EnvCard
-          label="Paystack Secret"
-          envKey="PAYSTACK_SECRET_KEY"
-          description="Secret key for processing payments and verifying transactions via Paystack."
+          label="Platform Subscription Paystack"
+          envKey="PAYSTACK_SUBSCRIPTION_SECRET_KEY"
+          description="Secret key for SaaS subscription billing paid to the platform owner."
         />
+        <EnvCard
+          label="Subscriber Key Encryption"
+          envKey="PAYMENT_SETTINGS_ENCRYPTION_KEY"
+          description="Dedicated encryption key for stored subscriber Paystack settings."
+        />
+      </div>
+
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Communication</h3>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <EnvCard
           label="Resend API Key"
           envKey="RESEND_API_KEY"
@@ -66,6 +77,10 @@ export default function AdminSettingsPage() {
           envKey="RESEND_FROM_EMAIL"
           description="Verified sender address/domain used by Resend for outgoing invite/reset emails."
         />
+      </div>
+
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Optional Provider Automation</h3>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <EnvCard
           label="Provider Order URL"
           envKey="PROVIDER_ORDER_URL"
@@ -113,11 +128,29 @@ export default function AdminSettingsPage() {
         />
       </div>
 
-      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Dispatch Control</h3>
-      <DispatchPolicyCard />
+      <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Fulfillment Ownership</h3>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Subscriber-Owned Routing</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-xs text-muted-foreground">
+              <p>
+                Each subscriber controls their own provider connection and network routing from their dashboard settings.
+              </p>
+              <p>
+                Superadmin monitors platform-wide dispatch health and keeps the fallback environment variables ready for launch support.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
 
-      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Dispatch Monitoring</h3>
-      <DispatchHealthCard />
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Dispatch Monitoring</h3>
+          <DispatchHealthCard />
+        </div>
+      </div>
     </div>
   );
 }

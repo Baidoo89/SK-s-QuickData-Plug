@@ -1,12 +1,9 @@
 import { requireAuthAndOrg, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
-
-const PLANS: Record<string, { name: string; priceGHS: number; maxProducts: number; maxAgents: number }> = {
-  starter: { name: "Starter", priceGHS: 99, maxProducts: 10, maxAgents: 5 },
-  professional: { name: "Professional", priceGHS: 299, maxProducts: 50, maxAgents: 20 },
-  enterprise: { name: "Enterprise", priceGHS: 799, maxProducts: 999999, maxAgents: 999999 },
-}
+import { getNextBillingDate, getSaasPlanForCheckout, refreshOrganizationSubscriptionStatus } from "@/lib/subscription-access"
+import { getSubscriptionPaystackSecret } from "@/lib/paystack"
+import { getBaseUrl } from "@/lib/mail"
 
 export async function POST(req: Request) {
   try {
@@ -15,13 +12,20 @@ export async function POST(req: Request) {
       return authResult
     }
 
-    const { planId } = await req.json()
+    const { planId, planCode } = await req.json().catch(() => ({}))
+    const explicitPlanId = typeof planId === "string" && planId.trim() ? planId.trim() : null
+    const requestedPlan =
+      explicitPlanId ??
+      (typeof planCode === "string" && planCode.trim()
+        ? planCode.trim()
+        : undefined)
+    const plan = explicitPlanId
+      ? await db.plan.findUnique({ where: { id: explicitPlanId } })
+      : await getSaasPlanForCheckout(requestedPlan)
 
-    if (!planId || !PLANS[planId]) {
-      return ApiErrors.BAD_REQUEST("Invalid plan")
+    if (!plan || !plan.active || !plan.visible || plan.retiredAt) {
+      return ApiErrors.BAD_REQUEST("This plan is no longer available for checkout.")
     }
-
-    const plan = PLANS[planId]
     const user = await db.user.findUnique({
       where: { id: authResult.user.id },
       include: { organization: true },
@@ -31,13 +35,53 @@ export async function POST(req: Request) {
       return ApiErrors.NOT_FOUND("Organization")
     }
 
-    // Check if org already has active subscription
-    const existingSub = await db.subscription.findUnique({
-      where: { organizationId: user.organizationId },
-    })
+    const existingSub = await refreshOrganizationSubscriptionStatus(user.organizationId)
 
-    if (existingSub?.status === "ACTIVE") {
-      return ApiErrors.CONFLICT("Already has active subscription")
+    const secret = getSubscriptionPaystackSecret()
+    const baseUrl = getBaseUrl()
+
+    if (!secret) {
+      if (process.env.NODE_ENV !== "production") {
+        const reference = `DEV-SUB-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+        const subscription = await db.subscription.upsert({
+          where: { organizationId: user.organizationId },
+          update: {
+            planId: plan.id,
+            status: "ACTIVE",
+            paystackRef: reference,
+            nextBillingAt: getNextBillingDate(existingSub?.nextBillingAt),
+            updatedAt: new Date(),
+          },
+          create: {
+            organizationId: user.organizationId,
+            planId: plan.id,
+            status: "ACTIVE",
+            paystackRef: reference,
+            nextBillingAt: getNextBillingDate(),
+          },
+        })
+
+        await db.payment.create({
+          data: {
+            subscriptionId: subscription.id,
+            amount: plan.priceGHS,
+            paystackRef: reference,
+            status: "SUCCESS",
+            paidAt: new Date(),
+          },
+        })
+
+        return apiSuccess(
+          {
+            devActivated: true,
+            redirectUrl: "/dashboard/setup?subscription=dev-active",
+            plan: { name: plan.name, priceGHS: plan.priceGHS },
+          },
+          "Development subscription activated. Configure Paystack before production launch.",
+        )
+      }
+
+      return ApiErrors.BAD_REQUEST("Subscription billing is not configured. Add PAYSTACK_SUBSCRIPTION_SECRET_KEY before taking live payments.")
     }
 
     // Convert GHS to pesewas (1 GHS = 100 pesewas)
@@ -47,7 +91,7 @@ export async function POST(req: Request) {
     const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        Authorization: `Bearer ${secret}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -55,10 +99,11 @@ export async function POST(req: Request) {
         amount: amountInPesewas,
         metadata: {
           organizationId: user.organizationId,
-          planId,
+          planId: plan.id,
+          planName: plan.name,
           orgName: user.organization?.name,
         },
-        callback_url: `${process.env.NEXTAUTH_URL}/api/paystack/verify`,
+        callback_url: `${baseUrl}/api/paystack/verify`,
       }),
     })
 

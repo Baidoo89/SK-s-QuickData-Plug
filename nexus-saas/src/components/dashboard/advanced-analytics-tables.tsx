@@ -55,7 +55,7 @@ export function AdvancedAnalyticsTables({
 
   return (
     <>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted-foreground">
           Filter analytics by network, agent, or product name.
         </p>
@@ -67,20 +67,20 @@ export function AdvancedAnalyticsTables({
         />
       </div>
 
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-7 mt-4">
-        <Card className="col-span-1 lg:col-span-3 bg-gradient-to-br from-slate-100 via-white to-slate-200">
+      <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-1 min-w-0 overflow-hidden border border-border bg-card/95 lg:col-span-3">
           <CardHeader>
             <CardTitle>Network performance</CardTitle>
             <p className="text-xs text-muted-foreground mt-1">
               Revenue by provider in the selected period.
             </p>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
+          <CardContent className="table-scroll">
             <Table className="min-w-[320px] text-xs md:text-sm">
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-primary">Network</TableHead>
-                  <TableHead className="text-right text-primary">Revenue (GH₵)</TableHead>
+                  <TableHead className="text-right text-primary">Revenue (GHS)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -102,16 +102,16 @@ export function AdvancedAnalyticsTables({
           </CardContent>
         </Card>
 
-        <Card className="col-span-1 lg:col-span-4 bg-gradient-to-br from-white via-slate-100 to-slate-200">
+        <Card className="col-span-1 min-w-0 overflow-hidden border border-border bg-card/95 lg:col-span-4">
           <CardHeader>
             <CardTitle>Top agents</CardTitle>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
+          <CardContent className="table-scroll">
             <Table className="min-w-[320px] text-xs md:text-sm">
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-primary">Agent</TableHead>
-                  <TableHead className="text-right text-primary">Revenue (GH₵)</TableHead>
+                  <TableHead className="text-right text-primary">Revenue (GHS)</TableHead>
                   <TableHead className="text-right">Orders</TableHead>
                 </TableRow>
               </TableHeader>
@@ -136,17 +136,17 @@ export function AdvancedAnalyticsTables({
         </Card>
       </div>
 
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-7 mt-4">
-        <Card className="col-span-1 lg:col-span-4 bg-gradient-to-br from-slate-100 via-white to-slate-200">
+      <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-1 min-w-0 overflow-hidden border border-border bg-card/95 lg:col-span-4">
           <CardHeader>
             <CardTitle>Top products</CardTitle>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
+          <CardContent className="table-scroll">
             <Table className="min-w-[320px] text-xs md:text-sm">
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-primary">Product</TableHead>
-                  <TableHead className="text-right text-primary">Revenue (GH₵)</TableHead>
+                  <TableHead className="text-right text-primary">Revenue (GHS)</TableHead>
                   <TableHead className="text-right">Orders</TableHead>
                 </TableRow>
               </TableHeader>

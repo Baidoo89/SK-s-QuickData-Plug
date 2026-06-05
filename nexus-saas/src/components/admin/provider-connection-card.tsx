@@ -23,7 +23,11 @@ function isLikelyProductionHost(hostname: string) {
   return normalized !== "localhost" && normalized !== "127.0.0.1" && !normalized.endsWith(".local")
 }
 
-export function ProviderConnectionCard() {
+type ProviderConnectionCardProps = {
+  endpoint?: string
+}
+
+export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connection" }: ProviderConnectionCardProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -45,7 +49,7 @@ export function ProviderConnectionCard() {
     async function loadConnection() {
       setLoading(true)
       try {
-        const res = await fetch("/api/admin/provider-connection")
+        const res = await fetch(endpoint)
         if (!res.ok) throw new Error("Could not load provider connection")
         const payload = await res.json()
         const data = payload.data
@@ -66,7 +70,7 @@ export function ProviderConnectionCard() {
     }
 
     loadConnection()
-  }, [toast])
+  }, [endpoint, toast])
 
   async function saveConnection() {
     const envGuess = inferProviderEnvironment(providerOrderUrl, providerApiKey)
@@ -83,7 +87,7 @@ export function ProviderConnectionCard() {
 
     setSaving(true)
     try {
-      const res = await fetch("/api/admin/provider-connection", {
+      const res = await fetch(endpoint, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -122,11 +126,11 @@ export function ProviderConnectionCard() {
   const showRiskWarning = prodHost && envGuess === "TEST"
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium">Provider Connection</CardTitle>
+    <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
+      <CardHeader className="border-b bg-muted/30 pb-3">
+        <CardTitle className="text-sm font-semibold">Provider Connection</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 p-4">
         <p className="text-xs text-muted-foreground">
           Store the provider endpoint and secret securely on the server. This is used only for API-routed orders.
         </p>
@@ -135,7 +139,7 @@ export function ProviderConnectionCard() {
           <span className="text-muted-foreground">Detected provider environment:</span>
           <Badge
             variant="secondary"
-            className={envGuess === "TEST" ? "bg-amber-100 text-amber-800" : envGuess === "LIVE" ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-700"}
+            className={envGuess === "TEST" ? "bg-accent/70 text-accent-foreground" : envGuess === "LIVE" ? "bg-primary/15 text-foreground" : "bg-muted text-foreground"}
           >
             {envGuess}
           </Badge>
@@ -145,11 +149,11 @@ export function ProviderConnectionCard() {
         </div>
 
         {showRiskWarning ? (
-          <div className="space-y-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2">
-            <p className="text-[11px] text-amber-900">
+          <div className="space-y-2 rounded-md border border-border bg-accent/60 px-3 py-2">
+            <p className="text-[11px] text-foreground">
               Warning: this looks like a production host, but provider URL/key looks like test or sandbox credentials.
             </p>
-            <label className="flex items-center gap-2 text-[11px] text-amber-900">
+            <label className="flex items-center gap-2 text-[11px] text-foreground">
               <input
                 type="checkbox"
                 checked={allowTestInProd}
@@ -202,10 +206,11 @@ export function ProviderConnectionCard() {
           <span>{updatedAt ? `Last updated: ${new Date(updatedAt).toLocaleString()}` : "Not configured yet"}</span>
         </div>
 
-        <Button onClick={saveConnection} disabled={loading || saving} className="text-xs">
+        <Button onClick={saveConnection} disabled={loading || saving} className="w-full text-xs sm:w-auto">
           {saving ? "Saving..." : "Save Provider Connection"}
         </Button>
       </CardContent>
     </Card>
   )
 }
+

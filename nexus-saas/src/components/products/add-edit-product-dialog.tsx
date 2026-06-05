@@ -22,12 +22,14 @@ export interface Product {
   id?: string
   name: string
   description?: string
-  price: number // base price
-  basePrice?: number // for clarity, but keep price for backward compatibility
+  price: number
+  basePrice?: number
+  storefrontPrice?: number
   stock?: number
   provider: string
   bundleType: string
   category: string
+  serviceForm?: string | null
 }
 
 
@@ -69,6 +71,7 @@ export function AddEditProductDialog({ open, setOpen, initialData, mode }: AddEd
         ...initialData,
         basePrice: initialData.basePrice ?? initialData.price ?? 0,
         price: initialData.price ?? initialData.basePrice ?? 0,
+        storefrontPrice: initialData.storefrontPrice ?? initialData.price ?? 0,
       })
     } else {
       setForm({
@@ -80,6 +83,7 @@ export function AddEditProductDialog({ open, setOpen, initialData, mode }: AddEd
         bundleType: "DATA",
         category: "DATA_BUNDLE",
         basePrice: 0,
+        storefrontPrice: 0,
       })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -89,7 +93,7 @@ export function AddEditProductDialog({ open, setOpen, initialData, mode }: AddEd
     const { name, value } = e.target
     setForm((prev) => ({
       ...prev,
-      [name]: ["price", "basePrice"].includes(name) ? parseFloat(value) : value
+      [name]: ["price", "basePrice", "storefrontPrice"].includes(name) ? parseFloat(value) : value
     }))
   }
 
@@ -120,61 +124,78 @@ export function AddEditProductDialog({ open, setOpen, initialData, mode }: AddEd
     }
   }
 
+  const isDataBundleForm = isBundleSection && (mode === "add" || form.category === "DATA_BUNDLE")
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>{mode === "edit" ? "Edit Product" : "Add Bundle"}</DialogTitle>
+            <DialogTitle>{mode === "edit" ? "Edit Product" : isDataBundleForm ? "Add Bundle" : "Add Product"}</DialogTitle>
             <DialogDescription>
-              {mode === "edit" ? "Update product details." : "Create a new bundle for your organization."}
+              {mode === "edit" ? "Update product details." : "Create a new catalog item for your organization."}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">Name</Label>
-              {isBundleSection ? (
-                <select id="name" name="name" className="col-span-3 flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" required value={form.name} onChange={handleChange}>
+            <div className="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
+              <Label htmlFor="name" className="sm:text-right">Name</Label>
+              {isDataBundleForm ? (
+                <select id="name" name="name" className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-3" required value={form.name} onChange={handleChange}>
                   {Array.from({ length: 100 }, (_, i) => (
                     <option key={i + 1} value={`${i + 1}GB`}>{i + 1}GB</option>
                   ))}
                 </select>
               ) : (
-                <Input id="name" name="name" className="col-span-3" required placeholder="e.g. Legal Doc Name" value={form.name} onChange={handleChange} />
+                <Input id="name" name="name" className="sm:col-span-3" required placeholder="e.g. Legal Doc Name" value={form.name} onChange={handleChange} />
               )}
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="basePrice" className="text-right">Base Price (GH₵)</Label>
-              <Input id="basePrice" name="basePrice" type="number" min="0" step="0.01" className="col-span-3" required placeholder="e.g. 10.00" value={form.basePrice ?? form.price} onChange={handleChange} />
+            <div className="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
+              <Label htmlFor="basePrice" className="sm:text-right">Source Cost</Label>
+              <Input id="basePrice" name="basePrice" type="number" min="0" step="0.01" className="sm:col-span-3" required placeholder="e.g. 10.00" value={form.basePrice ?? form.price} onChange={handleChange} />
             </div>
-            {!isBundleSection && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="category" className="text-right">Category</Label>
-                <select id="category" name="category" className="col-span-3 flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" required value={form.category} onChange={handleChange}>
+            {!isDataBundleForm && (
+              <div className="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
+                <Label htmlFor="category" className="sm:text-right">Category</Label>
+                <select id="category" name="category" className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-3" required value={form.category} onChange={handleChange}>
                   <option value="LEGAL_DOCUMENT">Legal Document</option>
                   <option value="EDUCATION">Education</option>
-                  <option value="AFA_MINUTES">AFA Minutes</option>
+                  <option value="REGISTRATION_SERVICE">Registration Service</option>
+                  {form.category === "AFA_REGISTRATION" ? <option value="AFA_REGISTRATION">Legacy Registration Service</option> : null}
                 </select>
               </div>
             )}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="provider" className="text-right">Provider</Label>
-              <input id="provider" name="provider" className="col-span-3 flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" required value={form.provider} readOnly />
+            <div className="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
+              <Label htmlFor="provider" className="sm:text-right">Provider</Label>
+              {isDataBundleForm ? (
+                <input id="provider" name="provider" className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-3" required value={form.provider} readOnly />
+              ) : (
+                <select id="provider" name="provider" className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-3" required value={form.provider} onChange={handleChange}>
+                  <option value="MTN">MTN</option>
+                  <option value="AIRTELTIGO">AirtelTigo</option>
+                  <option value="TELECEL">Telecel</option>
+                  <option value="SERVICE">Other Service</option>
+                </select>
+              )}
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="bundleType" className="text-right">Type</Label>
-              <select id="bundleType" name="bundleType" className="col-span-3 flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" required value={form.bundleType} onChange={handleChange}>
+            <div className="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
+              <Label htmlFor="bundleType" className="sm:text-right">Type</Label>
+              <select id="bundleType" name="bundleType" className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-3" required value={form.bundleType} onChange={handleChange}>
                 <option value="DATA">Data</option>
                 <option value="AIRTIME">Airtime</option>
+                <option value="SERVICE">Service</option>
               </select>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">Description</Label>
-              <Input id="description" name="description" className="col-span-3" value={form.description} onChange={handleChange} />
+            <div className="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
+              <Label htmlFor="description" className="sm:text-right">Description</Label>
+              <Input id="description" name="description" className="sm:col-span-3" value={form.description} onChange={handleChange} />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="price" className="text-right">Price</Label>
-              <Input id="price" name="price" type="number" step="0.01" className="col-span-3" required value={form.price} onChange={handleChange} />
+            <div className="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
+              <Label htmlFor="price" className="sm:text-right">Subscriber Buy</Label>
+              <Input id="price" name="price" type="number" step="0.01" className="sm:col-span-3" required value={form.price} onChange={handleChange} />
+            </div>
+            <div className="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
+              <Label htmlFor="storefrontPrice" className="sm:text-right">Storefront</Label>
+              <Input id="storefrontPrice" name="storefrontPrice" type="number" min="0" step="0.01" className="sm:col-span-3" required value={form.storefrontPrice ?? form.price} onChange={handleChange} />
             </div>
             <input type="hidden" name="stock" value={form.stock} />
           </div>

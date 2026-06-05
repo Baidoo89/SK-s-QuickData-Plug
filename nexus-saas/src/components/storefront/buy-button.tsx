@@ -46,25 +46,28 @@ export function BuyButton({ productId, subscriberSlug, agentId, disabled }: BuyB
         }),
       })
 
+      const body = await response.json().catch(() => null)
+
       if (!response.ok) {
-        const msg = await response.text()
-        throw new Error(msg || "Something went wrong")
+        throw new Error(body?.error?.message || body?.message || "Something went wrong")
+      }
+
+      const authorizationUrl = body?.data?.authorizationUrl
+      if (!authorizationUrl) {
+        throw new Error("Payment checkout was created without a payment link")
       }
 
       toast({
-        title: "Success!",
-        description: "Order placed successfully.",
+        title: "Redirecting to payment",
+        description: "Complete payment to submit the order.",
       })
-      setOpen(false)
-      // Refresh page to update stock UI
-      window.location.reload()
+      window.location.href = authorizationUrl
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: error instanceof Error ? error.message : "Could not place order.",
+        title: "Checkout failed",
+        description: error instanceof Error ? error.message : "Could not start checkout.",
       })
-    } finally {
       setIsLoading(false)
     }
   }
@@ -81,19 +84,19 @@ export function BuyButton({ productId, subscriberSlug, agentId, disabled }: BuyB
           <DialogHeader>
             <DialogTitle>Enter Details</DialogTitle>
             <DialogDescription>
-              Enter the recipient phone number for this bundle.
+              Enter the recipient phone number for this bundle. You will pay before the order is submitted.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="phone" className="text-right">
+            <div className="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
+              <Label htmlFor="phone" className="sm:text-right">
                 Phone
               </Label>
               <Input
                 id="phone"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
-                className="col-span-3"
+                className="sm:col-span-3"
                 placeholder="024XXXXXXX"
                 required
               />
@@ -102,7 +105,7 @@ export function BuyButton({ productId, subscriberSlug, agentId, disabled }: BuyB
           <DialogFooter>
             <Button type="submit" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Confirm Purchase
+              Continue to Payment
             </Button>
           </DialogFooter>
         </form>

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 
-type Row = { orderId: string; status: "PENDING" | "COMPLETED" | "FAILED" }
+type Row = { orderId: string; status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" }
 
 type ManualResultsImportProps = {
   importEndpoint?: string
@@ -38,7 +38,7 @@ export function ManualResultsImport({ importEndpoint = "/api/admin/orders/manual
       const orderId = cols[orderIdIdx]
       const status = cols[statusIdx]?.toUpperCase() as Row["status"]
 
-      if (!orderId || !["PENDING", "COMPLETED", "FAILED"].includes(status)) continue
+      if (!orderId || !["PENDING", "PROCESSING", "COMPLETED", "FAILED"].includes(status)) continue
       rows.push({ orderId, status })
     }
 
@@ -108,7 +108,7 @@ export function ManualResultsImport({ importEndpoint = "/api/admin/orders/manual
             className="w-full min-h-[110px] rounded-md border p-2 text-xs font-mono"
             placeholder="orderId,status"
           />
-          <p className="text-[11px] text-muted-foreground">Format: orderId,status with status as PENDING, COMPLETED, or FAILED.</p>
+          <p className="text-[11px] text-muted-foreground">Format: orderId,status with status as PENDING, PROCESSING, COMPLETED, or FAILED.</p>
           <Button type="submit" disabled={loading} className="text-xs">
             {loading ? "Importing..." : "Import Results"}
           </Button>

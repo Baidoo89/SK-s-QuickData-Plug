@@ -3,9 +3,15 @@ import { db } from "@/lib/db";
 import { formatGhanaCedis } from "@/lib/currency";
 
 import Link from "next/link";
+import { AlertTriangle, CheckCircle2, FileText, Megaphone, ShoppingBag, ShoppingCart, Store, TrendingUp, Wallet } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { MetricCard } from "@/components/ui/metric-card";
+import { PortalAccessMessage } from "@/components/access/portal-access-message";
+import { Badge } from "@/components/ui/badge";
+import { getUserWithdrawableSummary } from "@/lib/withdrawal-balance";
+import { getOrCreateResellerStorefrontLink } from "@/lib/storefront-links";
 
 function getGreetingByTime(date: Date): string {
   const hour = date.getHours();
@@ -22,6 +28,24 @@ function getDisplayName(name: string | null | undefined, email: string | null | 
 }
 
 type SalesRangeKey = "daily" | "weekly" | "monthly";
+
+type ChannelMetric = {
+  key: string;
+  label: string;
+  count: number;
+  revenue: number;
+  profit: number;
+  pending: number;
+  href: string;
+}
+
+type AlertItem = {
+  label: string;
+  description: string;
+  href: string;
+  action: string;
+  tone: "warning" | "info";
+}
 
 function resolveSalesRange(input?: string): SalesRangeKey {
   if (input === "weekly" || input === "monthly") return input;
@@ -43,71 +67,217 @@ function getRangeLabel(range: SalesRangeKey): string {
 export default async function ResellerDashboardPage({ searchParams }: { searchParams?: { salesRange?: string } }) {
   const session = await auth();
   if (!session?.user?.email) {
-    return null;
+    return <PortalAccessMessage title="Login required" description="Sign in with an approved reseller account to access this workspace." />;
   }
 
   const user = await db.user.findUnique({
     where: { email: session.user.email },
-    select: { id: true, name: true, email: true, role: true, organizationId: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      organizationId: true,
+      parentAgentId: true,
+      organization: { select: { slug: true, name: true } },
+    },
   });
 
-  if (!user || user.role !== "RESELLER" || !user.organizationId) {
-    return null;
+  if (!user || user.role !== "RESELLER" || !user.organizationId || !user.parentAgentId) {
+    return <PortalAccessMessage title="Reseller profile unavailable" description="This account is not linked to an approved reseller profile. Ask your agent or subscriber admin to review the account." />;
   }
 
   const now = new Date();
   const selectedSalesRange = resolveSalesRange(searchParams?.salesRange);
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const day = now.getDay();
+  const diffToMonday = (day + 6) % 7;
+  const startOfWeek = new Date(startOfToday);
+  startOfWeek.setDate(startOfToday.getDate() - diffToMonday);
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const salesStart = getRangeStart(now, selectedSalesRange);
 
-  const [walletAgg, todaysOrdersCount, monthCompletedAgg, filteredSalesAgg] = await Promise.all([
+  const [
+    walletAgg,
+    todaysOrders,
+    completedOrders,
+    selectedRangeOrders,
+    withdrawalSummary,
+    storefrontPriceCount,
+    pendingWithdrawals,
+    manualWorkCount,
+    todayServiceRequests,
+    pendingServiceRequestCount,
+  ] = await Promise.all([
     db.walletTransaction.aggregate({
       _sum: { amount: true },
       where: { userId: user.id, status: "success" },
     }),
-    db.order.count({
+    db.order.findMany({
       where: {
         organizationId: user.organizationId,
         userId: user.id,
         createdAt: { gte: startOfToday },
       },
+      include: { items: true },
     }),
-    db.order.aggregate({
-      _sum: { total: true },
+    db.order.findMany({
       where: {
         organizationId: user.organizationId,
         userId: user.id,
         status: "COMPLETED",
         createdAt: { gte: startOfMonth },
       },
+      include: { items: true },
     }),
-    db.order.aggregate({
-      _sum: { total: true },
+    db.order.findMany({
       where: {
         organizationId: user.organizationId,
         userId: user.id,
         status: "COMPLETED",
         createdAt: { gte: salesStart },
       },
+      include: { items: true },
+    }),
+    getUserWithdrawableSummary(user.id),
+    db.$queryRaw<Array<{ count: bigint }>>`
+      SELECT COUNT(*)::bigint AS count
+      FROM "ResellerStorefrontPrice"
+      WHERE "resellerId" = ${user.id}
+        AND "organizationId" = ${user.organizationId}
+    `,
+    db.withdrawalRequest.count({
+      where: {
+        organizationId: user.organizationId,
+        userId: user.id,
+        status: { in: ["PENDING", "APPROVED"] },
+      },
+    }),
+    db.order.count({
+      where: {
+        organizationId: user.organizationId,
+        userId: user.id,
+        status: { in: ["PENDING", "PROCESSING"] },
+        paymentStatus: "PAID",
+        fulfillmentMode: "MANUAL",
+      },
+    }),
+    db.serviceRequest.findMany({
+      where: {
+        organizationId: user.organizationId,
+        OR: [{ sellerUserId: user.id }, { userId: user.id }],
+        createdAt: { gte: startOfToday },
+      },
+      select: { total: true, profit: true },
+    }),
+    db.serviceRequest.count({
+      where: {
+        organizationId: user.organizationId,
+        OR: [{ sellerUserId: user.id }, { userId: user.id }],
+        status: "PENDING_REVIEW",
+        paymentStatus: "PAID",
+      },
     }),
   ]);
 
   const walletBalance = walletAgg._sum.amount ?? 0;
-  const monthCompletedTotal = monthCompletedAgg._sum.total ?? 0;
-  const filteredSales = filteredSalesAgg._sum.total ?? 0;
+  const todayCompletedOrders = todaysOrders.filter((order) => order.status === "COMPLETED");
+  const todayBuys = todaysOrders.filter((order) => order.source === "DASHBOARD_BUY");
+  const todayStorefrontSales = todaysOrders.filter((order) => order.source === "STOREFRONT");
+  const dailySales = todayCompletedOrders.reduce((sum, order) => sum + order.total, 0);
+  const weeklySales = completedOrders
+    .filter((order) => order.createdAt >= startOfWeek)
+    .reduce((sum, order) => sum + order.total, 0);
+  const monthCompletedTotal = completedOrders.reduce((sum, order) => sum + order.total, 0);
+  const filteredSales = selectedRangeOrders.reduce((sum, order) => sum + order.total, 0);
+  const dailyProfit = todayCompletedOrders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.profit, 0), 0);
+  const weeklyProfit = completedOrders
+    .filter((order) => order.createdAt >= startOfWeek)
+    .reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.profit, 0), 0);
+  const monthProfit = completedOrders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.profit, 0), 0);
   const selectedSalesRangeLabel = getRangeLabel(selectedSalesRange);
+  const serviceRevenueToday = todayServiceRequests.reduce((sum, request) => sum + request.total, 0);
+  const serviceProfitToday = todayServiceRequests.reduce((sum, request) => sum + request.profit, 0);
   const greeting = getGreetingByTime(now);
   const displayName = getDisplayName(user.name, user.email);
+  const storefrontPriceTotal = Number(storefrontPriceCount[0]?.count ?? 0);
+  const resellerStorePath = user.organization?.slug
+    ? await getOrCreateResellerStorefrontLink({
+        organizationId: user.organizationId,
+        organizationSlug: user.organization.slug,
+        resellerId: user.id,
+        resellerName: displayName,
+      })
+    : null;
+
+  function summarize(orders: typeof todaysOrders) {
+    return {
+      count: orders.length,
+      revenue: orders.reduce((sum, order) => sum + order.total, 0),
+      profit: orders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.profit, 0), 0),
+      pending: orders.filter((order) => ["PENDING", "PROCESSING", "PENDING_PAYMENT"].includes(order.status)).length,
+    };
+  }
+
+  const channelMetrics: ChannelMetric[] = [
+    { key: "buys", label: "Dashboard buys", ...summarize(todayBuys), href: "/reseller/orders" },
+    { key: "storefront", label: "Storefront sales", ...summarize(todayStorefrontSales), href: "/reseller/orders" },
+    { key: "services", label: "Service requests", count: todayServiceRequests.length, revenue: serviceRevenueToday, profit: serviceProfitToday, pending: pendingServiceRequestCount, href: "/reseller/service-requests" },
+    { key: "manual", label: "Pending fulfillment", count: manualWorkCount, revenue: todaysOrders.filter((order) => ["PENDING", "PROCESSING"].includes(order.status)).reduce((sum, order) => sum + order.total, 0), profit: 0, pending: manualWorkCount, href: "/reseller/orders" },
+  ];
+
+  const alertItems: AlertItem[] = [
+    ...(walletBalance <= 0 ? [{
+      label: "Wallet needs funding",
+      description: "Dashboard buys need wallet balance before orders can be placed.",
+      href: "/reseller/wallet",
+      action: "Open wallet",
+      tone: "warning" as const,
+    }] : []),
+    ...(storefrontPriceTotal === 0 ? [{
+      label: "No storefront customer prices",
+      description: "Set customer-facing prices before sharing your reseller storefront.",
+      href: "/reseller/storefront-pricing",
+      action: "Set prices",
+      tone: "warning" as const,
+    }] : []),
+    ...(pendingWithdrawals > 0 ? [{
+      label: "Withdrawal in review",
+      description: `${pendingWithdrawals} payout request${pendingWithdrawals === 1 ? "" : "s"} pending or approved.`,
+      href: "/reseller/withdrawals",
+      action: "View withdrawals",
+      tone: "info" as const,
+    }] : []),
+    ...(manualWorkCount > 0 ? [{
+      label: "Orders awaiting fulfillment",
+      description: `${manualWorkCount} paid manual order${manualWorkCount === 1 ? "" : "s"} are still pending or processing.`,
+      href: "/reseller/orders",
+      action: "View orders",
+      tone: "info" as const,
+    }] : []),
+    ...(pendingServiceRequestCount > 0 ? [{
+      label: "Service requests waiting",
+      description: `${pendingServiceRequestCount} paid service request${pendingServiceRequestCount === 1 ? "" : "s"} are waiting for subscriber processing.`,
+      href: "/reseller/service-requests?status=PENDING_REVIEW",
+      action: "View services",
+      tone: "info" as const,
+    }] : []),
+    ...(!resellerStorePath ? [{
+      label: "Storefront link unavailable",
+      description: "Your reseller storefront needs organization and parent-agent linkage.",
+      href: "/reseller/account",
+      action: "Review account",
+      tone: "warning" as const,
+    }] : []),
+  ];
 
   return (
-    <div className="space-y-6">
+    <div className="portal-page space-y-6">
       <div>
         <p className="text-sm font-medium text-primary">{`${greeting}, ${displayName}.`}</p>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-sm text-muted-foreground max-w-xl">
-          Snapshot of your reseller VTU activity: wallet balance, today&apos;s orders, and this
-          month&apos;s completed volume.
+          Track wallet-backed buys, storefront customer sales, and withdrawable profit without mixing balances.
         </p>
         <div className="flex flex-wrap gap-2 pt-2">
           {([
@@ -139,93 +309,204 @@ export default async function ResellerDashboardPage({ searchParams }: { searchPa
           </Button>
         </div>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Wallet balance</CardTitle>
+
+      {alertItems.length > 0 ? (
+        <Card className="border border-border bg-card/95 shadow-sm">
+          <CardHeader className="border-b bg-muted/30 pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <AlertTriangle className="h-4 w-4 text-primary" />
+              Operational alerts
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatGhanaCedis(walletBalance)}</div>
-            <p className="text-xs text-muted-foreground">Based on successful wallet transactions for this reseller.</p>
+          <CardContent className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
+            {alertItems.map((item) => (
+              <div key={item.label} className={item.tone === "warning" ? "status-warning rounded-md border p-3" : "status-info rounded-md border p-3"}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold">{item.label}</p>
+                    <p className="mt-1 text-xs leading-5">{item.description}</p>
+                  </div>
+                  <Button asChild size="sm" variant="outline" className="shrink-0 bg-background text-xs">
+                    <Link href={item.href}>{item.action}</Link>
+                  </Button>
+                </div>
+              </div>
+            ))}
           </CardContent>
         </Card>
-        <Card>
+      ) : (
+        <div className="status-success flex gap-3 rounded-md border px-4 py-3 text-sm">
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <p className="font-semibold">Reseller operations look clean</p>
+            <p>No wallet, pricing, withdrawal, or fulfillment alerts are active.</p>
+          </div>
+        </div>
+      )}
+
+      <div className="grid min-w-0 gap-4 md:grid-cols-2 lg:grid-cols-6">
+        <MetricCard
+          label="Today's Buys"
+          value={todayBuys.length}
+          description={`${todaysOrders.length} total orders today.`}
+          icon={ShoppingCart}
+          tone="info"
+        />
+        <MetricCard
+          label="Wallet Balance"
+          value={formatGhanaCedis(walletBalance)}
+          description="Successful wallet transactions for this reseller."
+          icon={Wallet}
+          tone="success"
+        />
+        <MetricCard
+          label="Storefront Sales"
+          value={todayStorefrontSales.length}
+          description={`Customer revenue ${formatGhanaCedis(todayStorefrontSales.reduce((sum, order) => sum + order.total, 0))}`}
+          icon={Store}
+          tone="primary"
+        />
+        <MetricCard
+          label="Withdrawable"
+          value={formatGhanaCedis(withdrawalSummary.availableBalance)}
+          description={`${formatGhanaCedis(withdrawalSummary.lockedAmount)} locked, ${formatGhanaCedis(withdrawalSummary.paidOut)} paid`}
+          icon={TrendingUp}
+          tone="success"
+        />
+        <MetricCard
+          label="Service Requests"
+          value={pendingServiceRequestCount}
+          description={`${todayServiceRequests.length} today, ${formatGhanaCedis(serviceRevenueToday)} value`}
+          icon={FileText}
+          tone={pendingServiceRequestCount > 0 ? "warning" : "primary"}
+        />
+        <Card className="md:col-span-2 lg:col-span-3">
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Today&apos;s orders</CardTitle>
+            <CardTitle className="text-sm font-medium">Revenue snapshot</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{todaysOrdersCount}</div>
-            <p className="text-xs text-muted-foreground">VTU orders you have placed today.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">This month (completed)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatGhanaCedis(monthCompletedTotal)}</div>
-            <p className="text-xs text-muted-foreground">Total value of your completed VTU orders this month.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Sales ({selectedSalesRangeLabel})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatGhanaCedis(filteredSales)}</div>
-            <p className="text-xs text-muted-foreground">Revenue from completed orders in selected range.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">API status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">OK</div>
-            <p className="text-xs text-muted-foreground">See API docs for programmatic access.</p>
-          </CardContent>
-        </Card>
-      </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Start selling</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p>Use your balance to send instant data bundles to your customers.</p>
-            <div className="flex flex-wrap gap-2 pt-1">
-              <Button asChild size="sm" className="text-xs">
-                <Link href="/reseller/buy/single">Buy single</Link>
-              </Button>
-              <Button asChild size="sm" variant="outline" className="text-xs">
-                <Link href="/reseller/buy/bulk">Buy bulk</Link>
-              </Button>
+          <CardContent className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Today</span>
+              <span className="font-semibold">{formatGhanaCedis(dailySales)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">This week</span>
+              <span className="font-semibold">{formatGhanaCedis(weeklySales)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">This month</span>
+              <span className="font-semibold">{formatGhanaCedis(monthCompletedTotal)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Selected range ({selectedSalesRangeLabel})</span>
+              <span className="font-semibold">{formatGhanaCedis(filteredSales)}</span>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="md:col-span-2 lg:col-span-3">
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Fund your wallet</CardTitle>
+            <CardTitle className="text-sm font-medium">Profit snapshot</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p>Top up via Paystack or ask your parent agent/admin to credit you.</p>
-            <Button asChild size="sm" className="text-xs mt-1">
-              <Link href="/reseller/wallet">Go to wallet</Link>
-            </Button>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Track performance</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p>Review your recent VTU orders and statuses in one place.</p>
-            <Button asChild size="sm" variant="outline" className="text-xs mt-1">
-              <Link href="/reseller/orders">View orders</Link>
-            </Button>
+          <CardContent className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Today</span>
+              <span className="font-semibold">{formatGhanaCedis(dailyProfit)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">This week</span>
+              <span className="font-semibold">{formatGhanaCedis(weeklyProfit)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">This month</span>
+              <span className="font-semibold">{formatGhanaCedis(monthProfit)}</span>
+            </div>
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader className="border-b bg-muted/30 pb-3">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <CardTitle className="text-sm font-semibold">Channel performance today</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Dashboard buys are wallet operations. Storefront customer sales produce withdrawable profit.
+              </p>
+            </div>
+            <Badge variant="outline" className="w-fit">{manualWorkCount} manual</Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="grid gap-3 p-4 md:grid-cols-3">
+          {channelMetrics.map((channel) => (
+            <Link key={channel.key} href={channel.href} className="rounded-md border bg-background p-3 transition-colors hover:bg-muted/40">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{channel.label}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{channel.count} order{channel.count === 1 ? "" : "s"}</p>
+                </div>
+                {channel.pending > 0 ? <Badge variant="secondary">{channel.pending} pending</Badge> : <Badge variant="outline">Clear</Badge>}
+              </div>
+              <div className="mt-3 space-y-1 text-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground">Revenue</span>
+                  <span className="font-semibold text-foreground">{formatGhanaCedis(channel.revenue)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground">Profit</span>
+                  <span className={channel.profit > 0 ? "font-semibold text-primary" : "font-medium text-muted-foreground"}>{formatGhanaCedis(channel.profit)}</span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-semibold">Quick actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-6">
+            {[
+              { href: "/reseller/buy/single", label: "Buy single", description: "Send one bundle.", icon: ShoppingBag },
+              { href: "/reseller/buy/bulk", label: "Buy bulk", description: "Upload many numbers.", icon: ShoppingBag },
+              { href: "/reseller/storefront-pricing", label: "Customer prices", description: "Set storefront margins.", icon: Megaphone },
+              { href: "/reseller/orders", label: "Orders", description: "Review order status.", icon: FileText },
+              { href: "/reseller/service-requests", label: "Service requests", description: "Track registration sales.", icon: FileText },
+              { href: "/reseller/wallet", label: "Wallet", description: "Top up and inspect logs.", icon: Wallet },
+            ].map((action) => {
+              const Icon = action.icon;
+              return (
+                <Link key={action.href} href={action.href} className="group">
+                  <div className="flex items-center gap-3 rounded-md border bg-background px-3 py-2 transition-colors group-hover:border-primary">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold">{action.label}</p>
+                      <p className="truncate text-[11px] text-muted-foreground">{action.description}</p>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {resellerStorePath ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold">Your storefront link</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="min-w-0 truncate rounded-md border bg-muted/30 px-3 py-2 font-mono text-xs">{resellerStorePath}</p>
+            <Button asChild size="sm" variant="outline" className="text-xs">
+              <Link href="/reseller/storefronts">Share links</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }

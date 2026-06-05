@@ -1,389 +1,604 @@
-"use client"
-
-import { useEffect, useState } from "react"
-import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Info } from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { ToastAction } from "@/components/ui/toast"
+import Link from "next/link"
+import { revalidatePath } from "next/cache"
+import { redirect } from "next/navigation"
+import { hash } from "bcryptjs"
+import { AlertTriangle, Building2, CreditCard, PackageCheck, ShieldCheck, ShoppingCart, UserCheck, Users } from "lucide-react"
+import { auth } from "@/auth"
+import { db } from "@/lib/db"
 import { formatGhanaCedis } from "@/lib/currency"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { MetricCard } from "@/components/ui/metric-card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
-interface OrgRow {
-  id: string
-  name: string
-  slug: string
-  createdAt: string
-  users: Array<{ email?: string | null; role: string }>
-  activeProductsCount?: number
-  active?: boolean
+export const dynamic = "force-dynamic"
+
+type AdminSearchParams = {
+  q?: string | string[]
 }
 
-interface AdminOverview {
-  totalOrgs: number
-  activeOrgs: number
-  totalOrders: number
-  totalRevenue: number
-  totalAgents: number
-  activeProducts: number
-  pendingAudits: number
+function slugify(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "")
 }
 
-export default function AdminPage() {
-  const { toast } = useToast()
-  const [orgs, setOrgs] = useState<OrgRow[]>([])
-  const [loading, setLoading] = useState(false)
-  const [query, setQuery] = useState("")
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
-  const [total, setTotal] = useState(0)
-  const [auditsOpen, setAuditsOpen] = useState(false)
-  const [selectedOrg, setSelectedOrg] = useState<string | null>(null)
-  const [audits, setAudits] = useState<any[]>([])
-  const [auditsLoading, setAuditsLoading] = useState(false)
-  const [overview, setOverview] = useState<AdminOverview | null>(null)
-  const safeOrgs = Array.isArray(orgs) ? orgs : []
+function addMonths(date: Date, months: number) {
+  const next = new Date(date)
+  next.setMonth(next.getMonth() + months)
+  return next
+}
 
-  useEffect(() => {
-    async function loadOverview() {
-      try {
-        const res = await fetch("/api/admin/overview")
-        if (!res.ok) return
-        const json = await res.json()
-        const payload = json?.data ?? json
-        setOverview({
-          totalOrgs: Number(payload?.totalOrgs ?? 0),
-          activeOrgs: Number(payload?.activeOrgs ?? 0),
-          totalOrders: Number(payload?.totalOrders ?? 0),
-          totalRevenue: Number(payload?.totalRevenue ?? 0),
-          totalAgents: Number(payload?.totalAgents ?? 0),
-          activeProducts: Number(payload?.activeProducts ?? 0),
-          pendingAudits: Number(payload?.pendingAudits ?? 0),
+async function requireSuperAdmin() {
+  const session = await auth()
+  const role = (session?.user as { role?: string } | undefined)?.role
+
+  if (!session?.user || role !== "SUPERADMIN") {
+    redirect("/login")
+  }
+
+  return session
+}
+
+async function setOrganizationStatus(formData: FormData) {
+  "use server"
+
+  await requireSuperAdmin()
+
+  const organizationId = String(formData.get("organizationId") ?? "")
+  const active = String(formData.get("active") ?? "") === "true"
+
+  if (!organizationId) {
+    return
+  }
+
+  const before = await db.organization.findUnique({
+    where: { id: organizationId },
+    select: { id: true, name: true, slug: true, active: true },
+  })
+
+  if (!before) {
+    return
+  }
+
+  await db.organization.update({
+    where: { id: organizationId },
+    data: { active },
+  })
+
+  await db.auditLog.create({
+    data: {
+      action: active ? "SUPERADMIN_ACTIVATE_ORG" : "SUPERADMIN_DEACTIVATE_ORG",
+      targetType: "ORGANIZATION",
+      targetId: organizationId,
+      organizationId,
+      actorName: "Super Admin",
+      before: JSON.stringify(before),
+      after: JSON.stringify({ ...before, active }),
+      meta: JSON.stringify({ source: "admin_overview" }),
+    },
+  })
+
+  revalidatePath("/admin")
+}
+
+async function createSubscriberTenant(formData: FormData) {
+  "use server"
+
+  await requireSuperAdmin()
+
+  const orgName = String(formData.get("orgName") ?? "").trim()
+  const requestedSlug = String(formData.get("slug") ?? "").trim()
+  const ownerName = String(formData.get("ownerName") ?? "").trim()
+  const ownerEmail = String(formData.get("ownerEmail") ?? "").trim().toLowerCase()
+  const password = String(formData.get("password") ?? "")
+  const planId = String(formData.get("planId") ?? "")
+  const subscriptionStatus = String(formData.get("subscriptionStatus") ?? "ACTIVE")
+
+  if (!orgName || !ownerName || !ownerEmail || !password || !planId) {
+    return
+  }
+
+  const slug = slugify(requestedSlug || orgName)
+  if (!slug || password.length < 6 || !ownerEmail.includes("@")) {
+    return
+  }
+
+  const [existingOrg, existingUser, plan] = await Promise.all([
+    db.organization.findUnique({ where: { slug }, select: { id: true } }),
+    db.user.findFirst({
+      where: { email: { equals: ownerEmail, mode: "insensitive" } },
+      select: { id: true },
+    }),
+    db.plan.findUnique({ where: { id: planId }, select: { id: true, name: true } }),
+  ])
+
+  if (existingOrg || existingUser || !plan) {
+    return
+  }
+
+  const passwordHash = await hash(password, 10)
+  const shouldCreateSubscription = subscriptionStatus !== "NONE"
+  const now = new Date()
+
+  const result = await db.$transaction(async (tx) => {
+    const organization = await tx.organization.create({
+      data: {
+        name: orgName,
+        slug,
+        active: true,
+      },
+    })
+
+    const owner = await tx.user.create({
+      data: {
+        name: ownerName,
+        email: ownerEmail,
+        password: passwordHash,
+        role: "SUBSCRIBER",
+        active: true,
+        signupStatus: "APPROVED",
+        organizationId: organization.id,
+      },
+    })
+
+    const subscription = shouldCreateSubscription
+      ? await tx.subscription.create({
+          data: {
+            organizationId: organization.id,
+            planId: plan.id,
+            status: subscriptionStatus,
+            nextBillingAt: subscriptionStatus === "ACTIVE" ? addMonths(now, 1) : null,
+            canceledAt: subscriptionStatus === "CANCELED" ? now : null,
+            paystackRef: `manual-${organization.id.slice(-8)}-${Date.now()}`,
+          },
         })
-      } catch {
-        // ignore overview errors; table still works
-      }
-    }
-    loadOverview()
-  }, [])
+      : null
 
-  useEffect(() => {
-    async function loadOrgs() {
-      setLoading(true)
-      try {
-        const params = new URLSearchParams()
-        params.set("page", String(page))
-        params.set("pageSize", String(pageSize))
-        if (query) params.set("q", query)
-        const res = await fetch(`/api/organizations?${params.toString()}`)
-        if (!res.ok) throw new Error()
-        const json = await res.json()
-        const payload = json?.data ?? json
-        const items = Array.isArray(payload?.items) ? payload.items : []
-        setOrgs(items)
-        setTotal(Number(payload?.total ?? 0))
-      } catch (err) {
-        setOrgs([])
-        setTotal(0)
-        toast({ variant: "destructive", title: "Error", description: "Could not load subscribers" })
-      } finally {
-        setLoading(false)
+    await tx.auditLog.create({
+      data: {
+        action: "SUPERADMIN_CREATE_SUBSCRIBER_TENANT",
+        targetType: "ORGANIZATION",
+        targetId: organization.id,
+        organizationId: organization.id,
+        actorName: "Super Admin",
+        after: JSON.stringify({
+          organization: { id: organization.id, name: organization.name, slug: organization.slug },
+          owner: { id: owner.id, email: owner.email },
+          subscription: subscription ? { id: subscription.id, status: subscription.status, planId: subscription.planId } : null,
+        }),
+        meta: JSON.stringify({ source: "admin_tenant_control", planName: plan.name }),
+      },
+    })
+
+    return { organization }
+  })
+
+  revalidatePath("/admin")
+  revalidatePath("/admin/subscriptions")
+  redirect(`/admin?q=${encodeURIComponent(result.organization.slug)}`)
+}
+
+export default async function SuperAdminPage({
+  searchParams,
+}: {
+  searchParams?: AdminSearchParams
+}) {
+  await requireSuperAdmin()
+
+  const qRaw = typeof searchParams?.q === "string" ? searchParams.q.trim() : ""
+  const q = qRaw.slice(0, 80)
+  const orgWhere = q
+    ? {
+        OR: [
+          { name: { contains: q, mode: "insensitive" as const } },
+          { slug: { contains: q, mode: "insensitive" as const } },
+          { users: { some: { email: { contains: q, mode: "insensitive" as const } } } },
+        ],
       }
-    }
-    loadOrgs()
-  }, [toast, page, pageSize, query])
+    : undefined
+
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+
+  const [
+    totalOrganizations,
+    activeOrganizations,
+    totalUsers,
+    totalSubscribers,
+    totalAgents,
+    totalResellers,
+    totalOrders,
+    platformRevenue,
+    monthPlatformRevenue,
+    storefrontVolume,
+    pendingOrders,
+    failedOrders,
+    activeProducts,
+    pendingSignups,
+    plans,
+    organizations,
+    recentOrders,
+    recentAudits,
+  ] = await Promise.all([
+    db.organization.count(),
+    db.organization.count({ where: { active: true } }),
+    db.user.count(),
+    db.user.count({ where: { role: "SUBSCRIBER" } }),
+    db.user.count({ where: { role: "AGENT" } }),
+    db.user.count({ where: { role: "RESELLER" } }),
+    db.order.count(),
+    db.payment.aggregate({
+      where: { status: "SUCCESS" },
+      _sum: { amount: true },
+    }),
+    db.payment.aggregate({
+      where: { status: "SUCCESS", paidAt: { gte: startOfMonth } },
+      _sum: { amount: true },
+    }),
+    db.storefrontPayment.aggregate({
+      where: { status: "SUCCESS" },
+      _sum: { amount: true },
+    }),
+    db.order.count({ where: { status: "PENDING" } }),
+    db.order.count({ where: { status: "FAILED" } }),
+    db.product.count({ where: { active: true } }),
+    db.user.count({ where: { signupStatus: "PENDING" } }),
+    db.plan.findMany({
+      orderBy: [{ priceGHS: "asc" }, { name: "asc" }],
+      select: { id: true, name: true, priceGHS: true, maxProducts: true, maxAgents: true },
+    }),
+    db.organization.findMany({
+      where: orgWhere,
+      orderBy: { createdAt: "desc" },
+      take: 25,
+      include: {
+        users: {
+          select: { email: true, role: true, active: true, signupStatus: true },
+          orderBy: { createdAt: "asc" },
+        },
+        products: { where: { active: true }, select: { id: true } },
+        subscription: {
+          select: {
+            status: true,
+            nextBillingAt: true,
+            plan: { select: { name: true, priceGHS: true } },
+          },
+        },
+        _count: {
+          select: {
+            orders: true,
+            customers: true,
+            agents: true,
+            products: true,
+          },
+        },
+      },
+    }),
+    db.order.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 8,
+      select: {
+        id: true,
+        total: true,
+        status: true,
+        createdAt: true,
+        organization: { select: { name: true } },
+        customer: { select: { name: true, email: true } },
+      },
+    }),
+    db.auditLog.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 8,
+      include: { organization: { select: { name: true } } },
+    }),
+  ])
+
+  const inactiveOrganizations = totalOrganizations - activeOrganizations
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold text-pink-600">SK's QuickData Admin</h1>
-      <p className="text-blue-700 mt-2">Monitor the overall platform and manage all subscribers.</p>
-
-      {overview && (
-        <div className="mt-6 grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 animate-fade-in bg-gradient-to-br from-pink-100 via-white to-blue-200">
-          {/* Subscribers Card */}
-          <Card className="relative bg-gradient-to-br from-slate-100 via-white to-slate-200 border border-slate-200 shadow-md group transition-transform hover:scale-[1.025]">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-medium text-primary flex items-center gap-1">
-                Subscribers
-                <span className="ml-1"><Info className="h-3 w-3 text-muted-foreground" /></span>
-              </CardTitle>
-              <Badge variant="secondary">{overview.activeOrgs} active</Badge>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl md:text-3xl font-bold text-accent-foreground">{overview.totalOrgs}</div>
-              <p className="text-xs md:text-sm text-muted-foreground">Organizations onboarded</p>
-              <Button size="sm" variant="outline" className="mt-2 w-full opacity-0 group-hover:opacity-100 transition-opacity">Add Subscriber</Button>
-            </CardContent>
-          </Card>
-          {/* Orders Card */}
-          <Card className="relative bg-gradient-to-br from-white via-slate-100 to-slate-200 border border-slate-200 shadow-md group transition-transform hover:scale-[1.025]">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-medium text-primary flex items-center gap-1">
-                Orders
-                <span className="ml-1"><Info className="h-3 w-3 text-muted-foreground" /></span>
-              </CardTitle>
-              <Badge variant="outline">All-time</Badge>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl md:text-3xl font-bold text-accent-foreground">{overview.totalOrders}</div>
-              <p className="text-xs md:text-sm text-muted-foreground">Across all subscribers</p>
-              <Button size="sm" variant="outline" className="mt-2 w-full opacity-0 group-hover:opacity-100 transition-opacity">View Orders</Button>
-            </CardContent>
-          </Card>
-          {/* Revenue Card */}
-          <Card className="relative bg-gradient-to-br from-slate-100 via-white to-slate-200 border border-slate-200 shadow-md group transition-transform hover:scale-[1.025]">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-medium text-primary flex items-center gap-1">
-                Revenue
-                <span className="ml-1"><Info className="h-3 w-3 text-muted-foreground" /></span>
-              </CardTitle>
-              <Badge variant="secondary">GH₵</Badge>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl md:text-3xl font-bold text-accent-foreground">{formatGhanaCedis(overview.totalRevenue)}</div>
-              <p className="text-xs md:text-sm text-muted-foreground">Completed orders only</p>
-              <Button size="sm" variant="outline" className="mt-2 w-full opacity-0 group-hover:opacity-100 transition-opacity">View Reports</Button>
-            </CardContent>
-          </Card>
-          {/* Agents Card */}
-          <Card className="relative bg-gradient-to-br from-white via-slate-100 to-slate-200 border border-slate-200 shadow-md group transition-transform hover:scale-[1.025]">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-medium text-primary flex items-center gap-1">
-                Agents
-                <span className="ml-1"><Info className="h-3 w-3 text-muted-foreground" /></span>
-              </CardTitle>
-              <Badge variant="outline">{overview.totalAgents} total</Badge>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl md:text-3xl font-bold text-accent-foreground">{overview.totalAgents}</div>
-              <p className="text-xs md:text-sm text-muted-foreground">Registered agents</p>
-              <Button size="sm" variant="outline" className="mt-2 w-full opacity-0 group-hover:opacity-100 transition-opacity">Add Agent</Button>
-            </CardContent>
-          </Card>
-          {/* Active Products Card */}
-          <Card className="relative bg-gradient-to-br from-pink-100 via-white to-pink-200 border border-pink-200 shadow-md group transition-transform hover:scale-[1.025]">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-medium text-pink-700 flex items-center gap-1">
-                Active Products
-                <span className="ml-1"><Info className="h-3 w-3 text-pink-400" /></span>
-              </CardTitle>
-              <Badge variant="secondary">Live</Badge>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl md:text-3xl font-bold text-pink-700">{overview.activeProducts ?? '—'}</div>
-              <p className="text-xs md:text-sm text-muted-foreground">Products currently active</p>
-              <Button size="sm" variant="outline" className="mt-2 w-full opacity-0 group-hover:opacity-100 transition-opacity">Add Product</Button>
-            </CardContent>
-          </Card>
-          {/* Pending Audits Card */}
-          <Card className="relative bg-gradient-to-br from-blue-100 via-white to-blue-200 border border-blue-200 shadow-md group transition-transform hover:scale-[1.025]">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-medium text-blue-700 flex items-center gap-1">
-                Pending Audits
-                <span className="ml-1"><Info className="h-3 w-3 text-blue-400" /></span>
-              </CardTitle>
-              <Badge variant="outline">{overview.pendingAudits ?? '—'}</Badge>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl md:text-3xl font-bold text-blue-700">{overview.pendingAudits ?? '—'}</div>
-              <p className="text-xs md:text-sm text-muted-foreground">Audits needing review</p>
-              <Button size="sm" variant="outline" className="mt-2 w-full opacity-0 group-hover:opacity-100 transition-opacity">Review Audits</Button>
-            </CardContent>
-          </Card>
-          {/* Active Subscribers Card */}
-          <Card className="relative bg-gradient-to-br from-green-100 via-white to-green-200 border border-green-200 shadow-md group transition-transform hover:scale-[1.025]">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-medium text-green-700 flex items-center gap-1">
-                Active Subscribers
-                <span className="ml-1"><Info className="h-3 w-3 text-green-400" /></span>
-              </CardTitle>
-              <Badge variant="secondary">Active</Badge>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl md:text-3xl font-bold text-green-700">{overview.activeOrgs}</div>
-              <p className="text-xs md:text-sm text-muted-foreground">Currently active</p>
-              <Button size="sm" variant="outline" className="mt-2 w-full opacity-0 group-hover:opacity-100 transition-opacity">View Subscribers</Button>
-            </CardContent>
-          </Card>
+    <div className="portal-page space-y-6">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-3xl">
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary">SaaS owner console</p>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Super Admin Control Center</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Control tenants, monitor platform money flow, review system activity, and keep every portal under supervision.
+          </p>
         </div>
-      )}
+        <div className="grid w-full gap-2 sm:grid-cols-3 lg:w-auto">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/admin/subscriptions">Subscriptions</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/admin/approvals">Approvals</Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link href="/admin/system">System Health</Link>
+          </Button>
+        </div>
+      </div>
 
-      <div className="mt-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Subscribers</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center mb-4 gap-2">
-              <input value={query} onChange={(e) => { setQuery(e.target.value); setPage(1) }} placeholder="Search subscribers" className="rounded border px-3 py-2 w-64" />
-              <select value={pageSize} onChange={(e) => { setPageSize(parseInt(e.target.value)); setPage(1) }} className="rounded border px-2 py-1">
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-              </select>
-              <div className="ml-auto text-sm text-muted-foreground">{total} results</div>
+      <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard label="Organizations" value={totalOrganizations} description={`${activeOrganizations} active, ${inactiveOrganizations} inactive`} icon={Building2} tone="primary" />
+        <MetricCard label="Platform Revenue" value={formatGhanaCedis(platformRevenue._sum.amount ?? 0)} description={`${formatGhanaCedis(monthPlatformRevenue._sum.amount ?? 0)} collected this month`} icon={CreditCard} tone="success" />
+        <MetricCard label="Tenant Storefront GMV" value={formatGhanaCedis(storefrontVolume._sum.amount ?? 0)} description="Subscriber-owned Paystack collections." icon={ShoppingCart} tone="info" />
+        <MetricCard label="Users" value={totalUsers} description={`${totalSubscribers} subscribers, ${totalAgents} agents, ${totalResellers} resellers`} icon={Users} tone="info" />
+        <MetricCard label="Order Risk" value={failedOrders > 0 ? failedOrders : pendingOrders} description={`${pendingOrders} pending, ${failedOrders} failed tenant orders`} icon={AlertTriangle} tone={failedOrders > 0 ? "warning" : "muted"} />
+        <MetricCard label="Active Products" value={activeProducts} description="Sellable products across all tenants" icon={PackageCheck} tone="primary" />
+        <MetricCard label="Pending Signups" value={pendingSignups} description="Agent and reseller approvals waiting" icon={UserCheck} tone={pendingSignups > 0 ? "warning" : "muted"} />
+        <MetricCard label="Platform Health" value={failedOrders > 0 ? "Needs review" : "Stable"} description="Based on failed order count" icon={ShieldCheck} tone={failedOrders > 0 ? "warning" : "success"} />
+      </div>
+
+      <Card className="border border-border bg-card/95 shadow-sm">
+        <CardHeader>
+          <CardTitle>Create Subscriber Tenant</CardTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Operator-led onboarding for a new SaaS customer. Creates the organization, subscriber owner login, and optional subscription.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <form action={createSubscriberTenant} className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-[1.1fr_0.9fr_1fr_1fr_0.9fr_0.9fr_auto] xl:items-end">
+            <div className="space-y-1">
+              <span className="text-xs text-muted-foreground">Organization</span>
+              <Input name="orgName" placeholder="Quick Data Ltd" required />
             </div>
-            {safeOrgs.length === 0 && !loading && (
-              <div className="flex flex-col items-center justify-center py-12">
-                <svg width="64" height="64" fill="none" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#f3f4f6"/><path d="M20 44h24M32 20v16M24 28l8 8 8-8" stroke="#a3a3a3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                <p className="mt-4 text-muted-foreground text-sm">No subscribers found. Try adjusting your search or add a new subscriber.</p>
-              </div>
-            )}
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Slug</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Users</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {safeOrgs.map((o) => (
-                  <TableRow key={o.id}>
-                    <TableCell className="font-semibold">{o.name}</TableCell>
-                    <TableCell>{o.slug}</TableCell>
-                    <TableCell>{new Date(o.createdAt).toLocaleString()}</TableCell>
-                    <TableCell>{o.users.map((u) => u.email ?? u.role).join(", ")}</TableCell>
-                    <TableCell>
-                      {o.active ? (
-                        <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">Active</Badge>
-                      ) : (
-                        <Badge variant="destructive">Inactive</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(window.location.origin + "/store/" + o.slug)}>Open Store</Button>
-                        <Button variant="outline" size="sm" onClick={() => openAuditsForAdmin(o.id, setAuditsLoading, setAudits, setSelectedOrg, setAuditsOpen)}>Audits</Button>
-                        {o.active ? (
-                          <Button size="sm" variant="destructive" onClick={async () => {
-                            try {
-                              const res = await fetch(`/api/organizations/${o.id}/deactivate`, { method: "POST" })
-                              const json = await res.json()
-                              const auditId = json?.auditId
-                              setOrgs((prev) => prev.map((p) => p.id === o.id ? { ...p, active: false, activeProductsCount: 0 } : p))
-                              const undoAction = auditId ? (<ToastAction altText="Undo deactivation" onClick={async () => {
-                                try {
-                                  const undoRes = await fetch(`/api/organizations/${o.id}/undo`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ auditId }) })
-                                  if (!undoRes.ok) throw new Error()
-                                  setOrgs((prev) => prev.map((p) => p.id === o.id ? { ...p, active: true } : p))
-                                  toast({ title: "Undo successful" })
-                                } catch {
-                                  toast({ variant: "destructive", title: "Undo failed" })
-                                }
-                              }}>Undo</ToastAction>) : undefined
-                              toast({ title: "Organization deactivated", action: undoAction })
-                            } catch {
-                              toast({ variant: "destructive", title: "Error", description: "Could not deactivate" })
-                            }
-                          }}>Deactivate</Button>
-                        ) : (
-                          <Button size="sm" variant="default" onClick={async () => {
-                            try {
-                              const res = await fetch(`/api/organizations/${o.id}/activate`, { method: "POST" })
-                              const json = await res.json()
-                              const auditId = json?.auditId
-                              setOrgs((prev) => prev.map((p) => p.id === o.id ? { ...p, active: true, activeProductsCount: 1 } : p))
-                              const undoAction = auditId ? (<ToastAction altText="Undo activation" onClick={async () => {
-                                try {
-                                  const undoRes = await fetch(`/api/organizations/${o.id}/undo`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ auditId }) })
-                                  if (!undoRes.ok) throw new Error()
-                                  setOrgs((prev) => prev.map((p) => p.id === o.id ? { ...p, active: false } : p))
-                                  toast({ title: "Undo successful" })
-                                } catch {
-                                  toast({ variant: "destructive", title: "Undo failed" })
-                                }
-                              }}>Undo</ToastAction>) : undefined
-                              toast({ title: "Organization activated", action: undoAction })
-                            } catch {
-                              toast({ variant: "destructive", title: "Error", description: "Could not activate" })
-                            }
-                          }}>Reactivate</Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
+            <div className="space-y-1">
+              <span className="text-xs text-muted-foreground">Slug</span>
+              <Input name="slug" placeholder="quick-data" />
+            </div>
+            <div className="space-y-1">
+              <span className="text-xs text-muted-foreground">Owner name</span>
+              <Input name="ownerName" placeholder="Owner name" required />
+            </div>
+            <div className="space-y-1">
+              <span className="text-xs text-muted-foreground">Owner email</span>
+              <Input name="ownerEmail" type="email" placeholder="owner@example.com" required />
+            </div>
+            <div className="space-y-1">
+              <span className="text-xs text-muted-foreground">Password</span>
+              <Input name="password" type="password" placeholder="Min. 6 chars" required minLength={6} />
+            </div>
+            <div className="space-y-1">
+              <span className="text-xs text-muted-foreground">Plan</span>
+              <select
+                name="planId"
+                required
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                defaultValue={plans[0]?.id ?? ""}
+              >
+                <option value="" disabled>Select plan</option>
+                {plans.map((plan) => (
+                  <option key={plan.id} value={plan.id}>
+                    {plan.name} - {formatGhanaCedis(plan.priceGHS)}
+                  </option>
                 ))}
-              </TableBody>
-            </Table>
-              <div className="flex items-center justify-between mt-4">
-              <div>
-                <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>
-                <span className="mx-3">Page {page}</span>
-                <Button variant="outline" size="sm" onClick={() => setPage((p) => p + 1)} disabled={page * pageSize >= total}>Next</Button>
-              </div>
-              <div className="text-sm text-muted-foreground">Showing {(page - 1) * pageSize + 1} - {Math.min(page * pageSize, total)} of {total}</div>
+              </select>
             </div>
+            <div className="space-y-1 md:col-span-2 xl:col-span-1">
+              <span className="text-xs text-muted-foreground">Access</span>
+              <select
+                name="subscriptionStatus"
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                defaultValue="ACTIVE"
+              >
+                <option value="ACTIVE">Activate now</option>
+                <option value="PENDING">Create pending</option>
+                <option value="EXPIRED">Create expired</option>
+                <option value="CANCELED">Create canceled</option>
+                <option value="NONE">No subscription</option>
+              </select>
+            </div>
+            <Button type="submit" className="md:col-span-2 xl:col-span-1">
+              Create
+            </Button>
+          </form>
+          {plans.length === 0 ? (
+            <p className="mt-3 text-xs text-warning">Create at least one plan in Subscriptions before onboarding tenants.</p>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      <Card className="border border-border bg-card/95 shadow-sm">
+        <CardHeader>
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <CardTitle>Tenant Control</CardTitle>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Search, inspect, suspend, or reactivate subscriber organizations.
+              </p>
+            </div>
+            <form className="grid w-full gap-2 sm:grid-cols-[minmax(0,1fr)_auto] lg:w-auto" method="GET">
+              <Input name="q" defaultValue={q} placeholder="Search organization, slug, owner email" className="lg:w-80" />
+              <Button type="submit" variant="outline">Search</Button>
+            </form>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 xl:hidden md:grid-cols-2">
+            {organizations.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">No organizations match your search.</p>
+            ) : (
+              organizations.map((org) => {
+                const owner = org.users.find((user) => user.role === "SUBSCRIBER") ?? org.users[0]
+                return (
+                  <div key={org.id} className="rounded-md border bg-background p-3 text-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold">{org.name}</p>
+                        <p className="font-mono text-xs text-muted-foreground">/{org.slug}</p>
+                      </div>
+                      <Badge variant={org.active ? "secondary" : "destructive"} className={org.active ? "status-success border" : ""}>
+                        {org.active ? "Active" : "Suspended"}
+                      </Badge>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                      <div>
+                        <p className="font-medium text-foreground">{org.subscription?.plan?.name ?? "No plan"}</p>
+                        <p>{org.subscription?.status ?? "UNASSIGNED"}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">{org._count.orders}</p>
+                        <p>Orders</p>
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">{owner?.email ?? "-"}</p>
+                        <p>Owner</p>
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">{org._count.agents} agents</p>
+                        <p>{org.products.length}/{org._count.products} products active</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <Button asChild size="sm" variant="outline" className="text-xs">
+                        <Link href={`/store/${org.slug}`} target="_blank">View Store</Link>
+                      </Button>
+                      <form action={setOrganizationStatus}>
+                        <input type="hidden" name="organizationId" value={org.id} />
+                        <input type="hidden" name="active" value={String(!org.active)} />
+                        <Button size="sm" variant={org.active ? "destructive" : "default"} type="submit" className="w-full text-xs">
+                          {org.active ? "Suspend" : "Reactivate"}
+                        </Button>
+                      </form>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+
+          <div className="table-scroll hidden rounded-md border bg-background xl:block">
+          <Table className="min-w-[900px] text-sm">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Organization</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Subscription</TableHead>
+                <TableHead>Owner</TableHead>
+                <TableHead className="text-right">Agents</TableHead>
+                <TableHead className="text-right">Orders</TableHead>
+                <TableHead className="text-right">Products</TableHead>
+                <TableHead className="text-right">Control</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {organizations.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
+                    No organizations match your search.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                organizations.map((org) => {
+                  const owner = org.users.find((user) => user.role === "SUBSCRIBER") ?? org.users[0]
+                  return (
+                    <TableRow key={org.id}>
+                      <TableCell>
+                        <div className="font-medium">{org.name}</div>
+                        <div className="font-mono text-xs text-muted-foreground">/{org.slug}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={org.active ? "secondary" : "destructive"} className={org.active ? "status-success border" : ""}>
+                          {org.active ? "Active" : "Suspended"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">{org.subscription?.plan?.name ?? "No plan"}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {org.subscription?.status ?? "UNASSIGNED"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">{owner?.email ?? "-"}</div>
+                        <div className="text-xs text-muted-foreground">{org.users.length} user accounts</div>
+                      </TableCell>
+                      <TableCell className="text-right">{org._count.agents}</TableCell>
+                      <TableCell className="text-right">{org._count.orders}</TableCell>
+                      <TableCell className="text-right">{org.products.length}/{org._count.products}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button asChild size="sm" variant="outline">
+                            <Link href={`/store/${org.slug}`} target="_blank">Store</Link>
+                          </Button>
+                          <form action={setOrganizationStatus}>
+                            <input type="hidden" name="organizationId" value={org.id} />
+                            <input type="hidden" name="active" value={String(!org.active)} />
+                            <Button size="sm" variant={org.active ? "destructive" : "default"} type="submit">
+                              {org.active ? "Suspend" : "Reactivate"}
+                            </Button>
+                          </form>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
+              )}
+            </TableBody>
+          </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+        <Card className="border border-border bg-card/95 shadow-sm">
+          <CardHeader>
+            <CardTitle>Order Activity Snapshot</CardTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Read-only signal for platform health. Tenant teams own order fulfillment.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {recentOrders.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No orders yet.</p>
+            ) : (
+              recentOrders.map((order) => (
+                <div key={order.id} className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{order.organization?.name ?? "No organization"}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {order.customer?.name ?? order.customer?.email ?? "Guest"} - {new Date(order.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <Badge variant={order.status === "COMPLETED" ? "secondary" : order.status === "FAILED" ? "destructive" : "outline"}>
+                      {order.status}
+                    </Badge>
+                    <p className="mt-1 text-sm font-semibold">{formatGhanaCedis(order.total)}</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border border-border bg-card/95 shadow-sm">
+          <CardHeader>
+            <CardTitle>Recent System Activity</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {recentAudits.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No audit logs yet.</p>
+            ) : (
+              recentAudits.map((log) => (
+                <div key={log.id} className="rounded-md border border-border p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <Badge variant="outline" className="font-mono text-xs">{log.action}</Badge>
+                    <span className="text-xs text-muted-foreground">{new Date(log.createdAt).toLocaleString()}</span>
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {log.organization?.name ?? "Platform"} - {log.actorName ?? log.actorId ?? "System"}
+                  </p>
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
       </div>
-      <Dialog open={auditsOpen} onOpenChange={setAuditsOpen}>
-              <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Organization Audits</DialogTitle>
-          </DialogHeader>
-          <div className="mt-4">
-            {auditsLoading && <div>Loading...</div>}
-            {!auditsLoading && audits.length === 0 && <div className="text-sm text-muted-foreground">No audits found.</div>}
-              {!auditsLoading && audits.length > 0 && (
-                <div className="max-h-96 overflow-auto">
-                <div className="space-y-3">
-                  {audits.map((a) => (
-                    <div key={a.id} className="rounded border p-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-semibold">{a.action}</div>
-                          <div className="text-sm text-muted-foreground">By: {a.actorName ?? "System"} — {new Date(a.createdAt).toLocaleString()}</div>
-                        </div>
-                        <div>
-                          {(a.action === "ACTIVATE_ORG" || a.action === "DEACTIVATE_ORG") && (
-                            <Button size="sm" onClick={async () => {
-                              try {
-                                const res = await fetch(`/api/organizations/${selectedOrg}/undo`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ auditId: a.id }) })
-                                if (!res.ok) throw new Error()
-                                toast({ title: "Undo successful" })
-                                setAudits((prev) => prev.filter((x) => x.id !== a.id))
-                                setOrgs((prev) => prev.map((p) => p.id === selectedOrg ? { ...p, active: !p.active } : p))
-                              } catch {
-                                toast({ variant: "destructive", title: "Undo failed" })
-                              }
-                            }}>Undo</Button>
-                          )}
-                        </div>
-                      </div>
-                      {a.meta && (
-                        <div className="mt-2 text-xs text-muted-foreground">{typeof a.meta === 'string' ? a.meta : JSON.stringify(a.meta)}</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
-
-async function openAuditsForAdmin(orgId: string, setAuditsLoading: (v: boolean) => void, setAudits: (v: any[]) => void, setSelectedOrg: (v: string | null) => void, setAuditsOpen: (v: boolean) => void) {
-  setSelectedOrg(orgId)
-  setAuditsOpen(true)
-  setAuditsLoading(true)
-  try {
-    const res = await fetch(`/api/organizations/${orgId}/audits?page=1&pageSize=50`)
-    if (!res.ok) throw new Error()
-    const json = await res.json()
-    setAudits(json.items || [])
-  } catch (e) {
-    // noop
-  } finally {
-    setAuditsLoading(false)
-  }
-}
-

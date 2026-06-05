@@ -12,14 +12,18 @@ type DispatchHealth = {
   alert: boolean
 }
 
-export function DispatchHealthCard() {
+type DispatchHealthCardProps = {
+  endpoint?: string
+}
+
+export function DispatchHealthCard({ endpoint = "/api/admin/dispatch-health" }: DispatchHealthCardProps) {
   const [data, setData] = useState<DispatchHealth | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch("/api/admin/dispatch-health")
+        const res = await fetch(endpoint)
         const payload = await res.json().catch(() => null)
         if (!res.ok) {
           throw new Error(payload?.error?.message || "Failed to load dispatch health")
@@ -31,23 +35,23 @@ export function DispatchHealthCard() {
     }
 
     load()
-  }, [])
+  }, [endpoint])
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium flex items-center justify-between">
+    <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
+      <CardHeader className="border-b bg-muted/30 pb-3">
+        <CardTitle className="text-sm font-semibold flex items-center justify-between">
           Dispatch Health
           {data ? (
-            <Badge className={data.alert ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}>
+            <Badge className={data.alert ? "bg-destructive/15 text-destructive" : "bg-primary/15 text-foreground"}>
               {data.alert ? "Alert" : "Healthy"}
             </Badge>
           ) : null}
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4">
         {error ? (
-          <p className="text-xs text-red-600">{error}</p>
+          <p className="text-xs text-destructive">{error}</p>
         ) : !data ? (
           <p className="text-xs text-muted-foreground">Loading dispatch health...</p>
         ) : (
@@ -64,3 +68,4 @@ export function DispatchHealthCard() {
     </Card>
   )
 }
+

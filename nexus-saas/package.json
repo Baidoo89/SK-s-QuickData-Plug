@@ -7,6 +7,8 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "seed:superadmin": "node scripts/reset_users_seed_superadmin.js",
+    "seed:qa": "node scripts/create_portal_users.js",
     "postinstall": "prisma generate"
   },
   "dependencies": {

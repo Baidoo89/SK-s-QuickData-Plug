@@ -1,4 +1,4 @@
-import { requireOrgManager, isAuthError } from "@/lib/auth-guard"
+import { requireAdmin, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
 import { dispatchOrderToProvider } from "@/lib/provider-dispatch"
@@ -9,7 +9,7 @@ export async function POST(
   { params }: { params: { id: string } },
 ) {
   try {
-    const authResult = await requireOrgManager()
+    const authResult = await requireAdmin()
     if (isAuthError(authResult)) {
       return authResult
     }

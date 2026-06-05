@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { apiSuccess, ApiErrors } from "@/lib/api-response"
+import { isSubscriptionActive } from "@/lib/subscription-access"
+import { getSubscriberStorefrontPrices, mapStorefrontPrices } from "@/lib/storefront-pricing"
 
 interface Params {
   params: {
@@ -14,7 +16,6 @@ export async function GET(_req: Request, { params }: Params) {
 
     const organization = await db.organization.findUnique({
       where: { slug: tenantSlug },
-      // Subscriptions are ignored for now; only org.active controls availability.
       include: { subscription: true },
     })
 
@@ -22,9 +23,12 @@ export async function GET(_req: Request, { params }: Params) {
       return ApiErrors.NOT_FOUND("Store")
     }
 
-    // For now, ignore subscription status and only respect organization.active.
     if (!organization.active) {
       return ApiErrors.FORBIDDEN()
+    }
+
+    if (!isSubscriptionActive(organization.subscription)) {
+      return ApiErrors.SUBSCRIPTION_REQUIRED()
     }
 
     const products = await db.product.findMany({
@@ -38,6 +42,8 @@ export async function GET(_req: Request, { params }: Params) {
       orderBy: { createdAt: "desc" },
     })
 
+    const storefrontPriceMap = mapStorefrontPrices(await getSubscriberStorefrontPrices(organization.id))
+
     const payload = products.map((product: any) => {
       const basePrice = product.basePrices?.[0]?.price ?? product.price
       return {
@@ -47,8 +53,11 @@ export async function GET(_req: Request, { params }: Params) {
         provider: product.provider,
         bundleType: product.bundleType,
         category: product.category,
+        serviceForm: product.serviceForm,
         stock: product.stock,
-        price: basePrice,
+        basePrice,
+        buyPrice: product.price,
+        price: storefrontPriceMap.get(product.id) ?? product.price,
       }
     })
 

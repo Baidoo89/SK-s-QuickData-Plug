@@ -14,7 +14,11 @@ type DispatchPolicy = {
   providerName: string
 }
 
-export function DispatchPolicyCard() {
+type DispatchPolicyCardProps = {
+  endpoint?: string
+}
+
+export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: DispatchPolicyCardProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -26,7 +30,7 @@ export function DispatchPolicyCard() {
     async function loadPolicy() {
       setLoading(true)
       try {
-        const res = await fetch("/api/admin/dispatch-policy")
+        const res = await fetch(endpoint)
         if (!res.ok) throw new Error("Could not load policy")
         const payload = await res.json()
         const data: DispatchPolicy = payload.data
@@ -46,7 +50,7 @@ export function DispatchPolicyCard() {
     }
 
     loadPolicy()
-  }, [toast])
+  }, [endpoint, toast])
 
   async function savePolicy() {
     setSaving(true)
@@ -56,7 +60,7 @@ export function DispatchPolicyCard() {
         .map((n) => n.trim().toUpperCase())
         .filter(Boolean)
 
-      const res = await fetch("/api/admin/dispatch-policy", {
+      const res = await fetch(endpoint, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -87,11 +91,11 @@ export function DispatchPolicyCard() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium">Order Dispatch Policy</CardTitle>
+    <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
+      <CardHeader className="border-b bg-muted/30 pb-3">
+        <CardTitle className="text-sm font-semibold">Order Dispatch Policy</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 p-4">
         <p className="text-xs text-muted-foreground">
           Control which networks go through provider API and which stay manual.
         </p>
@@ -135,7 +139,7 @@ export function DispatchPolicyCard() {
           </p>
         </div>
 
-        <Button onClick={savePolicy} disabled={loading || saving} className="text-xs">
+        <Button onClick={savePolicy} disabled={loading || saving} className="w-full text-xs sm:w-auto">
           {saving ? "Saving..." : "Save Dispatch Policy"}
         </Button>
       </CardContent>

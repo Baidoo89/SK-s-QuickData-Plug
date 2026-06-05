@@ -3,12 +3,20 @@ import { db } from "@/lib/db"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { OrderTimelineDialog } from "@/components/orders/order-timeline-dialog"
+import { getStorefrontPaymentMap, type OrderPaymentSummary } from "@/lib/storefront-payment-map"
+import { PortalAccessMessage } from "@/components/access/portal-access-message"
+import { formatGhanaCedis } from "@/lib/currency"
+import { Store } from "lucide-react"
 
 type AgentOrderItemRow = {
   quantity: number
+  price: number
+  profit: number
   product: {
     name: string
   }
@@ -37,6 +45,7 @@ type AgentOrderRow = {
   total: number
   status: string
   items: AgentOrderItemRow[]
+  payment?: OrderPaymentSummary
 }
 
 type OrderFilters = {
@@ -44,6 +53,13 @@ type OrderFilters = {
   from?: string
   to?: string
   q?: string
+}
+
+function orderStatusBadgeClass(status: string) {
+  if (status === "COMPLETED") return "status-success border"
+  if (status === "PENDING" || status === "PROCESSING") return "status-warning border"
+  if (status === "FAILED" || status === "PAYMENT_FAILED") return ""
+  return "status-info border"
 }
 
 export default async function AgentOrdersPage({
@@ -57,10 +73,11 @@ export default async function AgentOrdersPage({
   const q = typeof searchParams?.q === "string" ? searchParams.q : undefined
 
   const filters: OrderFilters = { status, from, to, q }
+  const hasFilters = Boolean(status || from || to || q)
 
   const session = await auth()
   if (!session?.user?.email) {
-    return null
+    return <PortalAccessMessage title="Login required" description="Sign in with an approved agent account to view orders." />
   }
 
   const user = await db.user.findUnique({
@@ -69,7 +86,7 @@ export default async function AgentOrdersPage({
   })
 
   if (!user || user.role !== "AGENT" || !user.organizationId) {
-    return null
+    return <PortalAccessMessage title="Agent profile unavailable" description="This account is not linked to an approved agent profile. Ask the subscriber admin to review the account." />
   }
 
   let agentId = user.agentId
@@ -99,12 +116,14 @@ export default async function AgentOrdersPage({
     )
   }
 
+  const ownershipFilter = [
+    { agentId },
+    { userId: user.id },
+  ]
+
   const where: any = {
     organizationId: user.organizationId,
-    OR: [
-      { agentId },
-      { userId: user.id },
-    ],
+    OR: ownershipFilter,
   }
 
   if (filters.status && filters.status !== "ALL") {
@@ -125,14 +144,20 @@ export default async function AgentOrdersPage({
 
   if (filters.q) {
     const search = filters.q
-    where.OR = [
-      { customer: { name: { contains: search, mode: "insensitive" } } },
-      { customer: { email: { contains: search, mode: "insensitive" } } },
-      { phoneNumber: { contains: search } },
+    where.AND = [
+      { OR: ownershipFilter },
+      {
+        OR: [
+          { customer: { name: { contains: search, mode: "insensitive" } } },
+          { customer: { email: { contains: search, mode: "insensitive" } } },
+          { phoneNumber: { contains: search } },
+        ],
+      },
     ]
+    delete where.OR
   }
 
-  const orders = await db.order.findMany({
+  const rawOrders = await db.order.findMany({
     where,
     include: {
       customer: true,
@@ -144,10 +169,15 @@ export default async function AgentOrdersPage({
     },
     orderBy: { createdAt: "desc" },
   }) as AgentOrderRow[]
+  const paymentMap = await getStorefrontPaymentMap(rawOrders.map((order) => order.id), user.organizationId)
+  const orders = rawOrders.map((order) => ({
+    ...order,
+    payment: paymentMap.get(order.id) || { owner: "WALLET" as const, status: "PAID", reference: "Wallet/Internal", amount: order.total, paidAt: null },
+  }))
 
   return (
-    <div className="space-y-6 overflow-x-hidden">
-      <div className="space-y-1 max-w-2xl mx-auto text-center">
+    <div className="portal-page space-y-6">
+      <div className="mx-auto max-w-2xl space-y-1 text-center">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Orders</h1>
         <p className="text-sm text-muted-foreground">
           All completed storefront orders that used your agent link will appear here.
@@ -162,28 +192,30 @@ export default async function AgentOrdersPage({
                 This list is backed by the real orders database. Admin and subscribers can also see these orders in their own views.
               </CardDescription>
             </div>
-            <form className="flex flex-wrap gap-2 md:gap-3 items-end" method="GET">
+            <form className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-[auto_auto_auto_minmax(12rem,1fr)_auto_auto] lg:items-end" method="GET">
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground mb-1">Status</span>
                 <select
                   name="status"
                   defaultValue={status || "ALL"}
-                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs md:w-auto"
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs"
                 >
                   <option value="ALL">All</option>
                   <option value="COMPLETED">Completed</option>
                   <option value="PENDING">Pending</option>
                   <option value="PROCESSING">Processing</option>
+                  <option value="PENDING_PAYMENT">Awaiting Payment</option>
+                  <option value="PAYMENT_FAILED">Payment Failed</option>
                   <option value="FAILED">Failed</option>
                 </select>
               </div>
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground mb-1">From</span>
-                <Input type="date" name="from" defaultValue={from} className="h-9 text-xs md:w-auto" />
+                <Input type="date" name="from" defaultValue={from} className="h-9 w-full text-xs" />
               </div>
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground mb-1">To</span>
-                <Input type="date" name="to" defaultValue={to} className="h-9 text-xs md:w-auto" />
+                <Input type="date" name="to" defaultValue={to} className="h-9 w-full text-xs" />
               </div>
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground mb-1">Search</span>
@@ -192,7 +224,7 @@ export default async function AgentOrdersPage({
                   name="q"
                   placeholder="Name, email, phone"
                   defaultValue={q}
-                  className="h-9 w-full text-xs md:w-56"
+                  className="h-9 w-full text-xs"
                 />
               </div>
               <Button type="submit" className="h-9 w-full text-xs md:w-auto">Apply</Button>
@@ -204,16 +236,24 @@ export default async function AgentOrdersPage({
         </CardHeader>
         <CardContent className="overflow-x-hidden">
           {orders.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              No orders yet. Share your storefront link with customers to start receiving orders.
-            </p>
+            <EmptyState
+              icon={Store}
+              title={hasFilters ? "No orders match these filters" : "No agent orders yet"}
+              description={
+                hasFilters
+                  ? "Adjust the status, date range, or search term to see more orders."
+                  : "Share your storefront link with customers or place a direct VTU order. Successful orders will be listed here."
+              }
+              action={hasFilters ? { label: "Reset Filters", href: "/agent/orders" } : { label: "Open Storefronts", href: "/agent/storefronts" }}
+              secondaryAction={hasFilters ? undefined : { label: "Buy Data", href: "/agent/buy/single" }}
+            />
           )}
           {orders.length > 0 && (
             <div className="space-y-2">
               <div className="px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                 Orders table
               </div>
-              <div className="w-full max-w-full overflow-x-auto rounded-md border bg-background">
+              <div className="table-scroll rounded-md border bg-background">
                 <Table className="min-w-[720px] text-xs">
                   <TableHeader className="bg-muted/40">
                     <TableRow>
@@ -221,8 +261,11 @@ export default async function AgentOrdersPage({
                       <TableHead className="whitespace-nowrap">Customer</TableHead>
                       <TableHead className="whitespace-nowrap">Phone</TableHead>
                       <TableHead className="whitespace-nowrap">Items</TableHead>
+                      <TableHead className="whitespace-nowrap">Payment</TableHead>
                       <TableHead className="whitespace-nowrap">Status</TableHead>
-                      <TableHead className="whitespace-nowrap text-right">Total (GH₵)</TableHead>
+                      <TableHead className="whitespace-nowrap">Timeline</TableHead>
+                      <TableHead className="whitespace-nowrap text-right">Total (GHS)</TableHead>
+                      <TableHead className="whitespace-nowrap text-right">Profit</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -232,7 +275,8 @@ export default async function AgentOrdersPage({
                       const phone = order.phoneNumber || order.customer?.phone || "-"
                       const itemsLabel = order.items
                         .map((item: AgentOrderItemRow) => formatItemName(item.product.name))
-                        .join(" · ")
+                        .join(" | ")
+                      const profit = order.items.reduce((sum, item) => sum + item.profit, 0)
 
                       return (
                         <TableRow key={order.id} className="hover:bg-muted/20">
@@ -248,32 +292,38 @@ export default async function AgentOrdersPage({
                             <span className="line-clamp-2 break-words">{itemsLabel}</span>
                           </TableCell>
                           <TableCell className="text-xs">
-                            <Badge
-                              variant={
-                                order.status === "COMPLETED"
-                                  ? "default"
-                                  : order.status === "PENDING" || order.status === "PROCESSING"
+                            <div className="space-y-1">
+                              <Badge variant="outline" className={order.payment?.owner === "STOREFRONT" ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted text-muted-foreground"}>
+                                {order.payment?.owner === "STOREFRONT" ? order.payment.status : "WALLET"}
+                              </Badge>
+                              <div className="max-w-[120px] truncate font-mono text-[10px] text-muted-foreground">
+                                {order.payment?.reference}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs">
+                              <Badge
+                                variant={
+                                  order.status === "COMPLETED"
                                   ? "secondary"
+                                  : order.status === "PENDING" || order.status === "PROCESSING"
+                                  ? "outline"
                                   : order.status === "FAILED"
                                   ? "destructive"
                                   : "outline"
-                              }
-                              className={
-                                order.status === "COMPLETED"
-                                  ? "bg-emerald-500/90"
-                                  : order.status === "PENDING"
-                                  ? "border-amber-500 text-amber-600"
-                                  : order.status === "PROCESSING"
-                                  ? "border-sky-500 text-sky-600"
-                                  : order.status === "FAILED"
-                                  ? ""
-                                  : "border-muted-foreground/40 text-muted-foreground"
-                              }
+                                }
+                                className={orderStatusBadgeClass(order.status)}
                             >
                               {order.status}
                             </Badge>
                           </TableCell>
-                          <TableCell className="whitespace-nowrap text-right text-xs font-semibold">GH₵ {order.total.toFixed(2)}</TableCell>
+                          <TableCell>
+                            <OrderTimelineDialog orderId={order.id} endpointBase="/api/agent/orders" />
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap text-right text-xs font-semibold">{formatGhanaCedis(order.total)}</TableCell>
+                          <TableCell className={profit > 0 ? "whitespace-nowrap text-right text-xs font-semibold text-primary" : "whitespace-nowrap text-right text-xs text-muted-foreground"}>
+                            {formatGhanaCedis(profit)}
+                          </TableCell>
                         </TableRow>
                       )
                     })}
@@ -287,3 +337,4 @@ export default async function AgentOrdersPage({
     </div>
   )
 }
+

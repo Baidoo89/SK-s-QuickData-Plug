@@ -48,8 +48,21 @@ export async function POST(req: Request) {
     const agent = await db.agent.findFirst({ where: { id: agentId, organizationId } })
     if (!agent) return ApiErrors.NOT_FOUND("Agent not found")
 
-    const product = await db.product.findFirst({ where: { id: productId, organizationId } })
+    const product = await db.product.findFirst({
+      where: { id: productId, organizationId },
+      include: {
+        basePrices: {
+          where: { organizationId },
+          select: { price: true },
+        },
+      },
+    })
     if (!product) return ApiErrors.NOT_FOUND("Product not found")
+
+    const basePrice = product.basePrices?.[0]?.price ?? product.price
+    if (price < basePrice) {
+      return ApiErrors.BAD_REQUEST(`Agent price cannot be below the base cost (${basePrice}).`)
+    }
 
     const record = await db.agentPrice.upsert({
       where: { agentId_productId: { agentId, productId } },

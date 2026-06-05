@@ -3,6 +3,9 @@ import { ApiErrors, logApiError } from "@/lib/api-response";
 
 import { db } from "@/lib/db";
 import { getBaseUrl } from "@/lib/mail";
+import { getOrganizationPaymentSettings } from "@/lib/organization-payment-settings";
+
+export const dynamic = "force-dynamic";
 
 function resolveWalletReturnPath(meta: Record<string, unknown>): string {
   const rawReturnPath = typeof meta.returnPath === "string" ? meta.returnPath : "";
@@ -16,22 +19,30 @@ function resolveWalletReturnPath(meta: Record<string, unknown>): string {
 
 export async function GET(req: Request) {
   try {
-    const secret = process.env.PAYSTACK_SECRET_KEY;
     const baseUrl = getBaseUrl();
-    if (!secret || !baseUrl) {
-      return ApiErrors.INTERNAL_ERROR({ reason: "Paystack not configured" });
+    if (!baseUrl) {
+      return ApiErrors.INTERNAL_ERROR({ reason: "App URL not configured" });
     }
 
     const { searchParams } = new URL(req.url);
     const reference = searchParams.get("reference");
+    const organizationId = searchParams.get("organizationId");
 
     if (!reference) {
       return ApiErrors.BAD_REQUEST("Missing reference");
     }
+    if (!organizationId) {
+      return ApiErrors.BAD_REQUEST("Missing organization");
+    }
+
+    const paymentSettings = await getOrganizationPaymentSettings(organizationId);
+    if (!paymentSettings.paystackConnected || !paymentSettings.paystackSecretKey) {
+      return ApiErrors.BAD_REQUEST("Subscriber Paystack is not connected");
+    }
 
     const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
       headers: {
-        Authorization: `Bearer ${secret}`,
+        Authorization: `Bearer ${paymentSettings.paystackSecretKey}`,
       },
     });
 
@@ -50,9 +61,10 @@ export async function GET(req: Request) {
     }
 
     const walletUserId = typeof meta.walletUserId === "string" ? meta.walletUserId : undefined;
+    const metadataOrganizationId = typeof meta.organizationId === "string" ? meta.organizationId : undefined;
 
-    if (!walletUserId) {
-      console.error("Missing walletUserId in Paystack metadata");
+    if (!walletUserId || metadataOrganizationId !== organizationId) {
+      console.error("Missing or mismatched wallet metadata in Paystack response");
       const failRedirect = `${baseUrl}${returnPath}?walletTopup=failed`;
       return NextResponse.redirect(failRedirect);
     }

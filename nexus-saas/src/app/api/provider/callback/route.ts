@@ -1,5 +1,6 @@
 import { db } from "@/lib/db"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
+import { notifyApiOrderStatus } from "@/lib/api-order-tracking"
 import { reverseOrderProfitIfNeeded, reverseOrderWalletDebitIfNeeded } from "@/lib/order-wallet"
 import { verifyProviderWebhookSignature } from "@/lib/provider-signature"
 import { z } from "zod"
@@ -83,6 +84,10 @@ export async function POST(req: Request) {
         }),
       },
     })
+
+    if (existing.status !== updated.status) {
+      await notifyApiOrderStatus(updated.id, updated.status)
+    }
 
     return apiSuccess(updated)
   } catch (error) {

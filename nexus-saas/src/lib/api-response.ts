@@ -67,6 +67,13 @@ export const ApiErrors = {
   FORBIDDEN: () =>
     apiError("FORBIDDEN", "You do not have permission to access this resource", 403),
 
+  SUBSCRIPTION_REQUIRED: () =>
+    apiError(
+      "SUBSCRIPTION_REQUIRED",
+      "An active subscription is required to sell, create orders, or use API access.",
+      402
+    ),
+
   NOT_FOUND: (resource: string = "Resource") =>
     apiError("NOT_FOUND", `${resource} not found`, 404),
 

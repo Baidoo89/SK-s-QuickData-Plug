@@ -1,6 +1,7 @@
 import { requireOrgManager, isAuthError } from "@/lib/auth-guard";
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response";
 import { db } from "@/lib/db";
+import { requireActiveSubscription } from "@/lib/subscription-access";
 import { randomBytes } from "crypto";
 
 export async function POST(req: Request) {
@@ -16,6 +17,9 @@ export async function POST(req: Request) {
     if (!name) {
       return ApiErrors.BAD_REQUEST("Name is required");
     }
+
+    const subscriptionError = await requireActiveSubscription(authResult.user.organizationId!);
+    if (subscriptionError) return subscriptionError;
 
     const key = "sk_" + randomBytes(24).toString("hex");
 

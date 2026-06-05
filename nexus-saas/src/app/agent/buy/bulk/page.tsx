@@ -4,10 +4,11 @@ import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
+import { SellingAccessAlert } from "@/components/access/selling-access-alert"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 function formatGhanaCedis(value: number): string {
-  return `GH₵ ${value.toFixed(2)}`
+  return `GHS ${value.toFixed(2)}`
 }
 
 const NETWORK_PREFIXES: Record<string, string[]> = {
@@ -29,6 +30,22 @@ export default function AgentBuyBulkPage() {
   const [validatingBulk, setValidatingBulk] = useState(false)
   const [validationIssues, setValidationIssues] = useState<any>(null)
   const [validationDialogOpen, setValidationDialogOpen] = useState(false)
+  const [sellingAccess, setSellingAccess] = useState<any>(null)
+
+  useEffect(() => {
+    async function loadSellingAccess() {
+      try {
+        const res = await fetch("/api/selling-access/status")
+        if (!res.ok) return
+        const payload = await res.json()
+        setSellingAccess(payload?.data ?? payload)
+      } catch {
+        // The API still enforces access. This banner is only for clearer UX.
+      }
+    }
+
+    loadSellingAccess()
+  }, [])
 
   useEffect(() => {
     async function loadNetworks() {
@@ -236,6 +253,7 @@ export default function AgentBuyBulkPage() {
       totalAmount,
     }
   }, [bulkInput, bundles, selectedNetwork])
+  const sellingBlocked = Boolean(sellingAccess && !sellingAccess.canSell)
 
   async function executeBulkBuy() {
     setBulkBuying(true)
@@ -332,6 +350,15 @@ export default function AgentBuyBulkPage() {
 
   async function handleBulkBuy(e: React.FormEvent) {
     e.preventDefault()
+    if (sellingBlocked) {
+      toast({
+        title: "Selling is blocked",
+        description: sellingAccess?.reason || "Ask the subscriber admin to complete selling setup.",
+        variant: "destructive",
+      })
+      return
+    }
+
     if (!selectedNetwork) {
       toast({
         title: "Error",
@@ -388,10 +415,25 @@ export default function AgentBuyBulkPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-6 md:p-8">
-      <Card className="overflow-hidden">
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold">Bulk Purchase</CardTitle>
+    <div className="portal-page mx-auto w-full max-w-3xl space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Bulk buy</h1>
+        <p className="text-sm text-muted-foreground">
+          Paste multiple customer lines, validate the batch, and confirm before wallet debits begin.
+        </p>
+      </div>
+
+      {sellingAccess ? (
+        <SellingAccessAlert
+          canSell={sellingAccess.canSell}
+          reason={sellingAccess.reason}
+          compact={sellingAccess.canSell}
+        />
+      ) : null}
+
+      <Card className="overflow-hidden border border-border bg-card/95 shadow-md">
+        <CardHeader className="border-b bg-muted/20">
+          <CardTitle className="text-sm font-semibold">Batch purchase</CardTitle>
           <CardDescription className="text-xs">
             Add one order per line and review everything before you confirm.
           </CardDescription>
@@ -400,13 +442,13 @@ export default function AgentBuyBulkPage() {
           <form className="space-y-4" onSubmit={handleBulkBuy}>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">
-                Network <span className="text-red-500">*</span>
+                Network <span className="text-destructive">*</span>
               </label>
               <select
-                className="w-full rounded-md border bg-background px-3 py-2 text-xs"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs"
                 value={selectedNetwork}
                 onChange={(e) => setSelectedNetwork(e.target.value)}
-                disabled={networks.length === 0}
+                disabled={sellingBlocked || networks.length === 0}
               >
                 <option value="">Select network</option>
                 {networks.map((n) => (
@@ -415,24 +457,24 @@ export default function AgentBuyBulkPage() {
                   </option>
                 ))}
               </select>
-              {loadingBundles && <p className="text-xs text-blue-600">Loading bundles for selected network...</p>}
+              {loadingBundles && <p className="text-xs text-primary">Loading bundles for selected network...</p>}
             </div>
 
             {/* Instructions */}
-            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 space-y-2">
-              <p className="text-xs font-medium text-blue-900">Format: phone + spaces + size</p>
-              <p className="text-xs text-blue-800">
+            <div className="space-y-2 rounded-md border border-primary/30 bg-primary/10 p-3">
+              <p className="text-xs font-medium text-foreground">Format: phone + spaces + size</p>
+              <p className="text-xs text-foreground">
                 Enter one order per line using: <strong>phone size</strong>
               </p>
-              <p className="text-xs text-blue-800">
+              <p className="text-xs text-foreground">
                 <strong>Example:</strong>
               </p>
-              <code className="text-xs block bg-blue-100 p-2 rounded font-mono">
+              <code className="block rounded-md bg-background/80 p-2 font-mono text-xs">
                 {`0557574477 1
 0557574488 2
 0557574499 1GB`}
               </code>
-              <p className="text-[11px] text-blue-800">
+              <p className="text-[11px] text-foreground">
                 If you type only a number, it is treated as GB (for example, <strong>1</strong> means <strong>1GB</strong>).
               </p>
             </div>
@@ -442,21 +484,22 @@ export default function AgentBuyBulkPage() {
               value={bulkInput}
               onChange={(e) => setBulkInput(e.target.value)}
               placeholder="0557574477 1"
-              className="w-full h-36 rounded-md border bg-background p-3 font-mono text-xs outline-none focus:ring-2 focus:ring-ring"
+              className="h-36 w-full rounded-md border border-input bg-background p-3 font-mono text-xs outline-none focus:ring-2 focus:ring-ring"
+              disabled={sellingBlocked}
             />
 
             {bulkInput.trim() && (
-              <div className="rounded border bg-muted/30 p-3 space-y-1.5 text-xs">
+              <div className="space-y-1.5 rounded-md border bg-muted/30 p-3 text-xs">
                 <p>
                   <strong>Orders:</strong> {preview.validRows.length} valid / {preview.invalidRows.length} invalid
                 </p>
                 <p>
-                  <strong>Estimated debit:</strong> {formatGhanaCedis(preview.totalAmount)}
+                  <strong>Estimated buy debit:</strong> {formatGhanaCedis(preview.totalAmount)}
                 </p>
                 {preview.invalidRows.length > 0 && (
                   <div className="space-y-1">
-                    <p className="text-red-600 font-medium">Invalid lines:</p>
-                    <div className="max-h-24 overflow-auto rounded border border-red-200 bg-red-50/60 p-2 text-red-700">
+                    <p className="text-destructive font-medium">Invalid lines:</p>
+                    <div className="max-h-24 overflow-auto rounded-md border border-destructive/30 bg-destructive/10 p-2 text-destructive">
                       {preview.invalidRows.slice(0, 6).map((row) => (
                         <p key={`invalid-${row.lineNumber}`}>
                           Line {row.lineNumber} ({row.phone || "no phone"}): {row.error}
@@ -474,7 +517,7 @@ export default function AgentBuyBulkPage() {
             {/* Submit Button */}
             <Button
               type="submit"
-              disabled={bulkBuying || !bulkInput.trim() || preview.validRows.length === 0}
+              disabled={sellingBlocked || bulkBuying || !bulkInput.trim() || preview.validRows.length === 0}
               className="w-full text-xs"
             >
               {bulkBuying ? "Processing..." : "Review & Confirm Purchase"}
@@ -487,17 +530,17 @@ export default function AgentBuyBulkPage() {
               <h3 className="text-xs font-semibold">Results</h3>
               <div className="space-y-2 md:hidden">
                 {bulkResults.map((result, idx) => (
-                  <div key={idx} className="rounded-lg border bg-background p-3 shadow-sm text-xs">
+                  <div key={idx} className="rounded-md border bg-background p-3 text-xs shadow-sm">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-medium">{result.phone}</p>
-                        <p className="text-[11px] text-muted-foreground">{result.size || "-"} · Qty {result.quantity || 1}</p>
+                        <p className="text-[11px] text-muted-foreground">{result.size || "-"} | Qty {result.quantity || 1}</p>
                       </div>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                        className={`rounded-md border px-2 py-0.5 text-[10px] font-semibold ${
                           result.status === "SUCCESS"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
+                            ? "status-success"
+                            : "bg-destructive/15 text-destructive"
                         }`}
                       >
                         {result.status}
@@ -513,10 +556,10 @@ export default function AgentBuyBulkPage() {
                   </div>
                 ))}
               </div>
-              <div className="hidden overflow-x-auto md:block">
+              <div className="table-scroll hidden md:block">
                 <table className="w-full text-xs border-collapse">
                   <thead>
-                    <tr className="bg-gray-100">
+                    <tr className="bg-muted">
                       <th className="border text-left p-2">Phone</th>
                       <th className="border text-left p-2">Size</th>
                       <th className="border text-center p-2">Qty</th>
@@ -527,7 +570,7 @@ export default function AgentBuyBulkPage() {
                   </thead>
                   <tbody>
                     {bulkResults.map((result, idx) => (
-                      <tr key={idx} className="hover:bg-gray-50">
+                      <tr key={idx} className="hover:bg-muted/40">
                         <td className="border p-2">{result.phone}</td>
                         <td className="border p-2 font-mono text-xs">{result.size || "-"}</td>
                         <td className="border p-2 text-center">{result.quantity || 1}</td>
@@ -535,8 +578,8 @@ export default function AgentBuyBulkPage() {
                           <span
                             className={`px-2 py-0.5 rounded text-xs font-medium ${
                               result.status === "SUCCESS"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
+                                ? "status-success border"
+                                : "bg-destructive/15 text-destructive"
                             }`}
                           >
                             {result.status}
@@ -587,7 +630,7 @@ export default function AgentBuyBulkPage() {
             <p className="text-xs text-muted-foreground">
               Wallet will be debited as orders are created.
             </p>
-            <p className="rounded border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-700">
+            <p className="rounded border border-destructive/30 bg-destructive/10 px-2 py-1 text-xs text-destructive">
               This action starts real purchases and wallet debits immediately. You cannot undo completed orders.
             </p>
           </div>
@@ -595,7 +638,7 @@ export default function AgentBuyBulkPage() {
             <Button type="button" variant="outline" onClick={() => setConfirmOpen(false)}>
               Cancel
             </Button>
-            <Button type="button" onClick={executeBulkBuy} disabled={bulkBuying}>
+            <Button type="button" onClick={executeBulkBuy} disabled={sellingBlocked || bulkBuying}>
               {bulkBuying ? "Processing..." : "Confirm & Buy"}
             </Button>
           </DialogFooter>
@@ -605,27 +648,27 @@ export default function AgentBuyBulkPage() {
       <Dialog open={validationDialogOpen} onOpenChange={setValidationDialogOpen}>
         <DialogContent className="sm:max-w-[520px]">
           <DialogHeader>
-            <DialogTitle className="text-red-600">Validation Issues Found</DialogTitle>
+            <DialogTitle className="text-destructive">Validation Issues Found</DialogTitle>
             <DialogDescription>
               Please review the issues below before proceeding.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 text-sm">
             {validationIssues?.warnings.insufficientFunds && (
-              <div className="rounded border border-red-200 bg-red-50 p-3">
-                <p className="font-medium text-red-900">⚠️ Insufficient Wallet Balance</p>
-                <p className="text-xs text-red-800 mt-1">
+              <div className="rounded border border-destructive/30 bg-destructive/10 p-3">
+                <p className="font-medium text-destructive">Insufficient Wallet Balance</p>
+                <p className="text-xs text-destructive mt-1">
                   Your wallet has {formatGhanaCedis(validationIssues.walletBalance)} but you need {formatGhanaCedis(preview.totalAmount)} for these orders.
                 </p>
               </div>
             )}
             {validationIssues?.warnings.activeOrderConflicts && (
-              <div className="rounded border border-orange-200 bg-orange-50 p-3">
-                <p className="font-medium text-orange-900">⚠️ Active Orders on These Phones</p>
-                <p className="text-xs text-orange-800 mt-1">
+              <div className="rounded border border-border bg-accent/60 p-3">
+                <p className="font-medium text-foreground">Active Orders on These Phones</p>
+                <p className="text-xs text-accent-foreground mt-1">
                   {validationIssues.phonesWithActiveOrders.length} phone(s) already have pending/processing orders:
                 </p>
-                <div className="text-xs text-orange-700 mt-2 max-h-24 overflow-auto space-y-1">
+                <div className="text-xs text-accent-foreground mt-2 max-h-24 overflow-auto space-y-1">
                   {validationIssues.phonesWithActiveOrders.map((phone: string) => (
                     <div key={phone} className="font-mono">
                       {phone}
@@ -641,6 +684,7 @@ export default function AgentBuyBulkPage() {
             </Button>
             <Button 
               type="button" 
+              disabled={sellingBlocked}
               onClick={() => {
                 setValidationDialogOpen(false)
                 setConfirmOpen(true)
@@ -654,3 +698,4 @@ export default function AgentBuyBulkPage() {
     </div>
   )
 }
+

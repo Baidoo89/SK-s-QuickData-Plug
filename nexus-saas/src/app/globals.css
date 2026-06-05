@@ -4,69 +4,81 @@
  
 @layer base {
   :root {
-    --background: 220 30% 98%;
-    --foreground: 224 47% 11%;
+    --background: 222 39% 7%;
+    --foreground: 214 28% 92%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 224 47% 11%;
+    --card: 222 31% 10%;
+    --card-foreground: 214 28% 94%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 224 47% 11%;
+    --popover: 222 31% 10%;
+    --popover-foreground: 214 28% 94%;
 
-    --primary: 218 92% 48%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 221 83% 62%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 214 100% 97%;
-    --secondary-foreground: 224 47% 11%;
+    --secondary: 184 52% 18%;
+    --secondary-foreground: 180 48% 92%;
 
-    --muted: 214 32% 96%;
-    --muted-foreground: 215 16% 45%;
+    --muted: 220 21% 15%;
+    --muted-foreground: 215 16% 70%;
 
-    --accent: 190 100% 95%;
-    --accent-foreground: 210 40% 18%;
+    --accent: 39 70% 18%;
+    --accent-foreground: 39 90% 92%;
 
-    --blue-ice: 210 70% 92%;
+    --blue-ice: 222 38% 11%;
+    --success: 158 64% 42%;
+    --success-foreground: 156 75% 95%;
+    --warning: 38 92% 56%;
+    --warning-foreground: 32 75% 9%;
+    --info: 188 78% 44%;
+    --info-foreground: 188 88% 96%;
  
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 350 84% 61%;
     --destructive-foreground: 210 40% 98%;
  
-    --border: 214 28% 88%;
-    --input: 214 28% 88%;
-    --ring: 218 92% 48%;
+    --border: 220 20% 24%;
+    --input: 220 20% 24%;
+    --ring: 188 78% 44%;
  
     --radius: 0.75rem;
   }
  
   .dark {
-    --background: 224 47% 8%;
-    --foreground: 210 40% 98%;
+    --background: 222 39% 7%;
+    --foreground: 214 28% 92%;
  
-    --card: 224 40% 11%;
-    --card-foreground: 210 40% 98%;
+    --card: 222 31% 10%;
+    --card-foreground: 214 28% 94%;
  
-    --popover: 224 40% 11%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 222 31% 10%;
+    --popover-foreground: 214 28% 94%;
  
-    --primary: 204 100% 68%;
-    --primary-foreground: 224 47% 11%;
+    --primary: 221 83% 62%;
+    --primary-foreground: 0 0% 100%;
  
-    --secondary: 224 30% 16%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 184 52% 18%;
+    --secondary-foreground: 180 48% 92%;
  
-    --muted: 224 30% 16%;
-    --muted-foreground: 215 20% 68%;
+    --muted: 220 21% 15%;
+    --muted-foreground: 215 16% 70%;
  
-    --accent: 190 35% 18%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 39 70% 18%;
+    --accent-foreground: 39 90% 92%;
 
-    --blue-ice: 210 65% 18%;
+    --blue-ice: 222 38% 11%;
+    --success: 158 64% 42%;
+    --success-foreground: 156 75% 95%;
+    --warning: 38 92% 56%;
+    --warning-foreground: 32 75% 9%;
+    --info: 188 78% 44%;
+    --info-foreground: 188 88% 96%;
  
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 350 70% 45%;
     --destructive-foreground: 210 40% 98%;
  
-    --border: 224 22% 20%;
-    --input: 224 22% 20%;
-    --ring: 204 100% 68%;
+    --border: 220 20% 24%;
+    --input: 220 20% 24%;
+    --ring: 188 78% 44%;
   }
 }
  
@@ -75,21 +87,125 @@
     @apply border-border;
   }
   html {
+    color-scheme: dark;
+    overflow-x: hidden;
     background:
-      radial-gradient(circle at top left, hsl(218 92% 48% / 0.10), transparent 30%),
-      radial-gradient(circle at top right, hsl(190 100% 44% / 0.08), transparent 24%),
+      radial-gradient(circle at top left, hsl(221 83% 62% / 0.16), transparent 34%),
+      radial-gradient(circle at top right, hsl(188 78% 44% / 0.12), transparent 28%),
+      radial-gradient(circle at bottom left, hsl(38 92% 56% / 0.07), transparent 30%),
       hsl(var(--background));
   }
   body {
     @apply min-h-screen bg-background text-foreground antialiased;
+    overflow-x: hidden;
     background:
-      radial-gradient(circle at top left, hsl(218 92% 48% / 0.08), transparent 28%),
-      radial-gradient(circle at bottom right, hsl(190 100% 44% / 0.08), transparent 22%),
+      radial-gradient(circle at top left, hsl(221 83% 62% / 0.13), transparent 30%),
+      radial-gradient(circle at top right, hsl(188 78% 44% / 0.1), transparent 28%),
+      radial-gradient(circle at bottom left, hsl(38 92% 56% / 0.07), transparent 26%),
       linear-gradient(to bottom, hsl(var(--background)), hsl(var(--background)));
     background-attachment: fixed;
+  }
+  @media (max-width: 768px) {
+    body {
+      background-attachment: scroll;
+    }
   }
   ::selection {
     background: hsl(var(--primary));
     color: hsl(var(--primary-foreground));
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    max-width: 100%;
+  }
+}
+
+@layer components {
+  .app-shell-bg {
+    background:
+      radial-gradient(circle at top right, hsl(221 83% 62% / 0.13), transparent 30%),
+      radial-gradient(circle at bottom left, hsl(188 78% 44% / 0.09), transparent 28%),
+      radial-gradient(circle at 60% 100%, hsl(38 92% 56% / 0.06), transparent 26%),
+      linear-gradient(to bottom, hsl(var(--background)), hsl(var(--background)));
+  }
+
+  .app-sidebar {
+    background:
+      linear-gradient(180deg, hsl(222 38% 12% / 0.94), hsl(222 44% 8% / 0.92)),
+      radial-gradient(circle at top left, hsl(188 78% 44% / 0.12), transparent 34%);
+  }
+
+  .app-topbar {
+    background:
+      linear-gradient(90deg, hsl(222 38% 11% / 0.86), hsl(218 35% 10% / 0.74));
+  }
+
+  .content-sheen {
+    background:
+      linear-gradient(to bottom, hsl(188 78% 44% / 0.055), transparent 55%),
+      linear-gradient(to right, hsl(221 83% 62% / 0.04), hsl(38 92% 56% / 0.025));
+  }
+
+  .portal-sidebar[data-collapsed="true"] .portal-sidebar-label,
+  .portal-sidebar[data-collapsed="true"] .portal-sidebar-section,
+  .portal-sidebar[data-collapsed="true"] .portal-sidebar-chevron,
+  .portal-sidebar[data-collapsed="true"] .portal-sidebar-subnav,
+  .portal-sidebar[data-collapsed="true"] nav > span,
+  .portal-sidebar[data-collapsed="true"] nav a span:not(.sr-only) {
+    display: none;
+  }
+
+  .portal-sidebar[data-collapsed="true"] .portal-sidebar-link,
+  .portal-sidebar[data-collapsed="true"] .portal-sidebar-trigger {
+    justify-content: center;
+    gap: 0;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .portal-sidebar[data-collapsed="true"] nav a,
+  .portal-sidebar[data-collapsed="true"] nav button {
+    justify-content: center;
+    gap: 0;
+  }
+
+  .portal-sidebar[data-collapsed="true"] .portal-sidebar-icon {
+    height: 1.15rem;
+    width: 1.15rem;
+  }
+
+  .status-success {
+    border-color: hsl(var(--success) / 0.34);
+    background: hsl(var(--success) / 0.12);
+    color: hsl(158 76% 70%);
+  }
+
+  .status-warning {
+    border-color: hsl(var(--warning) / 0.34);
+    background: hsl(var(--warning) / 0.13);
+    color: hsl(39 92% 78%);
+  }
+
+  .status-info {
+    border-color: hsl(var(--info) / 0.34);
+    background: hsl(var(--info) / 0.12);
+    color: hsl(var(--info-foreground));
+  }
+
+  .portal-page {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .table-scroll {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 }

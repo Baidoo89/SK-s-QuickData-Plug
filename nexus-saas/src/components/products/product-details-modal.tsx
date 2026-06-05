@@ -77,7 +77,7 @@ export function ProductDetailsModal({ product, onClose }: ProductDetailsModalPro
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</p>
               <Badge
                 variant={product.active ? "default" : "secondary"}
-                className={product.active ? "mt-0.5 bg-green-100 text-green-800" : "mt-0.5 bg-gray-100 text-gray-500"}
+                className={product.active ? "mt-0.5 bg-primary/15 text-foreground" : "mt-0.5 bg-muted text-muted-foreground"}
               >
                 {product.active ? "Active" : "Inactive"}
               </Badge>
@@ -110,3 +110,4 @@ export function ProductDetailsModal({ product, onClose }: ProductDetailsModalPro
     </Dialog>
   )
 }
+

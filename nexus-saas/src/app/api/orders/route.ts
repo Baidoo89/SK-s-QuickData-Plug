@@ -1,6 +1,9 @@
 import { requireAuthAndOrg, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
+import { getOrderSourceLogMap, ORDER_SOURCE_LABELS, resolveOrderSource } from "@/lib/order-source"
+
+export const dynamic = "force-dynamic"
 
 export async function GET(req: Request) {
   try {
@@ -15,6 +18,7 @@ export async function GET(req: Request) {
     const from = searchParams.get("from") || undefined
     const to = searchParams.get("to") || undefined
     const q = searchParams.get("q") || undefined
+    const source = searchParams.get("source") || undefined
     const format = searchParams.get("format") || undefined
     const claimPending = ["1", "true", "yes"].includes((searchParams.get("claimPending") || "").toLowerCase())
 
@@ -54,10 +58,20 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
     })
 
+    const sourceMap = await getOrderSourceLogMap(orders.map((order) => order.id))
+    let enrichedOrders = orders.map((order) => ({
+      ...order,
+      source: resolveOrderSource(order, sourceMap),
+    }))
+
+    if (source && source !== "ALL") {
+      enrichedOrders = enrichedOrders.filter((order) => order.source === source)
+    }
+
     if (format === "csv") {
       // Export should be read-only by default. Status transitions only happen when explicitly requested.
       if (claimPending) {
-        const pendingIds = orders.filter((o) => o.status === "PENDING").map((o) => o.id)
+        const pendingIds = enrichedOrders.filter((o) => o.status === "PENDING").map((o) => o.id)
         if (pendingIds.length > 0) {
           await db.order.updateMany({
             where: { id: { in: pendingIds } },
@@ -74,25 +88,38 @@ export async function GET(req: Request) {
             },
             orderBy: { createdAt: "desc" },
           })
+
+          const refreshedSourceMap = await getOrderSourceLogMap(orders.map((order) => order.id))
+          enrichedOrders = orders.map((order) => ({
+            ...order,
+            source: resolveOrderSource(order, refreshedSourceMap),
+          }))
+
+          if (source && source !== "ALL") {
+            enrichedOrders = enrichedOrders.filter((order) => order.source === source)
+          }
         }
       }
 
-      const header = ["id", "date", "buyer", "email", "phone", "status", "total", "items"]
-      const rows = orders.map((order) => {
+      const header = ["id", "date", "source", "buyer", "email", "phone", "status", "total", "profit", "items"]
+      const rows = enrichedOrders.map((order) => {
         const buyerName = order.customer?.name || order.user?.name || "Guest Customer"
         const buyerEmail = order.customer?.email || order.user?.email || ""
         const itemsSummary = order.items
           .map((item) => item.product.name.match(/\b\d+(?:\.\d+)?\s?(?:GB|MB|KB|TB)\b/i)?.[0].replace(/\s+/g, "").toUpperCase() ?? item.product.name)
           .join("; ")
+        const profit = order.items.reduce((sum, item) => sum + item.profit, 0)
 
         return [
           order.id,
           order.createdAt.toISOString(),
+          ORDER_SOURCE_LABELS[order.source],
           buyerName,
           buyerEmail,
           order.phoneNumber || "",
           order.status,
           order.total.toString(),
+          profit.toString(),
           itemsSummary,
         ]
       })
@@ -108,7 +135,7 @@ export async function GET(req: Request) {
       })
     }
 
-    return apiSuccess(orders)
+    return apiSuccess(enrichedOrders)
   } catch (error) {
     logApiError("[ORDERS_GET]", error)
     return ApiErrors.INTERNAL_ERROR()

@@ -2,9 +2,8 @@ import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { requireAuth, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors } from "@/lib/api-response"
-import { getEffectiveDispatchPolicy, shouldUseProviderApi } from "@/lib/dispatch-policy"
-import { dispatchOrderToProvider } from "@/lib/provider-dispatch"
-import { reverseOrderWalletDebitIfNeeded } from "@/lib/order-wallet"
+import { resolveOrderDispatch } from "@/lib/order-dispatch"
+import { requireActiveSubscription } from "@/lib/subscription-access"
 import { z } from "zod"
 
 const buyDataSchema = z.object({
@@ -60,6 +59,9 @@ export async function POST(req: Request) {
       return ApiErrors.UNAUTHORIZED()
     }
 
+    const subscriptionError = await requireActiveSubscription(user.organizationId)
+    if (subscriptionError) return subscriptionError
+
     const body = await req.json()
     const validation = buyDataSchema.safeParse(body)
 
@@ -94,9 +96,32 @@ export async function POST(req: Request) {
       return ApiErrors.BAD_REQUEST("Phone number does not match selected network")
     }
 
-    // Get pricing: reseller override > parent-agent override > base price > product price
+    const basePriceRecord = await db.basePrice.findFirst({
+      where: { productId: product.id, organizationId: user.organizationId },
+      select: { price: true },
+    })
+    const basePrice = basePriceRecord?.price ?? product.price
+
+    // Get pricing: reseller override > assigned pricing profile > parent-agent override > base price > product price
     let agentId = fullUser?.agentId || fullUser?.parentAgentId
-    let effectivePrice = product.price
+    let effectivePrice = basePrice
+
+    const assignedProfile = await db.userPricingProfileAssignment.findFirst({
+      where: { organizationId: user.organizationId, userId: user.id },
+      select: { pricingProfileId: true, strictPricing: true },
+    })
+
+    const profileItem = assignedProfile
+      ? await db.pricingProfileItem.findUnique({
+          where: {
+            pricingProfileId_productId: {
+              pricingProfileId: assignedProfile.pricingProfileId,
+              productId: product.id,
+            },
+          },
+          select: { price: true },
+        })
+      : null
 
     const resellerPrice = await db.resellerPrice.findFirst({
       where: {
@@ -106,11 +131,20 @@ export async function POST(req: Request) {
       },
     })
 
-    if (resellerPrice) {
+    if (assignedProfile?.strictPricing) {
+      if (!profileItem) {
+        return ApiErrors.BAD_REQUEST("No profile price is configured for this bundle. Update the assigned pricing profile first.")
+      }
+      effectivePrice = profileItem.price
+    } else if (resellerPrice) {
       effectivePrice = resellerPrice.price
     }
     
-    if (!resellerPrice && agentId) {
+    if (!resellerPrice && profileItem) {
+      effectivePrice = profileItem.price
+    }
+    
+    if (!resellerPrice && !profileItem && agentId) {
       const agentPrice = await db.agentPrice.findFirst({
         where: { agentId, productId: product.id, organizationId: user.organizationId },
       })
@@ -125,10 +159,6 @@ export async function POST(req: Request) {
         }
       }
     }
-
-    // Create order
-    const dispatchPolicy = await getEffectiveDispatchPolicy(user.organizationId)
-    const dispatchDecision = shouldUseProviderApi(dispatchPolicy, product.provider)
 
     const total = effectivePrice * quantity
     const phoneVariants = buildPhoneVariants(normalizedPhone)
@@ -175,11 +205,20 @@ export async function POST(req: Request) {
           phoneNumber: normalizedPhone,
           total,
           status: "PENDING",
+          source: "DASHBOARD_BUY",
+          sellerRole: "RESELLER",
+          sellerUserId: user.id,
+          sellerAgentId: agentId,
+          customerType: "DASHBOARD_USER",
+          paymentOwner: "WALLET",
+          paymentStatus: "PAID",
+          fulfillmentMode: "MANUAL",
           items: {
             create: {
               productId: product.id,
               quantity,
               price: effectivePrice,
+              profit: 0,
             },
           },
         },
@@ -198,62 +237,26 @@ export async function POST(req: Request) {
             walletTransactionId: debit.id,
             amount: total,
             userId: user.id,
+            channel: "RESELLER_DASHBOARD_BUY",
+            buyPrice: effectivePrice,
+            sourceCost: basePrice,
+            profitPolicy: "ZERO_SELF_PURCHASE",
           }),
         },
       })
 
       return created
+    }, { maxWait: 10000, timeout: 20000 })
+
+    const dispatch = await resolveOrderDispatch({
+      orderId: order.id,
+      organizationId: user.organizationId,
+      productId: product.id,
+      network: product.provider,
+      phone: normalizedPhone,
+      quantity,
+      amount: order.total,
     })
-
-    await db.auditLog.create({
-      data: {
-        action: "ORDER_DISPATCH_DECISION",
-        targetType: "ORDER",
-        targetId: order.id,
-        organizationId: user.organizationId,
-        meta: JSON.stringify({
-          mode: dispatchDecision.useApi ? "API" : "MANUAL",
-          provider: dispatchDecision.providerName,
-          reason: dispatchDecision.reason,
-          network: product.provider,
-        }),
-      },
-    })
-
-    let finalStatus = order.status
-    let dispatchMessage = dispatchDecision.reason
-
-    if (dispatchDecision.useApi) {
-      const dispatchResult = await dispatchOrderToProvider({
-        orderId: order.id,
-        organizationId: user.organizationId,
-        productId: product.id,
-        network: product.provider,
-        phone: normalizedPhone,
-        quantity,
-        amount: order.total,
-        providerName: dispatchDecision.providerName,
-      })
-
-      dispatchMessage = dispatchResult.message
-
-      if (dispatchResult.immediateStatus !== "PENDING") {
-        const updatedOrder = await db.order.update({
-          where: { id: order.id },
-          data: { status: dispatchResult.immediateStatus },
-          select: { status: true },
-        })
-        finalStatus = updatedOrder.status
-
-        if (dispatchResult.immediateStatus === "FAILED") {
-          await reverseOrderWalletDebitIfNeeded({
-            orderId: order.id,
-            organizationId: user.organizationId,
-            reason: "Immediate provider failure",
-          })
-        }
-      }
-    }
 
     return apiSuccess(
       {
@@ -263,10 +266,10 @@ export async function POST(req: Request) {
         quantity,
         pricePerUnit: effectivePrice,
         total: order.total,
-        status: finalStatus,
-        dispatchMode: dispatchDecision.useApi ? "API" : "MANUAL",
-        dispatchProvider: dispatchDecision.providerName,
-        dispatchReason: dispatchMessage,
+        status: dispatch.finalStatus,
+        dispatchMode: dispatch.dispatchMode,
+        dispatchProvider: dispatch.dispatchProvider,
+        dispatchReason: dispatch.dispatchReason,
         network: product.provider,
       },
       "Order created successfully",

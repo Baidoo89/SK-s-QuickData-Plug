@@ -6,9 +6,13 @@ import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { MetricCard } from "@/components/ui/metric-card";
 import { useToast } from "@/components/ui/use-toast";
 import { formatGhanaCedis } from "@/lib/currency";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Activity, CreditCard, WalletCards } from "lucide-react";
 
 interface WalletTopup {
   id: string;
@@ -39,6 +43,13 @@ export default function ResellerWalletPage() {
   const [activities, setActivities] = useState<WalletActivity[]>([]);
   const [topupAmount, setTopupAmount] = useState("");
   const [savingTopup, setSavingTopup] = useState(false);
+
+  function statusBadgeClass(status: string) {
+    if (status === "success") return "status-success border";
+    if (status === "pending") return "status-warning border";
+    if (status === "failed") return "";
+    return "status-info border";
+  }
 
   useEffect(() => {
     async function loadWallet() {
@@ -95,17 +106,41 @@ export default function ResellerWalletPage() {
   }, [searchParams, toast]);
 
   return (
-    <div className="flex flex-1 flex-col items-center">
-      <div className="w-full max-w-3xl space-y-4">
+    <div className="portal-page space-y-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Wallet</h1>
           <p className="text-sm text-muted-foreground max-w-xl">
-            View your current reseller wallet balance and recent top ups. Your agent or admin can credit this wallet manually, or you can top up via Paystack.
+            View your current reseller wallet balance and recent top-ups. Your agent can credit this wallet manually, or you can top up via Paystack.
           </p>
         </div>
-        <Card>
+
+        <div className="grid min-w-0 gap-4 md:grid-cols-3">
+          <MetricCard
+            label="Wallet Balance"
+            value={formatGhanaCedis(balance)}
+            description="Available balance for reseller VTU orders."
+            icon={WalletCards}
+            tone="success"
+          />
+          <MetricCard
+            label="Top Ups"
+            value={topups.length}
+            description="Recent funding records."
+            icon={CreditCard}
+            tone="primary"
+          />
+          <MetricCard
+            label="Activity"
+            value={activities.length}
+            description="Wallet credits, debits, and adjustments."
+            icon={Activity}
+            tone="info"
+          />
+        </div>
+
+        <Card id="top-up">
           <CardHeader>
-            <CardTitle>Wallet overview</CardTitle>
+            <CardTitle>Wallet Top Up</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm text-muted-foreground">
           <div>
@@ -113,22 +148,26 @@ export default function ResellerWalletPage() {
               Current wallet balance: <span className="font-semibold">{formatGhanaCedis(balance)}</span>
             </p>
             {topups.length > 0 && (
-              <div className="mt-2 text-[11px] space-y-1">
-                <p className="font-semibold text-foreground">Recent top ups</p>
-                {topups.slice(0, 5).map((t) => (
-                  <p key={t.id} className="flex justify-between gap-2">
+                <div className="mt-2 space-y-2 text-[11px]">
+                  <p className="font-semibold text-foreground">Recent Top-Ups</p>
+                  {topups.slice(0, 5).map((t) => (
+                  <p key={t.id} className="flex flex-col gap-1 rounded-md border bg-background px-2 py-1 sm:flex-row sm:items-center sm:justify-between">
                     <span>
-                      {t.method === "paystack" ? "Paystack" : "Manual"} · {t.beneficiaryEmail}
+                      {t.method === "paystack" ? "Paystack" : "Manual"} | {t.beneficiaryEmail}
                     </span>
-                    <span>{formatGhanaCedis(t.amount)}</span>
+                    <span className="font-medium text-foreground">{formatGhanaCedis(t.amount)}</span>
                   </p>
                 ))}
               </div>
             )}
             {topups.length === 0 && (
-              <p className="text-xs text-muted-foreground">
-                No top ups yet. Once your wallet is funded, the transactions will appear here.
-              </p>
+              <EmptyState
+                icon={WalletCards}
+                title="No top-ups yet"
+                description="Top up with Paystack or ask your agent to credit your wallet manually. Funding records will appear here."
+                secondaryAction={{ label: "Buy Data", href: "/reseller/buy/single" }}
+                className="mt-3 py-5"
+              />
             )}
           </div>
 
@@ -176,16 +215,16 @@ export default function ResellerWalletPage() {
               }
             }}
           >
-            <p className="font-medium text-foreground">Top up via Paystack</p>
-            <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+            <p className="font-medium text-foreground">Top Up via Paystack</p>
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
               <Input
                 type="number"
                 min={1}
                 step="0.01"
                 value={topupAmount}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setTopupAmount(e.target.value)}
-                placeholder="Amount in GH₵"
-                className="text-xs max-w-[180px]"
+                placeholder="Amount in GHS"
+                className="text-xs"
               />
               <Button
                 type="submit"
@@ -201,15 +240,20 @@ export default function ResellerWalletPage() {
             </p>
           </form>
 
-          <div className="space-y-2 pt-2">
-            <p className="font-medium text-foreground">Wallet overview</p>
+          <div id="transactions" className="space-y-2 pt-2">
+            <p className="font-medium text-foreground">Transactions</p>
             <p className="text-[11px] text-muted-foreground">
-              All wallet logs and activities, including Paystack top ups, manual credits, and debits.
+              All wallet logs and activities, including Paystack top-ups, manual credits, and debits.
             </p>
             {activities.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No wallet activity yet.</p>
+              <EmptyState
+                icon={WalletCards}
+                title="No wallet activity yet"
+                description="Paystack top-ups, manual credits, and order debits will appear here after your first wallet movement."
+                className="py-6"
+              />
             ) : (
-              <div className="w-full max-w-full overflow-x-auto rounded-md border bg-background">
+              <div className="table-scroll rounded-md border bg-background">
                 <Table className="min-w-[760px] text-xs">
                   <TableHeader className="bg-muted/40">
                     <TableRow>
@@ -217,7 +261,7 @@ export default function ResellerWalletPage() {
                       <TableHead className="whitespace-nowrap">Method</TableHead>
                       <TableHead className="whitespace-nowrap">Status</TableHead>
                       <TableHead className="whitespace-nowrap">Performed By</TableHead>
-                      <TableHead className="whitespace-nowrap text-right">Amount (GH₵)</TableHead>
+                      <TableHead className="whitespace-nowrap text-right">Amount (GHS)</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -225,14 +269,21 @@ export default function ResellerWalletPage() {
                       <TableRow key={activity.id} className="hover:bg-muted/20">
                         <TableCell className="whitespace-nowrap">{new Date(activity.createdAt).toLocaleString()}</TableCell>
                         <TableCell className="uppercase">{activity.method}</TableCell>
-                        <TableCell className="uppercase">{activity.status}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={activity.status === "success" ? "secondary" : activity.status === "failed" ? "destructive" : "outline"}
+                            className={statusBadgeClass(activity.status)}
+                          >
+                            {activity.status}
+                          </Badge>
+                        </TableCell>
                         <TableCell>
                           {activity.performedByEmail || "System"}
                           {activity.performedByRole ? (
                             <span className="ml-1 text-[11px] text-muted-foreground">({activity.performedByRole})</span>
                           ) : null}
                         </TableCell>
-                        <TableCell className={`whitespace-nowrap text-right font-semibold ${activity.amount < 0 ? "text-red-600" : "text-emerald-700"}`}>
+                        <TableCell className={`whitespace-nowrap text-right font-semibold ${activity.amount < 0 ? "text-destructive" : "text-success"}`}>
                           {formatGhanaCedis(activity.amount)}
                         </TableCell>
                       </TableRow>
@@ -244,7 +295,6 @@ export default function ResellerWalletPage() {
           </div>
         </CardContent>
       </Card>
-      </div>
     </div>
   );
 }
