@@ -160,24 +160,24 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
   const showRiskWarning = prodHost && envGuess === "TEST"
 
   return (
-    <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
+    <Card className="min-w-0 overflow-hidden border border-border bg-card/95 shadow-sm">
       <CardHeader className="border-b bg-muted/30 pb-3">
-        <CardTitle className="text-sm font-semibold">Provider Connection</CardTitle>
+        <CardTitle className="break-words text-sm font-semibold">Provider Connection</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 p-4">
-        <p className="text-xs text-muted-foreground">
+        <p className="break-words text-xs text-muted-foreground">
           Store the provider endpoint and secret securely on the server. This is used only for API-routed orders.
         </p>
 
         {connections.length > 0 ? (
-          <div className="space-y-2 rounded-md border border-border bg-muted/25 p-3">
+          <div className="min-w-0 space-y-2 rounded-md border border-border bg-muted/25 p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs font-semibold text-foreground">Saved provider slots</p>
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
-                className="h-8 text-[11px]"
+                className="h-8 w-full text-[11px] sm:w-auto"
                 onClick={() => {
                   setProviderKey("backup")
                   setProviderName("Backup Provider")
@@ -192,12 +192,12 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
                 New slot
               </Button>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid min-w-0 gap-2 sm:flex sm:flex-wrap">
               {connections.map((connection) => (
                 <button
                   key={connection.providerKey}
                   type="button"
-                  className="rounded-md border border-border bg-background px-2.5 py-1 text-left text-[11px] transition hover:border-primary"
+                  className="min-w-0 max-w-full rounded-md border border-border bg-background px-2.5 py-1 text-left text-[11px] transition hover:border-primary sm:max-w-[240px]"
                   onClick={() => {
                     setProviderKey(connection.providerKey)
                     setProviderName(connection.providerName)
@@ -208,19 +208,19 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
                     setProviderApiKey("")
                   }}
                 >
-                  <span className="font-semibold text-foreground">{connection.providerKey}</span>
-                  <span className="ml-1 text-muted-foreground">{connection.providerName}</span>
-                  <span className={connection.active ? "ml-1 text-primary" : "ml-1 text-destructive"}>
+                  <span className="break-all font-semibold text-foreground">{connection.providerKey}</span>
+                  <span className="ml-1 break-words text-muted-foreground">{connection.providerName}</span>
+                  <span className={connection.active ? "ml-1 break-words text-primary" : "ml-1 break-words text-destructive"}>
                     {connection.active ? "Active" : "Paused"}
                   </span>
-                  <span className="ml-1 text-muted-foreground">{connection.templateKey || "generic-json"}</span>
+                  <span className="ml-1 break-all text-muted-foreground">{connection.templateKey || "generic-json"}</span>
                 </button>
               ))}
             </div>
           </div>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-2 text-xs">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs">
           <span className="text-muted-foreground">Detected provider environment:</span>
           <Badge
             variant="secondary"
@@ -229,13 +229,13 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
             {envGuess}
           </Badge>
           {hostname ? (
-            <span className="text-[11px] text-muted-foreground">Host: {hostname}</span>
+            <span className="break-all text-[11px] text-muted-foreground">Host: {hostname}</span>
           ) : null}
         </div>
 
         {showRiskWarning ? (
           <div className="space-y-2 rounded-md border border-border bg-accent/60 px-3 py-2">
-            <p className="text-[11px] text-foreground">
+            <p className="break-words text-[11px] text-foreground">
               Warning: this looks like a production host, but provider URL/key looks like test or sandbox credentials.
             </p>
             <label className="flex items-center gap-2 text-[11px] text-foreground">
@@ -259,7 +259,7 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
             className="text-xs"
             placeholder="primary"
           />
-          <p className="text-[11px] text-muted-foreground">
+          <p className="break-words text-[11px] text-muted-foreground">
             Use short keys like primary, backup, mtn-main. Network routing uses this key.
           </p>
         </div>
@@ -296,13 +296,13 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
             className="text-xs"
             placeholder={hasApiKey ? "Leave blank to keep saved key" : "Enter provider secret"}
           />
-          <p className="text-[11px] text-muted-foreground">
+          <p className="break-words text-[11px] text-muted-foreground">
             {hasApiKey ? "A provider secret is already saved on the server." : "No provider secret saved yet."}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-          <span>{updatedAt ? `Last updated: ${new Date(updatedAt).toLocaleString()}` : "Not configured yet"}</span>
+          <span className="break-words">{updatedAt ? `Last updated: ${new Date(updatedAt).toLocaleString()}` : "Not configured yet"}</span>
         </div>
 
         <div className="space-y-1.5">
@@ -319,7 +319,7 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
               </option>
             ))}
           </select>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="break-words text-[11px] text-muted-foreground">
             The template defines auth headers, request payload, and response interpretation for this provider slot.
           </p>
         </div>
@@ -344,7 +344,7 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
               Paused
             </button>
           </div>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="break-words text-[11px] text-muted-foreground">
             Paused provider slots are skipped during dispatch and fallback routing.
           </p>
         </div>

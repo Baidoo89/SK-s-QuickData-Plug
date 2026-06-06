@@ -5,21 +5,21 @@ import { DispatchHealthCard } from "@/components/admin/dispatch-health-card";
 function EnvCard({ label, envKey, description }: { label: string; envKey: string; description: string }) {
   const isSet = Boolean(process.env[envKey]);
   return (
-    <Card>
+    <Card className="min-w-0 overflow-hidden">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium flex items-center justify-between gap-2">
-          {label}
+        <CardTitle className="flex min-w-0 items-center justify-between gap-2 text-sm font-medium">
+          <span className="min-w-0 break-words">{label}</span>
           <Badge
             variant="secondary"
-            className={isSet ? "status-success border text-xs" : "text-xs"}
+            className={isSet ? "status-success shrink-0 border text-xs" : "shrink-0 text-xs"}
           >
             {isSet ? "Set" : "Missing"}
           </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-xs text-muted-foreground">{description}</p>
-        <p className="mt-1 font-mono text-xs text-muted-foreground">{envKey}</p>
+        <p className="break-words text-xs text-muted-foreground">{description}</p>
+        <p className="mt-1 break-all font-mono text-xs text-muted-foreground">{envKey}</p>
       </CardContent>
     </Card>
   );
@@ -27,16 +27,16 @@ function EnvCard({ label, envKey, description }: { label: string; envKey: string
 
 export default function AdminSettingsPage() {
   return (
-    <div className="space-y-4">
-      <div className="max-w-3xl space-y-1">
+    <div className="portal-page min-w-0 space-y-4 overflow-x-hidden">
+      <div className="max-w-3xl min-w-0 space-y-1">
         <p className="text-xs font-semibold uppercase tracking-wide text-primary">Platform configuration</p>
-        <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
-        <p className="text-sm text-muted-foreground">
+        <h2 className="break-words text-2xl font-bold tracking-tight">Settings</h2>
+        <p className="break-words text-sm text-muted-foreground">
           Superadmin-owned platform configuration for auth, SaaS billing, email, encryption, and optional provider automation.
         </p>
       </div>
 
-      <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Launch Critical</h3>
+      <h3 className="break-words text-sm font-semibold uppercase tracking-wide text-muted-foreground">Launch Critical</h3>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <EnvCard
           label="Auth Secret"
@@ -65,7 +65,7 @@ export default function AdminSettingsPage() {
         />
       </div>
 
-      <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Communication</h3>
+      <h3 className="break-words text-sm font-semibold uppercase tracking-wide text-muted-foreground">Communication</h3>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <EnvCard
           label="Resend API Key"
@@ -79,7 +79,7 @@ export default function AdminSettingsPage() {
         />
       </div>
 
-      <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Optional Provider Automation</h3>
+      <h3 className="break-words text-sm font-semibold uppercase tracking-wide text-muted-foreground">Optional Provider Automation</h3>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <EnvCard
           label="Provider Order URL"
@@ -128,26 +128,26 @@ export default function AdminSettingsPage() {
         />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Fulfillment Ownership</h3>
-          <Card>
+      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <div className="min-w-0 space-y-3">
+          <h3 className="break-words text-sm font-semibold uppercase tracking-wide text-muted-foreground">Fulfillment Ownership</h3>
+          <Card className="min-w-0 overflow-hidden">
             <CardHeader>
-              <CardTitle className="text-sm font-medium">Subscriber-Owned Routing</CardTitle>
+              <CardTitle className="break-words text-sm font-medium">Subscriber-Owned Routing</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-xs text-muted-foreground">
-              <p>
+              <p className="break-words">
                 Each subscriber controls their own provider connection and network routing from their dashboard settings.
               </p>
-              <p>
+              <p className="break-words">
                 Superadmin monitors platform-wide dispatch health and keeps the fallback environment variables ready for launch support.
               </p>
             </CardContent>
           </Card>
         </div>
 
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Dispatch Monitoring</h3>
+        <div className="min-w-0 space-y-3">
+          <h3 className="break-words text-sm font-semibold uppercase tracking-wide text-muted-foreground">Dispatch Monitoring</h3>
           <DispatchHealthCard />
         </div>
       </div>

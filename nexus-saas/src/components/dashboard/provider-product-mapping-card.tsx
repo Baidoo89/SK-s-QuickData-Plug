@@ -102,12 +102,12 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
   const selectedConnection = connections.find((connection) => connection.providerKey === providerKey)
 
   return (
-    <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
+    <Card className="min-w-0 overflow-hidden border border-border bg-card/95 shadow-sm">
       <CardHeader className="border-b bg-muted/30 pb-3">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <CardTitle className="text-sm font-semibold">Provider Product Mapping</CardTitle>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 break-words text-xs text-muted-foreground">
               Match your local bundles to the package codes required by the selected provider slot.
             </p>
           </div>
@@ -137,18 +137,18 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
               ))}
             </select>
           </div>
-          <Button type="button" variant="outline" size="sm" onClick={() => loadMappings(providerKey)} disabled={loading}>
+          <Button type="button" variant="outline" size="sm" onClick={() => loadMappings(providerKey)} disabled={loading} className="w-full sm:w-auto">
             Refresh
           </Button>
         </div>
 
         {selectedConnection?.active === false ? (
-          <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+          <div className="break-words rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
             This provider slot is paused. Mappings are saved, but dispatch will skip the slot until it is active.
           </div>
         ) : null}
 
-        <div className="overflow-x-auto rounded-md border border-border">
+        <div className="table-scroll rounded-md border border-border">
           <Table className="min-w-[760px]">
             <TableHeader>
               <TableRow>
@@ -170,7 +170,7 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
               ) : (
                 rows.map((row) => (
                   <TableRow key={row.productId}>
-                    <TableCell className="font-medium">{row.name}</TableCell>
+                    <TableCell className="max-w-[220px] whitespace-normal break-words font-medium">{row.name}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="rounded-md text-[10px]">
                         {row.network}
@@ -212,7 +212,7 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
             </TableBody>
           </Table>
         </div>
-        <p className="text-[11px] text-muted-foreground">
+        <p className="break-words text-[11px] text-muted-foreground">
           If a code is empty, dispatch sends the local product ID. For most external providers, add the package code they gave you.
         </p>
       </CardContent>

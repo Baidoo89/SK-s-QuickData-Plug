@@ -83,29 +83,29 @@ export function PaymentSettingsCard() {
   }
 
   return (
-    <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
+    <Card className="min-w-0 overflow-hidden border border-border bg-card/95 shadow-sm">
       <CardHeader className="border-b bg-muted/30 pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-              <CreditCard className="h-5 w-5 text-primary" />
-              Subscriber Paystack
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <CardTitle className="flex min-w-0 items-center gap-2 text-sm font-semibold">
+              <CreditCard className="h-5 w-5 shrink-0 text-primary" />
+              <span className="min-w-0 break-words">Subscriber Paystack</span>
             </CardTitle>
-            <CardDescription className="text-xs">
+            <CardDescription className="break-words text-xs">
               Connect your own Paystack account so storefront payments, wallet top-ups, and customer funds settle to your business.
             </CardDescription>
           </div>
-          <Badge variant={settings?.paystackConnected ? "secondary" : "destructive"} className={settings?.paystackConnected ? "status-success border" : ""}>
+          <Badge variant={settings?.paystackConnected ? "secondary" : "destructive"} className={settings?.paystackConnected ? "status-success w-fit border" : "w-fit"}>
             {loading ? "Loading" : settings?.paystackConnected ? "Connected" : "Not connected"}
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="p-4">
-        <div className={settings?.paystackConnected ? "status-success mb-4 flex gap-3 rounded-md border p-3 text-sm" : "status-warning mb-4 flex gap-3 rounded-md border p-3 text-sm"}>
+        <div className={settings?.paystackConnected ? "status-success mb-4 flex min-w-0 gap-3 rounded-md border p-3 text-sm" : "status-warning mb-4 flex min-w-0 gap-3 rounded-md border p-3 text-sm"}>
           {settings?.paystackConnected ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />}
-          <div>
+          <div className="min-w-0">
             <p className="font-semibold">{settings?.paystackConnected ? "Paystack is connected" : "Paystack is required for storefront checkout"}</p>
-            <p>
+            <p className="break-words">
               {settings?.paystackConnected
                 ? `Storefront payments will settle to your Paystack account${settings.updatedAt ? `; last updated ${new Date(settings.updatedAt).toLocaleString()}` : ""}.`
                 : "Customers cannot complete storefront payment until both keys are saved."}
@@ -124,9 +124,9 @@ export function PaymentSettingsCard() {
               required
             />
             {publicKey && !publicKeyLooksValid ? (
-              <p className="text-xs text-destructive">Public key should start with pk_test_ or pk_live_.</p>
+              <p className="break-words text-xs text-destructive">Public key should start with pk_test_ or pk_live_.</p>
             ) : (
-              <p className="text-xs text-muted-foreground">Use test keys while testing checkout, then switch to live keys for production.</p>
+              <p className="break-words text-xs text-muted-foreground">Use test keys while testing checkout, then switch to live keys for production.</p>
             )}
           </div>
           <div className="grid gap-2">
@@ -140,9 +140,9 @@ export function PaymentSettingsCard() {
               type="password"
             />
             {secretKey && !secretKeyLooksValid ? (
-              <p className="text-xs text-destructive">Secret key should start with sk_test_ or sk_live_.</p>
+              <p className="break-words text-xs text-destructive">Secret key should start with sk_test_ or sk_live_.</p>
             ) : null}
-            <p className="text-xs text-muted-foreground">
+            <p className="break-words text-xs text-muted-foreground">
               The secret key is encrypted before storage. It is used only server-side to initialize and verify storefront and wallet payments.
             </p>
           </div>

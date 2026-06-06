@@ -130,12 +130,12 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
   }
 
   return (
-    <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
+    <Card className="min-w-0 overflow-hidden border border-border bg-card/95 shadow-sm">
       <CardHeader className="border-b bg-muted/30 pb-3">
-        <CardTitle className="text-sm font-semibold">Order Dispatch Policy</CardTitle>
+        <CardTitle className="break-words text-sm font-semibold">Order Dispatch Policy</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 p-4">
-        <p className="text-xs text-muted-foreground">
+        <p className="break-words text-xs text-muted-foreground">
           Control which networks go through provider API and which stay manual.
         </p>
 
@@ -152,10 +152,10 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
                 type="button"
                 disabled={loading || saving}
                 onClick={() => setMode(item.value as DispatchMode)}
-                className={`rounded-md border px-3 py-2 text-left transition ${mode === item.value ? "border-primary bg-primary/10 text-foreground" : "border-border bg-background text-muted-foreground hover:text-foreground"}`}
+                className={`min-w-0 rounded-md border px-3 py-2 text-left transition ${mode === item.value ? "border-primary bg-primary/10 text-foreground" : "border-border bg-background text-muted-foreground hover:text-foreground"}`}
               >
-                <span className="block text-xs font-semibold">{item.label}</span>
-                <span className="mt-0.5 block text-[10px]">{item.detail}</span>
+                <span className="block break-words text-xs font-semibold">{item.label}</span>
+                <span className="mt-0.5 block break-words text-[10px]">{item.detail}</span>
               </button>
             ))}
           </div>
@@ -170,7 +170,7 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
             className="text-xs"
             placeholder="primary"
           />
-          <p className="text-[11px] text-muted-foreground">
+          <p className="break-words text-[11px] text-muted-foreground">
             This must match a saved provider slot key. Example: primary, backup, mtn-main.
           </p>
         </div>
@@ -197,11 +197,11 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
                   type="button"
                   disabled={loading || saving}
                   onClick={() => toggleNetwork(network)}
-                  className={`rounded-md border px-3 py-2 text-left text-xs font-semibold transition ${enabled ? "border-primary bg-primary/10 text-foreground" : "border-border bg-background text-muted-foreground hover:text-foreground"}`}
+                  className={`min-w-0 rounded-md border px-3 py-2 text-left text-xs font-semibold transition ${enabled ? "border-primary bg-primary/10 text-foreground" : "border-border bg-background text-muted-foreground hover:text-foreground"}`}
                 >
-                  <span className="flex items-center justify-between gap-2">
-                    {network === "AIRTELTIGO" ? "AirtelTigo" : network.charAt(0) + network.slice(1).toLowerCase()}
-                    <Badge variant={enabled ? "secondary" : "outline"} className="rounded-md px-2 py-0 text-[10px]">
+                  <span className="flex min-w-0 items-center justify-between gap-2">
+                    <span className="min-w-0 break-words">{network === "AIRTELTIGO" ? "AirtelTigo" : network.charAt(0) + network.slice(1).toLowerCase()}</span>
+                    <Badge variant={enabled ? "secondary" : "outline"} className="shrink-0 rounded-md px-2 py-0 text-[10px]">
                       {enabled ? "API on" : "Manual"}
                     </Badge>
                   </span>
@@ -216,7 +216,7 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
             className="text-xs"
             placeholder="MTN, AIRTELTIGO, TELECEL"
           />
-          <p className="text-[11px] text-muted-foreground">
+          <p className="break-words text-[11px] text-muted-foreground">
             Comma-separated. Example: MTN for MTN-only API routing.
           </p>
         </div>
@@ -230,7 +230,7 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
             className="text-xs"
             placeholder="MTN=primary>backup, TELECEL=backup, AIRTELTIGO=primary"
           />
-          <p className="text-[11px] text-muted-foreground">
+          <p className="break-words text-[11px] text-muted-foreground">
             Optional. Use &gt; for fallback order. Example: MTN tries primary first, then backup.
           </p>
         </div>

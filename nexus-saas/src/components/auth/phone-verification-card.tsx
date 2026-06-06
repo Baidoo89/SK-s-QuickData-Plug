@@ -73,21 +73,21 @@ export function PhoneVerificationCard({
   }
 
   return (
-    <Card>
+    <Card className="min-w-0 overflow-hidden">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-          <ShieldCheck className="h-4 w-4 text-primary" />
-          Phone Verification
+        <CardTitle className="flex min-w-0 items-center gap-2 text-sm font-semibold">
+          <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
+          <span className="min-w-0 break-words">Phone Verification</span>
         </CardTitle>
-        <CardDescription className="text-xs">
+        <CardDescription className="break-words text-xs">
           Confirm a phone number for account recovery and security notifications once SMS delivery is connected.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {isVerified ? (
-          <div className="status-success flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
-            <CheckCircle2 className="h-4 w-4" />
-            Phone number verified.
+          <div className="status-success flex min-w-0 items-center gap-2 rounded-md border px-3 py-2 text-sm">
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            <span className="min-w-0 break-words">Phone number verified.</span>
           </div>
         ) : null}
         <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
@@ -101,7 +101,7 @@ export function PhoneVerificationCard({
             placeholder="0240000000"
             inputMode="tel"
           />
-          <Button type="button" variant="outline" onClick={requestCode} disabled={isSending || !phoneNumber.trim()}>
+          <Button type="button" variant="outline" onClick={requestCode} disabled={isSending || !phoneNumber.trim()} className="w-full sm:w-auto">
             {isSending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Send Code
           </Button>
@@ -115,13 +115,13 @@ export function PhoneVerificationCard({
               inputMode="numeric"
               maxLength={6}
             />
-            <Button type="button" onClick={verifyCode} disabled={isVerifying || code.length < 6}>
+            <Button type="button" onClick={verifyCode} disabled={isVerifying || code.length < 6} className="w-full sm:w-auto">
               {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Verify
             </Button>
           </div>
         ) : null}
-        <p className="text-xs text-muted-foreground">
+        <p className="break-words text-xs text-muted-foreground">
           Email verification is active for launch. Phone verification requires an SMS provider before real users can receive codes.
         </p>
       </CardContent>

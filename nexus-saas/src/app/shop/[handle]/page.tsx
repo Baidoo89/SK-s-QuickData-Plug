@@ -267,9 +267,9 @@ export default async function ShopPage({ params, searchParams }: ShopPageProps) 
         <div className="border-b border-destructive/30 bg-destructive/10 py-4 text-destructive">
           <div className="container flex min-w-0 gap-3 text-sm">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            <div>
+            <div className="min-w-0">
               <p className="font-semibold">Checkout unavailable</p>
-              <p>{data.storeInactiveReason || "This store is currently inactive. Purchases are disabled."}</p>
+              <p className="break-words">{data.storeInactiveReason || "This store is currently inactive. Purchases are disabled."}</p>
             </div>
           </div>
         </div>
@@ -278,9 +278,9 @@ export default async function ShopPage({ params, searchParams }: ShopPageProps) 
         <div className="border-b border-primary/30 bg-primary/10 py-4 text-primary">
           <div className="container flex min-w-0 gap-3 text-sm">
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-            <div>
+            <div className="min-w-0">
               <p className="font-semibold">Payment successful</p>
-              <p>{Number.isFinite(orderCount) && orderCount > 1 ? `${orderCount} orders are` : "Your order is"} now pending fulfillment.</p>
+              <p className="break-words">{Number.isFinite(orderCount) && orderCount > 1 ? `${orderCount} orders are` : "Your order is"} now pending fulfillment.</p>
             </div>
           </div>
         </div>
@@ -289,22 +289,22 @@ export default async function ShopPage({ params, searchParams }: ShopPageProps) 
         <div className="border-b border-destructive/30 bg-destructive/10 py-4 text-destructive">
           <div className="container flex min-w-0 gap-3 text-sm">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            <div>
+            <div className="min-w-0">
               <p className="font-semibold">Payment not completed</p>
-              <p>No order has entered fulfillment.</p>
+              <p className="break-words">No order has entered fulfillment.</p>
             </div>
           </div>
         </div>
       ) : null}
-      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/90 backdrop-blur-md">
-        <div className="container flex min-h-16 min-w-0 items-center justify-between py-3">
-          <div className="flex min-w-0 items-center gap-3 font-bold text-xl text-primary">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-primary/30 bg-primary/10 text-sm font-bold text-primary shadow-sm">
+      <header className="sticky top-0 z-[60] w-full border-b border-border bg-background/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/85">
+        <div className="container flex min-h-14 min-w-0 items-center justify-between py-2 sm:min-h-16 sm:py-3">
+          <div className="flex min-w-0 items-center gap-2 font-bold text-primary sm:gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-primary/30 bg-primary/10 text-xs font-bold text-primary shadow-sm sm:h-10 sm:w-10 sm:text-sm">
               {getInitials(data.sellerName)}
             </div>
-            <div className="flex min-w-0 flex-col">
-              <span className="truncate text-base md:text-lg">{data.sellerName}</span>
-              <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            <div className="flex min-w-0 max-w-[calc(100vw-6rem)] flex-col">
+              <span className="truncate text-sm sm:text-base md:text-lg">{data.sellerName}</span>
+              <span className="truncate text-[10px] font-medium uppercase tracking-wide text-muted-foreground sm:text-[11px]">
                 Official customer checkout
               </span>
             </div>
@@ -312,14 +312,14 @@ export default async function ShopPage({ params, searchParams }: ShopPageProps) 
         </div>
       </header>
 
-      <div className="border-b border-border bg-muted/25 py-8 md:py-14">
-        <div className="container space-y-8">
-          <div className="max-w-3xl">
+      <div className="border-b border-border bg-muted/25 py-6 md:py-14">
+        <div className="container min-w-0 space-y-6 sm:space-y-8">
+          <div className="min-w-0 max-w-3xl">
             <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-primary">Official storefront</p>
-            <h1 className="break-words text-3xl font-bold tracking-tight md:text-4xl lg:text-5xl">
+            <h1 className="break-words text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl lg:text-5xl">
               Buy data and services from {data.sellerName}
             </h1>
-            <p className="mt-4 max-w-2xl text-base text-muted-foreground md:text-lg">
+            <p className="mt-4 max-w-2xl break-words text-sm text-muted-foreground sm:text-base md:text-lg">
               Choose a bundle or registration service, pay securely, and your request goes straight to {data.sellerName} for fulfillment.
             </p>
           </div>
@@ -331,7 +331,7 @@ export default async function ShopPage({ params, searchParams }: ShopPageProps) 
         </div>
       </div>
 
-      <main className="container py-8 md:py-12">
+      <main className="container min-w-0 py-6 md:py-12">
         <SimpleBuySectionsClient
           subscriberSlug={data.organization.slug}
           bundles={bundles}
@@ -344,7 +344,7 @@ export default async function ShopPage({ params, searchParams }: ShopPageProps) 
         />
       </main>
       <footer className="border-t border-border py-6">
-        <div className="container text-center text-xs text-muted-foreground">
+        <div className="container break-words text-center text-xs text-muted-foreground">
           This storefront is operated by {data.sellerName}. Customer payments are processed securely before fulfillment. {networkCount > 0 ? `${networkCount} network group${networkCount === 1 ? "" : "s"} available.` : catalogCount > 0 ? "Service checkout available." : ""}
         </div>
       </footer>

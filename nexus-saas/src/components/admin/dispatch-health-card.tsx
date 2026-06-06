@@ -38,12 +38,12 @@ export function DispatchHealthCard({ endpoint = "/api/admin/dispatch-health" }: 
   }, [endpoint])
 
   return (
-    <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
+    <Card className="min-w-0 overflow-hidden border border-border bg-card/95 shadow-sm">
       <CardHeader className="border-b bg-muted/30 pb-3">
-        <CardTitle className="text-sm font-semibold flex items-center justify-between">
-          Dispatch Health
+        <CardTitle className="flex min-w-0 items-center justify-between gap-2 text-sm font-semibold">
+          <span className="min-w-0 break-words">Dispatch Health</span>
           {data ? (
-            <Badge className={data.alert ? "bg-destructive/15 text-destructive" : "bg-primary/15 text-foreground"}>
+            <Badge className={data.alert ? "shrink-0 bg-destructive/15 text-destructive" : "shrink-0 bg-primary/15 text-foreground"}>
               {data.alert ? "Alert" : "Healthy"}
             </Badge>
           ) : null}
@@ -51,15 +51,15 @@ export function DispatchHealthCard({ endpoint = "/api/admin/dispatch-health" }: 
       </CardHeader>
       <CardContent className="p-4">
         {error ? (
-          <p className="text-xs text-destructive">{error}</p>
+          <p className="break-words text-xs text-destructive">{error}</p>
         ) : !data ? (
           <p className="text-xs text-muted-foreground">Loading dispatch health...</p>
         ) : (
           <div className="space-y-1 text-xs">
-            <div className="flex justify-between"><span>Attempts (24h):</span><span className="font-semibold">{data.attempts24h}</span></div>
-            <div className="flex justify-between"><span>Failed dispatches (24h):</span><span className="font-semibold">{data.failedDispatches24h}</span></div>
-            <div className="flex justify-between"><span>Stale API pending:</span><span className="font-semibold">{data.stalePendingApiOrders}</span></div>
-            <p className="text-[11px] text-muted-foreground pt-1">
+            <div className="flex min-w-0 justify-between gap-2"><span className="min-w-0 break-words">Attempts (24h):</span><span className="shrink-0 font-semibold">{data.attempts24h}</span></div>
+            <div className="flex min-w-0 justify-between gap-2"><span className="min-w-0 break-words">Failed dispatches (24h):</span><span className="shrink-0 font-semibold">{data.failedDispatches24h}</span></div>
+            <div className="flex min-w-0 justify-between gap-2"><span className="min-w-0 break-words">Stale API pending:</span><span className="shrink-0 font-semibold">{data.stalePendingApiOrders}</span></div>
+            <p className="break-words pt-1 text-[11px] text-muted-foreground">
               Stale means API-routed orders pending longer than {data.staleMinutes} minutes.
             </p>
           </div>

@@ -73,19 +73,19 @@ export function StorefrontReadinessCard({
   ]
 
   return (
-    <Card>
+    <Card className="min-w-0 overflow-hidden">
       <CardHeader>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              {ready ? <CheckCircle2 className="h-5 w-5 text-success" /> : <AlertCircle className="h-5 w-5 text-warning" />}
-              Storefront Readiness
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <CardTitle className="flex min-w-0 items-center gap-2">
+              {ready ? <CheckCircle2 className="h-5 w-5 shrink-0 text-success" /> : <AlertCircle className="h-5 w-5 shrink-0 text-warning" />}
+              <span className="min-w-0 break-words">Storefront Readiness</span>
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="break-words">
               Checkout opens only when billing, Paystack, products, and pricing are ready.
             </CardDescription>
           </div>
-          <Badge variant={ready ? "secondary" : "outline"} className={ready ? "status-success border" : "status-warning border"}>
+          <Badge variant={ready ? "secondary" : "outline"} className={ready ? "status-success w-fit border" : "status-warning w-fit border"}>
             {ready ? "Ready to sell" : "Checkout blocked"}
           </Badge>
         </div>
@@ -95,17 +95,17 @@ export function StorefrontReadinessCard({
           {items.map((item) => {
             const Icon = item.icon
             return (
-              <Link key={item.label} href={item.href} className="block rounded-md border border-border bg-background p-3 transition-colors hover:bg-muted/40">
-                <div className="flex gap-3">
-                  <div className={item.complete ? "text-primary" : "text-muted-foreground"}>
+              <Link key={item.label} href={item.href} className="block min-w-0 rounded-md border border-border bg-background p-3 transition-colors hover:bg-muted/40">
+                <div className="flex min-w-0 gap-3">
+                  <div className={item.complete ? "shrink-0 text-primary" : "shrink-0 text-muted-foreground"}>
                     {item.complete ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
                   </div>
                   <div className="min-w-0">
-                    <p className="flex items-center gap-2 text-sm font-semibold">
-                      <Icon className="h-4 w-4 text-muted-foreground" />
-                      {item.label}
+                    <p className="flex min-w-0 items-center gap-2 text-sm font-semibold">
+                      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="min-w-0 break-words">{item.label}</span>
                     </p>
-                    <p className="mt-1 text-xs leading-5 text-muted-foreground">{item.description}</p>
+                    <p className="mt-1 break-words text-xs leading-5 text-muted-foreground">{item.description}</p>
                   </div>
                 </div>
               </Link>
@@ -113,22 +113,22 @@ export function StorefrontReadinessCard({
           })}
         </div>
 
-        <div className={ready ? "status-success rounded-md border p-3 text-sm" : "status-warning rounded-md border p-3 text-sm"}>
+        <div className={ready ? "status-success break-words rounded-md border p-3 text-sm" : "status-warning break-words rounded-md border p-3 text-sm"}>
           {ready
             ? "Your storefront can accept paid orders. Customers will pay first, then orders enter manual fulfillment."
             : "Customers cannot complete checkout yet. Finish the missing setup items above before sharing the store link."}
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="grid gap-2 sm:flex sm:flex-wrap">
           {storePath ? (
-            <Button asChild variant="outline" size="sm">
+            <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
               <Link href={storePath} target="_blank">
                 <ExternalLink className="mr-2 h-4 w-4" />
                 Open Storefront
               </Link>
             </Button>
           ) : null}
-          <Button asChild size="sm" variant={ready ? "secondary" : "default"}>
+          <Button asChild size="sm" variant={ready ? "secondary" : "default"} className="w-full sm:w-auto">
             <Link href="/dashboard/products">Manage Products</Link>
           </Button>
         </div>

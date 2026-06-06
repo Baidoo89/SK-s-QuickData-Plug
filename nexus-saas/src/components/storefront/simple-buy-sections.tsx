@@ -589,7 +589,7 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
   }
 
   return (
-    <div className="portal-page space-y-6">
+    <div className="portal-page min-w-0 space-y-5 sm:space-y-6">
       {!storeActive && (
         <SellingAccessAlert
           canSell={false}
@@ -598,53 +598,53 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
       )}
 
       {storeActive && productCount === 0 && (
-        <div className="status-warning flex gap-3 rounded-md border px-4 py-3 text-sm shadow-sm">
+        <div className="status-warning flex min-w-0 gap-3 rounded-md border px-4 py-3 text-sm shadow-sm">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <div>
+          <div className="min-w-0">
             <p className="font-semibold">No products or services available</p>
-            <p>This storefront is active, but no public bundles or service requests are available yet.</p>
+            <p className="break-words">This storefront is active, but no public bundles or service requests are available yet.</p>
           </div>
         </div>
       )}
 
       {storefrontCanSell && (
-        <div className="status-info flex gap-3 rounded-md border px-4 py-3 text-sm shadow-sm">
+        <div className="status-info flex min-w-0 gap-3 rounded-md border px-4 py-3 text-sm shadow-sm">
           <CreditCard className="mt-0.5 h-4 w-4 shrink-0" />
-          <div>
+          <div className="min-w-0">
             <p className="font-semibold">Secure payment first</p>
-            <p>Your order is sent to the seller only after Paystack confirms payment.</p>
+            <p className="break-words">Your order is sent to the seller only after Paystack confirms payment.</p>
           </div>
         </div>
       )}
 
       <Tabs defaultValue="single" className="min-w-0 space-y-5">
-        <TabsList className={`grid w-full max-w-2xl ${services.length > 0 ? "grid-cols-3" : "grid-cols-2"} rounded-md bg-muted p-1`}>
-          <TabsTrigger value="single" className="rounded-md">
-            <ShoppingBag className="mr-1.5 h-4 w-4 sm:mr-2" />
-            Single Buy
+        <TabsList className={`grid h-auto w-full max-w-2xl gap-1 rounded-md bg-muted p-1 ${services.length > 0 ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-2"}`}>
+          <TabsTrigger value="single" className="min-w-0 rounded-md px-2 py-2 text-xs sm:text-sm">
+            <ShoppingBag className="mr-1.5 h-4 w-4 shrink-0 sm:mr-2" />
+            <span className="truncate">Single Buy</span>
           </TabsTrigger>
-          <TabsTrigger value="bulk" className="rounded-md">
-            <Layers3 className="mr-1.5 h-4 w-4 sm:mr-2" />
-            Bulk Buy
+          <TabsTrigger value="bulk" className="min-w-0 rounded-md px-2 py-2 text-xs sm:text-sm">
+            <Layers3 className="mr-1.5 h-4 w-4 shrink-0 sm:mr-2" />
+            <span className="truncate">Bulk Buy</span>
           </TabsTrigger>
           {services.length > 0 ? (
-            <TabsTrigger value="services" className="rounded-md">
-              <FileText className="mr-1.5 h-4 w-4 sm:mr-2" />
-              Services
+            <TabsTrigger value="services" className="min-w-0 rounded-md px-2 py-2 text-xs sm:text-sm">
+              <FileText className="mr-1.5 h-4 w-4 shrink-0 sm:mr-2" />
+              <span className="truncate">Services</span>
             </TabsTrigger>
           ) : null}
         </TabsList>
 
-        <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
+        <div className="grid min-w-0 max-w-full gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(260px,0.75fr)]">
           <div className="min-w-0 space-y-5">
             <TabsContent value="single" className="mt-0">
-              <Card className="overflow-hidden border-border/80 bg-card/95 shadow-sm">
+              <Card className="min-w-0 overflow-hidden border-border/80 bg-card/95 shadow-sm">
                 <CardHeader className="border-b border-border/70 bg-muted/20">
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    <ShoppingBag className="h-5 w-5 text-primary" />
-                    Buy Single Bundle
+                  <CardTitle className="flex min-w-0 items-center gap-2 text-lg sm:text-xl">
+                    <ShoppingBag className="h-5 w-5 shrink-0 text-primary" />
+                    <span className="min-w-0 break-words">Buy Single Bundle</span>
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="break-words">
                     Select a network, choose a bundle, enter the number, and pay securely. No account required.
                   </CardDescription>
                 </CardHeader>
@@ -663,7 +663,7 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
                             size="sm"
                             variant={selectedProvider === provider ? "default" : "outline"}
                             onClick={() => setSelectedProvider(provider)}
-                            className="shrink-0"
+                            className="max-w-36 shrink-0 truncate"
                             disabled={!storefrontCanSellBundles}
                           >
                             {provider}
@@ -707,16 +707,16 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
                     </div>
 
                     {selectedBundle && (
-                      <div className="grid gap-3 rounded-md border border-primary/20 bg-primary/10 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
-                        <div className="space-y-1 text-sm">
+                      <div className="grid min-w-0 gap-3 rounded-md border border-primary/20 bg-primary/10 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                        <div className="min-w-0 space-y-1 text-sm">
                           <p className="font-semibold text-foreground">Order summary</p>
-                          <p className="text-muted-foreground">
+                          <p className="break-words text-muted-foreground">
                             {selectedBundle.name} - {selectedBundle.provider}
                           </p>
                         </div>
-                        <div className="text-left sm:text-right">
+                        <div className="min-w-0 text-left sm:text-right">
                           <p className="text-xs uppercase tracking-wide text-muted-foreground">Total</p>
-                          <p className="text-2xl font-bold text-primary">{formatGhanaCedis(totalSingleCost)}</p>
+                          <p className="break-words text-xl font-bold text-primary sm:text-2xl">{formatGhanaCedis(totalSingleCost)}</p>
                         </div>
                       </div>
                     )}
@@ -736,20 +736,20 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
             </TabsContent>
 
             <TabsContent value="bulk" className="mt-0">
-              <Card className="overflow-hidden border-border/80 bg-card/95 shadow-sm">
+              <Card className="min-w-0 overflow-hidden border-border/80 bg-card/95 shadow-sm">
                 <CardHeader className="border-b border-border/70 bg-muted/20">
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    <Layers3 className="h-5 w-5 text-primary" />
-                    Bulk Buy
+                  <CardTitle className="flex min-w-0 items-center gap-2 text-lg sm:text-xl">
+                    <Layers3 className="h-5 w-5 shrink-0 text-primary" />
+                    <span className="min-w-0 break-words">Bulk Buy</span>
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="break-words">
                     Add one order per line using phone and size, then review the validation summary before submitting.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4 p-4 sm:p-6">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground">Network</label>
-                      <div className="table-scroll flex gap-2 pb-1">
+                    <div className="table-scroll flex gap-2 pb-1">
                       <Button type="button" size="sm" variant={selectedProvider === "ALL" ? "default" : "outline"} onClick={() => setSelectedProvider("ALL")} className="shrink-0" disabled={!storefrontCanSellBundles}>
                         All
                       </Button>
@@ -760,7 +760,7 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
                           size="sm"
                           variant={selectedProvider === provider ? "default" : "outline"}
                           onClick={() => setSelectedProvider(provider)}
-                          className="shrink-0"
+                          className="max-w-36 shrink-0 truncate"
                           disabled={!storefrontCanSellBundles}
                         >
                           {provider}
@@ -769,15 +769,15 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
                     </div>
                   </div>
 
-                    <div className="grid min-w-0 gap-3 sm:grid-cols-2">
-                    <div className="rounded-md border border-border bg-muted/35 p-4 text-sm">
+                  <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+                    <div className="min-w-0 rounded-md border border-border bg-muted/35 p-4 text-sm">
                       <p className="font-semibold text-foreground">Format</p>
-                      <p className="mt-1 text-muted-foreground">Use one order per line.</p>
+                      <p className="mt-1 break-words text-muted-foreground">Use one order per line.</p>
                     </div>
-                    <div className="rounded-md border border-border bg-muted/35 p-4 text-sm">
+                    <div className="min-w-0 rounded-md border border-border bg-muted/35 p-4 text-sm">
                       <p className="font-semibold text-foreground">Accepted input</p>
-                      <p className="mt-1 text-muted-foreground">phone size</p>
-                      <p className="text-muted-foreground">or phone 1GB</p>
+                      <p className="mt-1 break-words text-muted-foreground">phone size</p>
+                      <p className="break-words text-muted-foreground">or phone 1GB</p>
                     </div>
                   </div>
 
@@ -801,12 +801,12 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
                   </form>
 
                   {bulkInput.trim() && (
-                    <div className="space-y-3 rounded-md border border-border bg-muted/30 p-4 text-sm">
+                    <div className="min-w-0 space-y-3 rounded-md border border-border bg-muted/30 p-4 text-sm">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="font-semibold text-foreground">
+                        <p className="break-words font-semibold text-foreground">
                           Orders: {preview.validRows.length} valid / {preview.invalidRows.length} invalid
                         </p>
-                        <p className="text-muted-foreground">Estimated payment: {formatGhanaCedis(preview.totalAmount)}</p>
+                        <p className="break-words text-muted-foreground">Estimated payment: {formatGhanaCedis(preview.totalAmount)}</p>
                       </div>
                       {selectedProvider === "ALL" && (
                         <p className="text-destructive">Select a network to resolve bundle sizes before submitting.</p>
@@ -816,7 +816,7 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
                           <p className="font-medium text-destructive">Invalid lines</p>
                           <div className="max-h-24 space-y-1 overflow-auto rounded-md border border-destructive/30 bg-destructive/10 p-3 text-destructive">
                             {preview.invalidRows.slice(0, 6).map((row) => (
-                              <p key={`invalid-${row.lineNumber}`}>
+                              <p key={`invalid-${row.lineNumber}`} className="break-words">
                                 Line {row.lineNumber}: {row.error}
                               </p>
                             ))}
@@ -879,13 +879,13 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
 
             {services.length > 0 ? (
               <TabsContent value="services" className="mt-0">
-                <Card className="overflow-hidden border-border/80 bg-card/95 shadow-sm">
+                <Card className="min-w-0 overflow-hidden border-border/80 bg-card/95 shadow-sm">
                   <CardHeader className="border-b border-border/70 bg-muted/20">
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                      <FileText className="h-5 w-5 text-primary" />
-                      Registration Services
+                    <CardTitle className="flex min-w-0 items-center gap-2 text-lg sm:text-xl">
+                      <FileText className="h-5 w-5 shrink-0 text-primary" />
+                      <span className="min-w-0 break-words">Registration Services</span>
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className="break-words">
                       Complete the required customer details, then pay securely before submission.
                     </CardDescription>
                   </CardHeader>
@@ -914,7 +914,7 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
                           Select a registration service to show the required customer form.
                         </div>
                       ) : (
-                        <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="grid min-w-0 gap-4 sm:grid-cols-2">
                           <div className="space-y-2">
                             <label className="text-sm font-medium text-foreground">Full name</label>
                             <Input
@@ -986,16 +986,16 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
                       )}
 
                       {selectedService && (
-                        <div className="grid gap-3 rounded-md border border-primary/20 bg-primary/10 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
-                          <div className="space-y-1 text-sm">
+                        <div className="grid min-w-0 gap-3 rounded-md border border-primary/20 bg-primary/10 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                          <div className="min-w-0 space-y-1 text-sm">
                             <p className="font-semibold text-foreground">Registration summary</p>
-                            <p className="text-muted-foreground">
+                            <p className="break-words text-muted-foreground">
                               {selectedService.name} - {selectedService.provider}
                             </p>
                           </div>
-                          <div className="text-left sm:text-right">
+                          <div className="min-w-0 text-left sm:text-right">
                             <p className="text-xs uppercase tracking-wide text-muted-foreground">Total</p>
-                            <p className="text-2xl font-bold text-primary">{formatGhanaCedis(totalServiceCost)}</p>
+                            <p className="break-words text-xl font-bold text-primary sm:text-2xl">{formatGhanaCedis(totalServiceCost)}</p>
                           </div>
                         </div>
                       )}
@@ -1023,50 +1023,50 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
             ) : null}
           </div>
 
-          <div className="min-w-0 space-y-4 lg:sticky lg:top-24 lg:self-start">
-            <Card className="border-border/80 bg-card/95 shadow-sm">
+          <div className="min-w-0 space-y-4 lg:sticky lg:top-20 lg:self-start">
+            <Card className="min-w-0 border-border/80 bg-card/95 shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">How it works</CardTitle>
                 <CardDescription>Quick checkout for customers on any device.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 text-sm text-muted-foreground">
-                <div className="flex gap-3 rounded-md bg-muted/40 p-3">
+                <div className="flex min-w-0 gap-3 rounded-md bg-muted/40 p-3">
                   <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">1</div>
-                  <p>Pick a bundle or service and enter the required customer details.</p>
+                  <p className="min-w-0 break-words">Pick a bundle or service and enter the required customer details.</p>
                 </div>
-                <div className="flex gap-3 rounded-md bg-muted/40 p-3">
+                <div className="flex min-w-0 gap-3 rounded-md bg-muted/40 p-3">
                   <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">2</div>
-                  <p>Pay securely with card, bank, or mobile money where available.</p>
+                  <p className="min-w-0 break-words">Pay securely with card, bank, or mobile money where available.</p>
                 </div>
-                <div className="flex gap-3 rounded-md bg-muted/40 p-3">
+                <div className="flex min-w-0 gap-3 rounded-md bg-muted/40 p-3">
                   <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">3</div>
-                  <p>After payment, the seller receives the order for fulfillment.</p>
+                  <p className="min-w-0 break-words">After payment, the seller receives the order for fulfillment.</p>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-border/80 bg-card/95 shadow-sm">
+            <Card className="min-w-0 border-border/80 bg-card/95 shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Available catalog</CardTitle>
                 <CardDescription>{productCount} public item{productCount === 1 ? "" : "s"} loaded from this storefront.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
                 {bundles.slice(0, 5).map((bundle) => (
-                  <div key={bundle.id} className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-sm">
-                    <div className="min-w-0 pr-3">
-                      <p className="truncate font-medium text-foreground">{bundle.name}</p>
-                      <p className="truncate text-xs text-muted-foreground">{bundle.provider}</p>
+                  <div key={bundle.id} className="grid min-w-0 gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                    <div className="min-w-0">
+                      <p className="break-words font-medium text-foreground">{bundle.name}</p>
+                      <p className="break-words text-xs text-muted-foreground">{bundle.provider}</p>
                     </div>
-                    <p className="shrink-0 font-semibold text-primary">{formatGhanaCedis(bundle.effectivePrice)}</p>
+                    <p className="break-words font-semibold text-primary sm:text-right">{formatGhanaCedis(bundle.effectivePrice)}</p>
                   </div>
                 ))}
                 {services.slice(0, 5).map((service) => (
-                  <div key={service.id} className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-sm">
-                    <div className="min-w-0 pr-3">
-                      <p className="truncate font-medium text-foreground">{service.name}</p>
-                      <p className="truncate text-xs text-muted-foreground">{service.provider} registration service</p>
+                  <div key={service.id} className="grid min-w-0 gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                    <div className="min-w-0">
+                      <p className="break-words font-medium text-foreground">{service.name}</p>
+                      <p className="break-words text-xs text-muted-foreground">{service.provider} registration service</p>
                     </div>
-                    <p className="shrink-0 font-semibold text-primary">{formatGhanaCedis(service.effectivePrice)}</p>
+                    <p className="break-words font-semibold text-primary sm:text-right">{formatGhanaCedis(service.effectivePrice)}</p>
                   </div>
                 ))}
                 {productCount === 0 && <p className="text-sm text-muted-foreground">No public bundles or services available yet.</p>}

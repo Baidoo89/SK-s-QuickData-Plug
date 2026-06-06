@@ -57,11 +57,11 @@ export function SettingsForm({ initialName }: SettingsFormProps) {
   };
 
   return (
-    <form onSubmit={onSubmit}>
-      <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
+    <form onSubmit={onSubmit} className="min-w-0">
+      <Card className="min-w-0 overflow-hidden border border-border bg-card/95 shadow-sm">
         <CardHeader className="border-b bg-muted/30 pb-3">
           <CardTitle className="text-sm font-semibold">Organization Name</CardTitle>
-          <CardDescription>
+          <CardDescription className="break-words">
             This is your organization&apos;s visible name on dashboards and storefront pages.
           </CardDescription>
         </CardHeader>
@@ -77,7 +77,7 @@ export function SettingsForm({ initialName }: SettingsFormProps) {
           </div>
         </CardContent>
         <CardFooter className="border-t bg-muted/20 px-4 py-3">
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading} className="w-full sm:w-auto">
             {loading ? "Saving..." : "Save"}
           </Button>
         </CardFooter>

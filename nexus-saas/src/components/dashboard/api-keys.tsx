@@ -112,18 +112,18 @@ export function ApiKeys({ apiKeys }: ApiKeysProps) {
   }
 
   return (
-    <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
+    <Card className="min-w-0 overflow-hidden border border-border bg-card/95 shadow-sm">
       <CardHeader className="border-b bg-muted/30 pb-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <CardTitle className="text-sm font-semibold">API Keys</CardTitle>
-            <CardDescription className="text-xs">
+            <CardDescription className="break-words text-xs">
               Manage credentials for external sites that submit paid orders into your fulfillment flow.
             </CardDescription>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button size="sm">
+              <Button size="sm" className="w-full sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" />
                 Create New Key
               </Button>
@@ -158,11 +158,11 @@ export function ApiKeys({ apiKeys }: ApiKeysProps) {
             <p className="py-6 text-center text-sm text-muted-foreground">No API keys found.</p>
           ) : (
             apiKeys.map((apiKey) => (
-              <div key={apiKey.id} className="rounded-md border bg-background p-3 text-sm">
-                <div className="flex items-start justify-between gap-3">
+              <div key={apiKey.id} className="min-w-0 rounded-md border bg-background p-3 text-sm">
+                <div className="flex min-w-0 items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate font-semibold">{apiKey.name}</p>
-                    <p className="font-mono text-xs text-muted-foreground">
+                    <p className="break-all font-mono text-xs text-muted-foreground">
                       {apiKey.key.slice(0, 8)}...{apiKey.key.slice(-4)}
                     </p>
                     <Badge variant="outline" className="mt-2 rounded-md px-2 py-0 text-[10px]">
@@ -185,61 +185,61 @@ export function ApiKeys({ apiKeys }: ApiKeysProps) {
         </div>
 
         <div className="table-scroll hidden rounded-md border bg-background md:block">
-        <Table className="min-w-[620px]">
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Owner</TableHead>
-              <TableHead>Key</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {apiKeys.map((apiKey) => (
-              <TableRow key={apiKey.id}>
-                <TableCell className="font-medium">{apiKey.name}</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="rounded-md px-2 py-0 text-[10px]">
-                    {apiKey.ownerType || "SUBSCRIBER"}
-                  </Badge>
-                </TableCell>
-                <TableCell className="font-mono text-xs">
-                  {apiKey.key.slice(0, 8)}...{apiKey.key.slice(-4)}
-                </TableCell>
-                <TableCell>
-                  {new Date(apiKey.createdAt).toLocaleDateString()}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onCopy(apiKey.key)}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDelete(apiKey.id)}
-                      disabled={isLoading}
-                    >
-                      <Trash className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            {apiKeys.length === 0 && (
+          <Table className="min-w-[620px]">
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  No API keys found.
-                </TableCell>
+                <TableHead>Name</TableHead>
+                <TableHead>Owner</TableHead>
+                <TableHead>Key</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {apiKeys.map((apiKey) => (
+                <TableRow key={apiKey.id}>
+                  <TableCell className="font-medium">{apiKey.name}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="rounded-md px-2 py-0 text-[10px]">
+                      {apiKey.ownerType || "SUBSCRIBER"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="font-mono text-xs">
+                    {apiKey.key.slice(0, 8)}...{apiKey.key.slice(-4)}
+                  </TableCell>
+                  <TableCell>
+                    {new Date(apiKey.createdAt).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onCopy(apiKey.key)}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onDelete(apiKey.id)}
+                        disabled={isLoading}
+                      >
+                        <Trash className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {apiKeys.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                    No API keys found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
       </CardContent>
     </Card>
