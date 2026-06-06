@@ -12,17 +12,17 @@ export function slugifyStorefrontHandle(value: string) {
     .replace(/(^-|-$)+/g, "")
 }
 
-async function uniqueSlug(client: DbClient, base: string) {
+async function uniqueSlug(client: DbClient, base: string, ignoreId?: string) {
   const cleanBase = slugifyStorefrontHandle(base) || "store"
   let candidate = cleanBase
   let suffix = 2
 
-  while (await client.storefrontLink.findUnique({ where: { slug: candidate }, select: { id: true } })) {
+  while (true) {
+    const existing = await client.storefrontLink.findUnique({ where: { slug: candidate }, select: { id: true } })
+    if (!existing || existing.id === ignoreId) return candidate
     candidate = `${cleanBase}-${suffix}`
     suffix += 1
   }
-
-  return candidate
 }
 
 export async function getOrCreateSubscriberStorefrontLink(input: {
@@ -41,6 +41,38 @@ export async function getOrCreateSubscriberStorefrontLink(input: {
   const row = await db.storefrontLink.create({
     data: {
       slug,
+      organizationId: input.organizationId,
+      ownerType: "SUBSCRIBER",
+    },
+    select: { slug: true },
+  })
+
+  return `/shop/${row.slug}`
+}
+
+export async function refreshSubscriberStorefrontSlug(input: {
+  organizationId: string
+  organizationName: string
+  organizationSlug: string
+}) {
+  const existing = await db.storefrontLink.findFirst({
+    where: { organizationId: input.organizationId, ownerType: "SUBSCRIBER", agentId: null, resellerId: null },
+    select: { id: true, slug: true },
+  })
+  const nextSlug = await uniqueSlug(db, input.organizationSlug || input.organizationName, existing?.id)
+
+  if (existing) {
+    const row = await db.storefrontLink.update({
+      where: { id: existing.id },
+      data: { slug: nextSlug },
+      select: { slug: true },
+    })
+    return `/shop/${row.slug}`
+  }
+
+  const row = await db.storefrontLink.create({
+    data: {
+      slug: nextSlug,
       organizationId: input.organizationId,
       ownerType: "SUBSCRIBER",
     },

@@ -14,6 +14,7 @@ export async function POST(req: Request) {
       agentId: body?.agentId,
       resellerId: body?.resellerId,
       returnPath: body?.returnPath,
+      returnUrl: body?.returnUrl,
       productId: body?.productId,
       customerName: body?.customerName,
       phoneNumber: body?.phoneNumber,

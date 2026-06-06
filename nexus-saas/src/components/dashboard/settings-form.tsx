@@ -31,13 +31,17 @@ export function SettingsForm({ initialName }: SettingsFormProps) {
         body: JSON.stringify({ name }),
       });
 
+      const payload = await res.json().catch(() => null);
+
       if (!res.ok) {
         throw new Error("Something went wrong");
       }
 
       toast({
         title: "Settings updated",
-        description: "Your organization name has been updated.",
+        description: payload?.data?.storePath
+          ? `Your organization name and storefront link were updated to ${payload.data.storePath}.`
+          : "Your organization name has been updated.",
       });
       
       router.refresh();

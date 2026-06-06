@@ -11,6 +11,7 @@ export async function POST(req: Request) {
       agentId: body?.agentId,
       resellerId: body?.resellerId,
       returnPath: body?.returnPath,
+      returnUrl: body?.returnUrl,
       items: Array.isArray(body?.items) ? body.items : [],
     })
 

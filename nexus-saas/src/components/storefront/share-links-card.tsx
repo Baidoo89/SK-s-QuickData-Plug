@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/components/ui/use-toast"
+import { buildStorefrontUrl } from "@/lib/storefront-url"
 
 type ShareLink = {
   label: string
@@ -33,7 +34,7 @@ export function ShareLinksCard({
 
   const handleCopy = async (path: string) => {
     try {
-      await navigator.clipboard.writeText(`${origin}${path}`)
+      await navigator.clipboard.writeText(buildStorefrontUrl(path, origin))
       toast({ title: "Copied", description: "Link copied to clipboard." })
     } catch {
       toast({ variant: "destructive", title: "Copy failed", description: "Could not copy link." })
@@ -53,7 +54,7 @@ export function ShareLinksCard({
           </div>
         ) : null}
         {links.map((link) => {
-          const displayUrl = origin ? `${origin}${link.path}` : link.path
+          const displayUrl = origin ? buildStorefrontUrl(link.path, origin) : link.path
           return (
             <div key={`${link.label}:${link.path}`} className="space-y-2 rounded-lg border border-border bg-card/90 p-3">
               <div className="space-y-1">
@@ -67,7 +68,7 @@ export function ShareLinksCard({
                     <Copy className="h-3 w-3" />
                   </Button>
                   <Button type="button" size="icon" variant="secondary" className="h-8 w-8" asChild>
-                    <Link href={link.path} target="_blank">
+                    <Link href={displayUrl} target="_blank">
                       <ExternalLink className="h-3 w-3" />
                     </Link>
                   </Button>
