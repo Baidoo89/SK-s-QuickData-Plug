@@ -246,60 +246,7 @@ export function ManualQueueWorkspace({ rows }: Props) {
         </div>
       ) : null}
 
-      <div className="grid gap-2 2xl:hidden lg:grid-cols-2">
-        {rows.map((order) => {
-          const checked = selected.has(order.id)
-          return (
-            <div key={order.id} className={`rounded-md border bg-background p-3 text-sm ${checked ? "border-primary bg-primary/5" : ""}`}>
-              <div className="flex items-start gap-2">
-                <label className="flex min-w-0 flex-1 items-start gap-2">
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => toggleOrder(order.id)}
-                    className="mt-1 h-4 w-4 rounded border-border"
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-2">
-                      <span className="truncate text-base font-semibold leading-tight">{order.phoneNumber || "N/A"}</span>
-                      <Badge variant="outline" className="shrink-0 px-2 py-0 text-[10px]">{order.network || "-"}</Badge>
-                    </span>
-                    <span className="mt-0.5 block truncate text-xs font-medium text-muted-foreground">{order.itemsLabel || "Bundle N/A"}</span>
-                    <span className="mt-0.5 block font-mono text-[10px] text-muted-foreground">#{order.id.slice(-8)} | {formatDate(order.createdAt)}</span>
-                  </span>
-                </label>
-                <div className="shrink-0 text-right">
-                  <p className="font-semibold leading-tight">{formatGhanaCedis(order.total)}</p>
-                  <p className="text-[10px] text-muted-foreground">{order.sourceLabel}</p>
-                </div>
-              </div>
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                <Badge variant="secondary" className="px-2 py-0 text-[10px]">{order.provider || "Manual fulfillment"}</Badge>
-                <Badge variant="outline" className="px-2 py-0 text-[10px]">{order.sellerRole}</Badge>
-                <Badge variant="outline" className={paymentBadgeClass(order)}>
-                  {paymentBadgeLabel(order)}
-                </Badge>
-                <span className="truncate text-[10px] text-muted-foreground">{order.sellerName || order.agentName || "Direct"}</span>
-              </div>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                <div className="min-w-0">
-                  <OrderTimelineDialog orderId={order.id} />
-                </div>
-                <OrderStatusSelect
-                  orderId={order.id}
-                  initialStatus={order.status}
-                  endpointBase="/api/dashboard/orders"
-                />
-              </div>
-            </div>
-          )
-        })}
-        {rows.length === 0 && (
-          <p className="py-6 text-center text-sm text-muted-foreground">No manual pending orders found.</p>
-        )}
-      </div>
-
-      <div className="table-scroll hidden rounded-md border bg-background 2xl:block">
+      <div className="table-scroll rounded-md border bg-background">
         <Table className="min-w-[1180px] table-fixed text-xs">
           <TableHeader className="bg-muted/40">
             <TableRow>

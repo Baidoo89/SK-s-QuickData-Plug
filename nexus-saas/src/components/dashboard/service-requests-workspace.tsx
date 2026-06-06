@@ -3,8 +3,10 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { formatGhanaCedis } from "@/lib/currency"
+import { CheckCircle2, PackageCheck, XCircle } from "lucide-react"
 
 export type ServiceRequestRow = {
   id: string
@@ -111,82 +113,63 @@ function ServiceStatusSelect({ requestId, initialStatus }: { requestId: string; 
   )
 }
 
+function ServiceRequestActions({ requestId, status, readOnly }: { requestId: string; status: string; readOnly?: boolean }) {
+  const [saving, setSaving] = useState<string | null>(null)
+  const router = useRouter()
+
+  async function updateStatus(next: string) {
+    setSaving(next)
+    try {
+      const response = await fetch(`/api/dashboard/service-requests/${requestId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: next }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to update service request (${response.status})`)
+      }
+
+      router.refresh()
+    } catch (error) {
+      console.error("Failed to update service request status", error)
+    } finally {
+      setSaving(null)
+    }
+  }
+
+  if (readOnly || PAYMENT_LOCKED_STATUSES.has(status)) return null
+
+  return (
+    <div className="flex min-w-[220px] flex-wrap justify-end gap-1">
+      {status === "PENDING_REVIEW" ? (
+        <Button type="button" size="sm" variant="outline" className="h-8 text-[11px]" onClick={() => updateStatus("PROCESSING")} disabled={Boolean(saving)}>
+          <PackageCheck className="mr-1.5 h-3.5 w-3.5" />
+          {saving === "PROCESSING" ? "Picking..." : "Pick"}
+        </Button>
+      ) : null}
+      {status !== "COMPLETED" ? (
+        <Button type="button" size="sm" className="h-8 text-[11px]" onClick={() => updateStatus("COMPLETED")} disabled={Boolean(saving)}>
+          <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+          Done
+        </Button>
+      ) : null}
+      {status !== "FAILED" && status !== "REJECTED" ? (
+        <Button type="button" size="sm" variant="destructive" className="h-8 text-[11px]" onClick={() => updateStatus("FAILED")} disabled={Boolean(saving)}>
+          <XCircle className="mr-1.5 h-3.5 w-3.5" />
+          Fail
+        </Button>
+      ) : null}
+    </div>
+  )
+}
+
 export function ServiceRequestsWorkspace({ rows, readOnly = false }: Props) {
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 xl:hidden">
-        {rows.map((request) => (
-          <div key={request.id} className="rounded-md border bg-background p-3 text-sm">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="truncate text-base font-semibold">{request.customerName}</p>
-                <p className="text-xs text-muted-foreground">{request.serviceName}</p>
-                <p className="font-mono text-[10px] text-muted-foreground">#{request.id.slice(-8)} | {formatDate(request.createdAt)}</p>
-              </div>
-              <div className="shrink-0 text-right">
-                <p className="font-semibold">{formatGhanaCedis(request.total)}</p>
-                <Badge variant="outline" className="mt-1 px-2 py-0 text-[10px]">{request.provider || "SERVICE"}</Badge>
-              </div>
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-              <div>
-                <p className="font-medium text-foreground">{request.phoneNumber}</p>
-                <p>Phone number</p>
-              </div>
-              <div>
-                <p className="truncate font-medium text-foreground">{request.ghanaCardNumber || "-"}</p>
-                <p>Ghana Card</p>
-              </div>
-              <div>
-                <p className="truncate font-medium text-foreground">{request.location || "-"}</p>
-                <p>Location</p>
-              </div>
-              <div>
-                <p className="font-medium text-foreground">{request.dateOfBirth || "-"}</p>
-                <p>Date of birth</p>
-              </div>
-              <div>
-                <p className="font-medium text-foreground">{request.paymentStatus}</p>
-                <p>Payment</p>
-              </div>
-              <div>
-                <p className="font-medium text-foreground">{request.sellerRole}</p>
-                <p>Seller</p>
-              </div>
-              <div>
-                <p className={request.profit > 0 ? "font-semibold text-primary" : "font-medium text-muted-foreground"}>{formatGhanaCedis(request.profit)}</p>
-                <p>Profit</p>
-              </div>
-            </div>
-            {request.formDetails.length > 0 ? (
-              <div className="mt-3 rounded-md border bg-muted/20 p-3 text-xs">
-                <p className="mb-2 font-semibold text-foreground">Form details</p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {request.formDetails.slice(0, 6).map((detail) => (
-                    <div key={detail.label}>
-                      <p className="truncate font-medium text-foreground">{detail.value || "-"}</p>
-                      <p className="text-muted-foreground">{detail.label}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-            <div className="mt-3">
-              {readOnly ? (
-                <Badge variant="outline" className={`w-full justify-center py-1.5 text-[11px] ${statusClass(request.status)}`}>
-                  {request.status.replace(/_/g, " ")}
-                </Badge>
-              ) : (
-                <ServiceStatusSelect requestId={request.id} initialStatus={request.status} />
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="hidden min-w-0 max-w-full overflow-hidden rounded-md border bg-background xl:block">
+      <div className="min-w-0 max-w-full overflow-hidden rounded-md border bg-background">
         <div className="table-scroll">
-          <Table className="min-w-[1480px] table-fixed text-xs">
+          <Table className="min-w-[1640px] table-fixed text-xs">
             <TableHeader className="bg-muted/40">
               <TableRow>
                 <TableHead className="w-[80px]">ID</TableHead>
@@ -202,6 +185,7 @@ export function ServiceRequestsWorkspace({ rows, readOnly = false }: Props) {
                 <TableHead className="w-[115px]">Seller</TableHead>
                 <TableHead className="w-[100px]">Payment</TableHead>
                 <TableHead className="w-[145px]">Status</TableHead>
+                <TableHead className="w-[230px] text-right">Actions</TableHead>
                 <TableHead className="w-[90px] text-right">Total</TableHead>
                 <TableHead className="w-[90px] text-right">Profit</TableHead>
               </TableRow>
@@ -247,6 +231,9 @@ export function ServiceRequestsWorkspace({ rows, readOnly = false }: Props) {
                     ) : (
                       <ServiceStatusSelect requestId={request.id} initialStatus={request.status} />
                     )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <ServiceRequestActions requestId={request.id} status={request.status} readOnly={readOnly} />
                   </TableCell>
                   <TableCell className="text-right font-bold">{formatGhanaCedis(request.total)}</TableCell>
                   <TableCell className={request.profit > 0 ? "text-right font-semibold text-primary" : "text-right text-muted-foreground"}>

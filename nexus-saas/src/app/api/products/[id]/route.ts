@@ -38,6 +38,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
           bundleType: bundleType ?? existing.bundleType,
           category: category ?? existing.category,
           serviceForm: serviceForm !== undefined ? serviceForm || null : existing.serviceForm,
+          active: active !== undefined ? Boolean(active) : existing.active,
         },
       })
 

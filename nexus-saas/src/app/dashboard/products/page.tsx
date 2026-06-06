@@ -99,6 +99,8 @@ function BundlePricingContent() {
   const [newProfileName, setNewProfileName] = useState("")
   const [newProfileTag, setNewProfileTag] = useState("")
   const [newProfileRole, setNewProfileRole] = useState<"AGENT" | "RESELLER" | "BOTH">("BOTH")
+  const [savingProductId, setSavingProductId] = useState<string | null>(null)
+  const [savingProfileProductId, setSavingProfileProductId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchProducts()
@@ -198,15 +200,23 @@ function BundlePricingContent() {
       return
     }
 
-    await fetch(`/api/pricing/profiles/${selectedProfileId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productId, price }),
-    })
+    setSavingProfileProductId(productId)
+    try {
+      const res = await fetch(`/api/pricing/profiles/${selectedProfileId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId, price }),
+      })
+      if (!res.ok) throw new Error("Failed to update profile price")
 
-    setProfileRows((prev) =>
-      prev.map((row) => (row.productId === productId ? { ...row, profilePrice: price } : row))
-    )
+      setProfileRows((prev) =>
+        prev.map((row) => (row.productId === productId ? { ...row, profilePrice: price } : row))
+      )
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Could not save profile price")
+    } finally {
+      setSavingProfileProductId(null)
+    }
   }
 
   const networkBundles = useMemo(() => {
@@ -278,6 +288,63 @@ function BundlePricingContent() {
     if (!confirm(`Delete "${product.name}"? This cannot be undone.`)) return
     await fetch(`/api/products/${product.id}`, { method: "DELETE" })
     await fetchProducts()
+  }
+
+  async function saveProductInline(product: any, updates: Partial<{ name: string; basePrice: number; price: number; storefrontPrice: number; active: boolean }>) {
+    const next = {
+      name: updates.name ?? product.name,
+      description: product.description ?? "",
+      provider: product.provider,
+      category: product.category,
+      bundleType: product.bundleType ?? "DATA",
+      basePrice: updates.basePrice ?? Number(product.basePrice ?? product.price ?? 0),
+      price: updates.price ?? Number(product.price ?? 0),
+      storefrontPrice: updates.storefrontPrice ?? Number(product.storefrontPrice ?? product.price ?? 0),
+      active: updates.active ?? product.active !== false,
+    }
+
+    if (!next.name.trim()) {
+      alert("Bundle name is required")
+      return
+    }
+    if ([next.basePrice, next.price, next.storefrontPrice].some((value) => !Number.isFinite(value) || value < 0)) {
+      alert("Prices must be valid positive numbers")
+      return
+    }
+    if (next.price < next.basePrice) {
+      alert("Subscriber buy price should not be below source cost")
+      return
+    }
+    if (next.storefrontPrice < next.basePrice) {
+      alert("Storefront price should not be below source cost")
+      return
+    }
+
+    setSavingProductId(product.id)
+    try {
+      const res = await fetch(`/api/products/${product.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(next),
+      })
+      if (!res.ok) throw new Error("Failed to save bundle")
+
+      setProducts((current) =>
+        current.map((item) => (item.id === product.id ? { ...item, ...next } : item))
+      )
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Could not save bundle")
+      await fetchProducts()
+    } finally {
+      setSavingProductId(null)
+    }
+  }
+
+  function handleInlineNumberBlur(product: any, field: "basePrice" | "price" | "storefrontPrice", value: string) {
+    const next = Number(value)
+    const current = Number(product[field] ?? product.price ?? 0)
+    if (!Number.isFinite(next) || next < 0 || next === current) return
+    saveProductInline(product, { [field]: next })
   }
 
   const handleAddBundle = async () => {
@@ -550,72 +617,55 @@ function BundlePricingContent() {
                 className="py-6"
               />
             ) : (
-              <>
-              <div className="grid gap-3 xl:hidden lg:grid-cols-2">
-                {networkProfileRows.map((row) => (
-                  <div key={row.productId} className="rounded-md border bg-background p-3 text-sm">
-                    <p className="font-semibold">{row.productName}</p>
-                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                      <div>
-                        <p className="font-medium text-foreground">{formatGhanaCedis(row.basePrice)}</p>
-                        <p>Base price</p>
-                      </div>
-                      <div>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          defaultValue={row.profilePrice}
-                          className="h-9 text-right text-xs"
-                          onBlur={(e) => {
-                            const val = Number(e.target.value)
-                            if (Number.isNaN(val) || val < 0) return
-                            if (val === row.profilePrice) return
-                            saveProfilePrice(row.productId, val)
-                          }}
-                        />
-                        <p className="mt-1 text-right">Profile price</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="table-scroll hidden rounded-md border bg-background xl:block">
+              <div className="table-scroll rounded-md border bg-background">
                 <Table className="min-w-[640px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Bundle</TableHead>
                       <TableHead className="text-right">Base Price</TableHead>
                       <TableHead className="text-right">Profile Price</TableHead>
+                      <TableHead className="text-right">Margin</TableHead>
+                      <TableHead className="text-right">Save</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {networkProfileRows.map((row) => (
-                      <TableRow key={row.productId}>
-                        <TableCell className="font-medium">{row.productName}</TableCell>
-                        <TableCell className="text-right">{formatGhanaCedis(row.basePrice)}</TableCell>
-                        <TableCell className="text-right">
-                          <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            defaultValue={row.profilePrice}
-                            className="w-28 ml-auto text-right"
-                            onBlur={(e) => {
-                              const val = Number(e.target.value)
-                              if (Number.isNaN(val) || val < 0) return
-                              if (val === row.profilePrice) return
-                              saveProfilePrice(row.productId, val)
-                            }}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {networkProfileRows.map((row) => {
+                      const margin = Math.max(Number(row.profilePrice) - Number(row.basePrice), 0)
+                      return (
+                        <TableRow key={row.productId}>
+                          <TableCell className="font-medium">{row.productName}</TableCell>
+                          <TableCell className="text-right">{formatGhanaCedis(row.basePrice)}</TableCell>
+                          <TableCell className="text-right">
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              defaultValue={row.profilePrice}
+                              disabled={savingProfileProductId === row.productId}
+                              className="ml-auto h-8 w-28 text-right"
+                              onBlur={(e) => {
+                                const val = Number(e.target.value)
+                                if (Number.isNaN(val) || val < 0) return
+                                if (val === row.profilePrice) return
+                                saveProfilePrice(row.productId, val)
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.currentTarget.blur()
+                                }
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell className="text-right text-primary">{formatGhanaCedis(margin)}</TableCell>
+                          <TableCell className="text-right text-[11px] text-muted-foreground">
+                            {savingProfileProductId === row.productId ? "Saving..." : "Auto"}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
                   </TableBody>
                 </Table>
               </div>
-              </>
             )}
           </CardContent>
         </Card>
@@ -944,50 +994,8 @@ function BundlePricingContent() {
           ) : (
             <div className="space-y-3">
               <h3 className="font-semibold text-sm">Current Bundles ({networkBundles.length})</h3>
-              <div className="grid gap-3 xl:hidden lg:grid-cols-2">
-                {networkBundles.map(bundle => (
-                  <div key={bundle.id} className="rounded-md border bg-background p-3 text-sm">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold">{bundle.name}</p>
-                        <p className="text-xs text-muted-foreground">{currentNetwork?.name}</p>
-                      </div>
-                      <Badge variant={bundle.active ? "default" : "outline"} className={bundle.active ? "status-success border" : ""}>
-                        {bundle.active ? "Active" : "Inactive"}
-                      </Badge>
-                    </div>
-                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                      <div>
-                        <p className="font-medium text-foreground">{formatGhanaCedis(bundle.basePrice ?? bundle.price)}</p>
-                        <p>Source cost</p>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-foreground">{formatGhanaCedis(bundle.price)}</p>
-                        <p>Buy price</p>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-primary">{formatGhanaCedis(bundle.storefrontPrice ?? bundle.price)}</p>
-                        <p>Storefront</p>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-foreground">{formatGhanaCedis(Math.max(Number(bundle.storefrontPrice ?? bundle.price) - Number(bundle.basePrice ?? bundle.price), 0))}</p>
-                        <p>Profit</p>
-                      </div>
-                    </div>
-                    <div className="mt-3 flex justify-end gap-1">
-                      <Button size="sm" variant="ghost" onClick={() => handleEdit(bundle)} title="Edit">
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => handleDelete(bundle)} title="Delete">
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="table-scroll hidden rounded-md border bg-background xl:block">
-                <Table className="min-w-[720px]">
+              <div className="table-scroll rounded-md border bg-background">
+                <Table className="min-w-[980px]">
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
                       <TableHead>Bundle Name</TableHead>
@@ -996,21 +1004,85 @@ function BundlePricingContent() {
                       <TableHead className="text-right">Storefront</TableHead>
                       <TableHead className="text-right">Profit</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Save</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {networkBundles.map(bundle => (
                       <TableRow key={bundle.id} className="hover:bg-muted/50">
-                        <TableCell className="font-medium">{bundle.name}</TableCell>
-                        <TableCell className="text-right text-sm">{formatGhanaCedis(bundle.basePrice ?? bundle.price)}</TableCell>
-                        <TableCell className="text-right font-semibold">{formatGhanaCedis(bundle.price)}</TableCell>
-                        <TableCell className="text-right font-semibold text-primary">{formatGhanaCedis(bundle.storefrontPrice ?? bundle.price)}</TableCell>
+                        <TableCell className="font-medium">
+                          <Input
+                            defaultValue={bundle.name}
+                            disabled={savingProductId === bundle.id}
+                            className="h-8 min-w-[180px]"
+                            onBlur={(e) => {
+                              const value = e.target.value.trim()
+                              if (!value || value === bundle.name) return
+                              saveProductInline(bundle, { name: value })
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") e.currentTarget.blur()
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell className="text-right text-sm">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            defaultValue={bundle.basePrice ?? bundle.price}
+                            disabled={savingProductId === bundle.id}
+                            className="ml-auto h-8 w-28 text-right"
+                            onBlur={(e) => handleInlineNumberBlur(bundle, "basePrice", e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") e.currentTarget.blur()
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            defaultValue={bundle.price}
+                            disabled={savingProductId === bundle.id}
+                            className="ml-auto h-8 w-28 text-right"
+                            onBlur={(e) => handleInlineNumberBlur(bundle, "price", e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") e.currentTarget.blur()
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell className="text-right font-semibold text-primary">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            defaultValue={bundle.storefrontPrice ?? bundle.price}
+                            disabled={savingProductId === bundle.id}
+                            className="ml-auto h-8 w-28 text-right"
+                            onBlur={(e) => handleInlineNumberBlur(bundle, "storefrontPrice", e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") e.currentTarget.blur()
+                            }}
+                          />
+                        </TableCell>
                         <TableCell className="text-right text-sm">{formatGhanaCedis(Math.max(Number(bundle.storefrontPrice ?? bundle.price) - Number(bundle.basePrice ?? bundle.price), 0))}</TableCell>
                         <TableCell>
-                          <Badge variant={bundle.active ? "default" : "outline"} className={bundle.active ? "status-success border" : ""}>
-                            {bundle.active ? "Active" : "Inactive"}
-                          </Badge>
+                          <button
+                            type="button"
+                            disabled={savingProductId === bundle.id}
+                            onClick={() => saveProductInline(bundle, { active: bundle.active === false })}
+                            className="rounded-md"
+                          >
+                            <Badge variant={bundle.active ? "default" : "outline"} className={bundle.active ? "status-success border" : ""}>
+                              {bundle.active ? "Active" : "Inactive"}
+                            </Badge>
+                          </button>
+                        </TableCell>
+                        <TableCell className="text-right text-[11px] text-muted-foreground">
+                          {savingProductId === bundle.id ? "Saving..." : "Auto"}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-1 justify-end">
