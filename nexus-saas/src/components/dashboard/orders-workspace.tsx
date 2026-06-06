@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { CheckCircle2, ClipboardCopy, Eye, Loader2, PackageCheck, XCircle } from "lucide-react"
+import { CheckCircle2, ClipboardCopy, Eye, Loader2, PackageCheck, Send, XCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 import { Badge } from "@/components/ui/badge"
@@ -91,6 +91,7 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
   const { toast } = useToast()
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [savingStatus, setSavingStatus] = useState<"PROCESSING" | "COMPLETED" | "FAILED" | null>(null)
+  const [dispatchingApi, setDispatchingApi] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
 
   const actionableRows = useMemo(() => rows.filter((row) => row.actionable), [rows])
@@ -204,6 +205,53 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
     }
   }
 
+  async function sendSelectedToApi() {
+    if (selectedRows.length === 0) {
+      toast({
+        title: "No orders selected",
+        description: "Select paid manual pending or processing orders first.",
+      })
+      return
+    }
+
+    const confirmed = window.confirm(
+      `Send ${selectedRows.length} selected manual order${selectedRows.length === 1 ? "" : "s"} through the active API dispatch policy?`,
+    )
+    if (!confirmed) return
+
+    setDispatchingApi(true)
+    try {
+      const res = await fetch("/api/dashboard/orders/bulk-dispatch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderIds: selectedRows.map((row) => row.id),
+        }),
+      })
+
+      const payload = await res.json().catch(() => null)
+      if (!res.ok) {
+        throw new Error(payload?.error?.message || "API dispatch failed")
+      }
+
+      const data = payload?.data || {}
+      toast({
+        title: "API dispatch complete",
+        description: `${data.sentToApi ?? 0} sent to API, ${data.stayedManual ?? 0} stayed manual, ${data.skipped ?? 0} skipped.`,
+      })
+      setSelected(new Set())
+      router.refresh()
+    } catch (error) {
+      toast({
+        title: "API dispatch failed",
+        description: error instanceof Error ? error.message : "Could not send selected orders to API.",
+        variant: "destructive",
+      })
+    } finally {
+      setDispatchingApi(false)
+    }
+  }
+
   return (
     <div className="portal-page max-w-full space-y-3 pb-24 md:pb-0">
       <div className="flex min-w-0 flex-col gap-3 rounded-md border bg-muted/30 p-3 xl:flex-row xl:items-center xl:justify-between">
@@ -222,18 +270,22 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
           <Badge variant="outline">Processing: {processingRows.length}</Badge>
           <Badge variant="outline">Selected: {selectedRows.length}</Badge>
         </div>
-        <div className="grid w-full min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:w-auto xl:flex xl:flex-wrap xl:justify-end">
-          <Button type="button" variant="outline" size="sm" onClick={() => setPreviewOpen((open) => !open)}>
+        <div className="grid w-full min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:w-auto xl:flex xl:flex-wrap xl:justify-end">
+          <Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => setPreviewOpen((open) => !open)}>
             <Eye className="mr-2 h-4 w-4" />
             Preview Copy
           </Button>
-          <Button type="button" variant="outline" size="sm" onClick={() => copyOrders("pending")}>
+          <Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => copyOrders("pending")}>
             <ClipboardCopy className="mr-2 h-4 w-4" />
             Copy Pending
           </Button>
-          <Button type="button" variant="outline" size="sm" onClick={() => copyOrders("selected")} disabled={selectedRows.length === 0}>
+          <Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => copyOrders("selected")} disabled={selectedRows.length === 0}>
             <ClipboardCopy className="mr-2 h-4 w-4" />
             Copy Selected
+          </Button>
+          <Button type="button" variant="outline" size="sm" className="text-xs" onClick={sendSelectedToApi} disabled={dispatchingApi || selectedRows.length === 0}>
+            {dispatchingApi ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+            Send to API
           </Button>
         </div>
       </div>
@@ -352,7 +404,7 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
       </div>
 
       {selectedRows.length > 0 ? (
-        <div className="fixed inset-x-0 bottom-0 z-40 max-w-full border-t bg-background/95 p-3 shadow-lg backdrop-blur md:left-auto md:right-6 md:bottom-6 md:w-[520px] md:rounded-md md:border">
+        <div className="fixed inset-x-0 bottom-0 z-40 max-w-full border-t bg-background/95 p-3 shadow-lg backdrop-blur md:left-auto md:right-6 md:bottom-6 md:w-[640px] md:rounded-md md:border">
           <div className="mb-2 flex items-center justify-between gap-3 text-sm">
             <span className="font-semibold">
               {selectedRows.length} selected
@@ -362,20 +414,24 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
               Clear
             </button>
           </div>
-          <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-4">
-            <Button type="button" variant="outline" size="sm" onClick={() => bulkUpdate("PROCESSING")} disabled={savingStatus !== null || selectedPendingRows.length === 0}>
+          <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-5">
+            <Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => bulkUpdate("PROCESSING")} disabled={savingStatus !== null || selectedPendingRows.length === 0}>
               {savingStatus === "PROCESSING" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-4 w-4" />}
               Claim Pending
             </Button>
-            <Button type="button" variant="outline" size="sm" onClick={() => copyOrders("selected")}>
+            <Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => copyOrders("selected")}>
               <ClipboardCopy className="mr-2 h-4 w-4" />
               Copy
             </Button>
-            <Button type="button" size="sm" onClick={() => bulkUpdate("COMPLETED")} disabled={savingStatus !== null}>
+            <Button type="button" variant="outline" size="sm" className="text-xs" onClick={sendSelectedToApi} disabled={dispatchingApi}>
+              {dispatchingApi ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+              API
+            </Button>
+            <Button type="button" size="sm" className="text-xs" onClick={() => bulkUpdate("COMPLETED")} disabled={savingStatus !== null}>
               {savingStatus === "COMPLETED" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
               Delivered
             </Button>
-            <Button type="button" variant="destructive" size="sm" onClick={() => bulkUpdate("FAILED")} disabled={savingStatus !== null}>
+            <Button type="button" variant="destructive" size="sm" className="text-xs" onClick={() => bulkUpdate("FAILED")} disabled={savingStatus !== null}>
               {savingStatus === "FAILED" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
               Failed
             </Button>
