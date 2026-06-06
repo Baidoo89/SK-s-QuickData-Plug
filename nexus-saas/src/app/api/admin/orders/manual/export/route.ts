@@ -133,7 +133,7 @@ export async function GET(req: Request) {
       .map((i) => i.product.name.match(/\b\d+(?:\.\d+)?\s?(?:GB|MB|KB|TB)\b/i)?.[0].replace(/\s+/g, "").toUpperCase() ?? i.product.name)
       .join(" | ")
     const row = [
-      order.id,
+      order.publicOrderCode || order.id,
       order.createdAt.toISOString(),
       rowStatus,
       meta.network || "",

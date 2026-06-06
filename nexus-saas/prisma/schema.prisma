@@ -100,6 +100,7 @@ model Product {
 
 model Order {
   id        String      @id @default(cuid())
+  publicOrderCode String? @unique
   userId    String?
   user      User?       @relation(fields: [userId], references: [id])
   
@@ -140,6 +141,15 @@ model Order {
   @@index([paymentStatus])
   @@index([fulfillmentMode])
   @@index([externalReference])
+  @@index([publicOrderCode])
+}
+
+model OrderNumberCounter {
+  id        String   @id @default(cuid())
+  dateKey   String   @unique
+  nextValue Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ServiceRequest {

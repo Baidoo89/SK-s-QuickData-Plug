@@ -114,6 +114,7 @@ export async function DashboardManualQueueSection({
 
   const workspaceRows: ManualQueueRow[] = rows.map((order) => ({
     id: order.id,
+    publicOrderCode: order.publicOrderCode || order.id.slice(-8),
     createdAt: order.createdAt.toISOString(),
     customerName: order.customer?.name || "Guest",
     phoneNumber: order.phoneNumber || "",

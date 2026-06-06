@@ -1,6 +1,7 @@
 import crypto from "crypto"
 import { db } from "@/lib/db"
 import { getBaseUrl } from "@/lib/mail"
+import { allocatePublicOrderCode } from "@/lib/order-code"
 import { getOrganizationPaymentSettings } from "@/lib/organization-payment-settings"
 import { getResellerPricingProfileContext, resolveResellerBuyPrice } from "@/lib/reseller-pricing"
 import { isSubscriptionActive } from "@/lib/subscription-access"
@@ -302,6 +303,7 @@ export async function createStorefrontCheckout(input: StorefrontCheckoutInput) {
 
       const order = await tx.order.create({
         data: {
+          publicOrderCode: await allocatePublicOrderCode(tx),
           organizationId: subscriber.id,
           customerId: customer.id,
           userId: resolvedResellerId ?? undefined,

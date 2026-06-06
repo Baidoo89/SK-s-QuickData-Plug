@@ -32,7 +32,15 @@ type ProviderConnectionSummary = {
   providerName: string
   providerOrderUrl: string | null
   hasApiKey: boolean
+  templateKey: string
   active: boolean
+}
+
+type ProviderTemplateSummary = {
+  templateKey: string
+  name: string
+  description: string | null
+  authType: string
 }
 
 export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connection" }: ProviderConnectionCardProps) {
@@ -43,8 +51,10 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
   const [providerName, setProviderName] = useState("Primary Provider")
   const [providerOrderUrl, setProviderOrderUrl] = useState("")
   const [providerApiKey, setProviderApiKey] = useState("")
+  const [templateKey, setTemplateKey] = useState("generic-json")
   const [active, setActive] = useState(true)
   const [connections, setConnections] = useState<ProviderConnectionSummary[]>([])
+  const [templates, setTemplates] = useState<ProviderTemplateSummary[]>([])
   const [hasApiKey, setHasApiKey] = useState(false)
   const [updatedAt, setUpdatedAt] = useState<string | null>(null)
   const [hostname, setHostname] = useState("")
@@ -68,10 +78,12 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
         setProviderKey(data.providerKey || "primary")
         setProviderName(data.providerName || "Primary Provider")
         setProviderOrderUrl(data.providerOrderUrl || "")
+        setTemplateKey(data.templateKey || "generic-json")
         setActive(data.active !== false)
         setHasApiKey(Boolean(data.hasApiKey))
         setUpdatedAt(data.updatedAt || null)
         setConnections(Array.isArray(data.connections) ? data.connections : [])
+        setTemplates(Array.isArray(data.templates) ? data.templates : [])
       } catch (error) {
         toast({
           title: "Error",
@@ -109,6 +121,7 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
           providerKey,
           providerOrderUrl,
           providerApiKey,
+          templateKey,
           active,
         }),
       })
@@ -121,8 +134,10 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
       setHasApiKey(Boolean(payload?.data?.hasApiKey))
       setUpdatedAt(payload?.data?.updatedAt || null)
       setProviderKey(payload?.data?.providerKey || providerKey)
+      setTemplateKey(payload?.data?.templateKey || templateKey)
       setActive(payload?.data?.active !== false)
       setConnections(Array.isArray(payload?.data?.connections) ? payload.data.connections : [])
+      setTemplates(Array.isArray(payload?.data?.templates) ? payload.data.templates : templates)
       setProviderApiKey("")
       setAllowTestInProd(false)
       toast({
@@ -168,6 +183,7 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
                   setProviderName("Backup Provider")
                   setProviderOrderUrl("")
                   setProviderApiKey("")
+                  setTemplateKey("generic-json")
                   setHasApiKey(false)
                   setActive(true)
                   setUpdatedAt(null)
@@ -186,6 +202,7 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
                     setProviderKey(connection.providerKey)
                     setProviderName(connection.providerName)
                     setProviderOrderUrl(connection.providerOrderUrl || "")
+                    setTemplateKey(connection.templateKey || "generic-json")
                     setHasApiKey(connection.hasApiKey)
                     setActive(connection.active)
                     setProviderApiKey("")
@@ -196,6 +213,7 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
                   <span className={connection.active ? "ml-1 text-primary" : "ml-1 text-destructive"}>
                     {connection.active ? "Active" : "Paused"}
                   </span>
+                  <span className="ml-1 text-muted-foreground">{connection.templateKey || "generic-json"}</span>
                 </button>
               ))}
             </div>
@@ -285,6 +303,25 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
 
         <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
           <span>{updatedAt ? `Last updated: ${new Date(updatedAt).toLocaleString()}` : "Not configured yet"}</span>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium">Provider Template</label>
+          <select
+            value={templateKey}
+            onChange={(e) => setTemplateKey(e.target.value)}
+            disabled={loading || saving}
+            className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {(templates.length > 0 ? templates : [{ templateKey: "generic-json", name: "Generic JSON Provider", description: null, authType: "BEARER" }]).map((template) => (
+              <option key={template.templateKey} value={template.templateKey}>
+                {template.name} ({template.authType})
+              </option>
+            ))}
+          </select>
+          <p className="text-[11px] text-muted-foreground">
+            The template defines auth headers, request payload, and response interpretation for this provider slot.
+          </p>
         </div>
 
         <div className="space-y-1.5">

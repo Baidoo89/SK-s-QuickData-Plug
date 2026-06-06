@@ -3,6 +3,7 @@ import { z } from "zod"
 import { requireOrgManager, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { getStoredProviderConnection, listStoredProviderConnections, upsertProviderConnection } from "@/lib/provider-connection"
+import { listProviderTemplates } from "@/lib/provider-template"
 
 export const dynamic = "force-dynamic"
 
@@ -11,6 +12,8 @@ const providerConnectionSchema = z.object({
   providerName: z.string().min(1).default("Primary Provider"),
   providerOrderUrl: z.string().min(1),
   providerApiKey: z.string().optional().default(""),
+  templateKey: z.string().optional().default("generic-json"),
+  settings: z.string().optional().default(""),
   active: z.boolean().optional().default(true),
 })
 
@@ -21,9 +24,10 @@ export async function GET(req: Request) {
 
     const organizationId = authResult.user.organizationId!
     const providerKey = new URL(req.url).searchParams.get("providerKey") || "primary"
-    const [record, connections] = await Promise.all([
+    const [record, connections, templates] = await Promise.all([
       getStoredProviderConnection(organizationId, providerKey),
       listStoredProviderConnections(organizationId),
+      listProviderTemplates(),
     ])
 
     return apiSuccess({
@@ -32,6 +36,8 @@ export async function GET(req: Request) {
       providerOrderUrl: record?.providerOrderUrl || "",
       providerApiKey: record?.providerApiKey ? "********" : "",
       hasApiKey: Boolean(record?.providerApiKey),
+      templateKey: record?.templateKey || "generic-json",
+      settings: record?.settings || "",
       active: record?.active !== false,
       updatedAt: record?.updatedAt ? new Date(record.updatedAt).toISOString() : null,
       connections: connections.map((connection) => ({
@@ -39,7 +45,14 @@ export async function GET(req: Request) {
         providerName: connection.providerName,
         providerOrderUrl: connection.providerOrderUrl,
         hasApiKey: Boolean(connection.providerApiKey),
+        templateKey: connection.templateKey,
         active: connection.active,
+      })),
+      templates: templates.map((template) => ({
+        templateKey: template.templateKey,
+        name: template.name,
+        description: template.description,
+        authType: template.authType,
       })),
     })
   } catch (error) {
@@ -67,10 +80,15 @@ export async function PUT(req: Request) {
       providerName: parsed.data.providerName.trim(),
       providerOrderUrl: parsed.data.providerOrderUrl.trim(),
       providerApiKey: providerApiKey.length > 0 ? providerApiKey : null,
+      templateKey: parsed.data.templateKey,
+      settings: parsed.data.settings.trim() || null,
       active: parsed.data.active,
       updatedById: authResult.user.id,
     })
-    const connections = await listStoredProviderConnections(authResult.user.organizationId!)
+    const [connections, templates] = await Promise.all([
+      listStoredProviderConnections(authResult.user.organizationId!),
+      listProviderTemplates(),
+    ])
 
     return apiSuccess(
       {
@@ -79,6 +97,8 @@ export async function PUT(req: Request) {
         providerOrderUrl: record?.providerOrderUrl || parsed.data.providerOrderUrl.trim(),
         providerApiKey: record?.providerApiKey ? "********" : "",
         hasApiKey: Boolean(record?.providerApiKey),
+        templateKey: record?.templateKey || parsed.data.templateKey,
+        settings: record?.settings || parsed.data.settings.trim() || "",
         active: record?.active !== false,
         updatedAt: record?.updatedAt ? new Date(record.updatedAt).toISOString() : null,
         connections: connections.map((connection) => ({
@@ -86,7 +106,14 @@ export async function PUT(req: Request) {
           providerName: connection.providerName,
           providerOrderUrl: connection.providerOrderUrl,
           hasApiKey: Boolean(connection.providerApiKey),
+          templateKey: connection.templateKey,
           active: connection.active,
+        })),
+        templates: templates.map((template) => ({
+          templateKey: template.templateKey,
+          name: template.name,
+          description: template.description,
+          authType: template.authType,
         })),
       },
       "Provider connection updated"

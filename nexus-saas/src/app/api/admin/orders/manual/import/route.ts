@@ -39,8 +39,11 @@ export async function POST(req: Request) {
       try {
         const existing = await db.order.findFirst({
           where: {
-            id: row.orderId,
             ...(isSuperAdmin ? {} : { organizationId: organizationId! }),
+            OR: [
+              { id: row.orderId },
+              { publicOrderCode: row.orderId },
+            ],
           },
           select: { id: true, organizationId: true, status: true },
         })
@@ -56,19 +59,19 @@ export async function POST(req: Request) {
         }
 
         await db.order.update({
-          where: { id: row.orderId },
+          where: { id: existing.id },
           data: { status: row.status },
         })
 
         if (["FAILED", "CANCELLED", "REFUNDED"].includes(row.status)) {
           await reverseOrderWalletDebitIfNeeded({
-            orderId: row.orderId,
+            orderId: existing.id,
             organizationId: existing.organizationId,
             reason: `Manual import marked ${row.status.toLowerCase()}`,
           })
 
           await reverseOrderProfitIfNeeded({
-            orderId: row.orderId,
+            orderId: existing.id,
             organizationId: existing.organizationId,
             previousStatus: existing.status,
             reason: `Manual import marked ${row.status.toLowerCase()}`,
@@ -81,14 +84,14 @@ export async function POST(req: Request) {
             actorName: authResult.user.email,
             action: "ORDER_MANUAL_IMPORT_STATUS",
             targetType: "ORDER",
-            targetId: row.orderId,
+            targetId: existing.id,
             organizationId: existing.organizationId,
             meta: JSON.stringify({ status: row.status }),
           },
         })
 
         if (existing.status !== row.status) {
-          await notifyApiOrderStatus(row.orderId, row.status)
+          await notifyApiOrderStatus(existing.id, row.status)
         }
 
         updated++

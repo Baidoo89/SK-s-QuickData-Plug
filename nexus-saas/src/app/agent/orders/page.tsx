@@ -36,6 +36,7 @@ function formatItemName(name: string) {
 
 type AgentOrderRow = {
   id: string
+  publicOrderCode: string | null
   createdAt: Date
   customer: {
     name: string | null
@@ -151,6 +152,8 @@ export default async function AgentOrdersPage({
           { customer: { name: { contains: search, mode: "insensitive" } } },
           { customer: { email: { contains: search, mode: "insensitive" } } },
           { phoneNumber: { contains: search } },
+          { publicOrderCode: { contains: search, mode: "insensitive" } },
+          { id: { contains: search } },
         ],
       },
     ]
@@ -257,6 +260,7 @@ export default async function AgentOrdersPage({
                 <Table className="min-w-[720px] text-xs">
                   <TableHeader className="bg-muted/40">
                     <TableRow>
+                      <TableHead className="whitespace-nowrap">Order ID</TableHead>
                       <TableHead className="whitespace-nowrap">Time</TableHead>
                       <TableHead className="whitespace-nowrap">Customer</TableHead>
                       <TableHead className="whitespace-nowrap">Phone</TableHead>
@@ -280,6 +284,7 @@ export default async function AgentOrdersPage({
 
                       return (
                         <TableRow key={order.id} className="hover:bg-muted/20">
+                          <TableCell className="whitespace-nowrap font-mono text-xs font-medium">{order.publicOrderCode || order.id.slice(-8)}</TableCell>
                           <TableCell className="whitespace-nowrap text-xs">{date.toLocaleString()}</TableCell>
                           <TableCell className="text-xs font-medium">
                             {customerName}

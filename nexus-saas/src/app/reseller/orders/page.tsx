@@ -91,6 +91,8 @@ export default async function ResellerOrdersPage({
   if (filters.q) {
     const search = filters.q;
     where.OR = [
+      { publicOrderCode: { contains: search, mode: "insensitive" } },
+      { id: { contains: search } },
       { customer: { name: { contains: search, mode: "insensitive" } } },
       { customer: { email: { contains: search, mode: "insensitive" } } },
       { phoneNumber: { contains: search } },
@@ -198,6 +200,7 @@ export default async function ResellerOrdersPage({
                   <Table className="min-w-[820px] text-xs">
                     <TableHeader className="bg-muted/40">
                       <TableRow>
+                        <TableHead className="whitespace-nowrap">Order ID</TableHead>
                         <TableHead className="whitespace-nowrap">Date</TableHead>
                         <TableHead className="whitespace-nowrap">Customer</TableHead>
                         <TableHead className="whitespace-nowrap">Phone</TableHead>
@@ -221,6 +224,7 @@ export default async function ResellerOrdersPage({
 
                         return (
                           <TableRow key={order.id} className="hover:bg-muted/20">
+                            <TableCell className="whitespace-nowrap font-mono text-xs font-medium">{order.publicOrderCode || order.id.slice(-8)}</TableCell>
                             <TableCell className="whitespace-nowrap text-xs">{date.toLocaleString()}</TableCell>
                             <TableCell className="text-xs font-medium">{customerName}</TableCell>
                             <TableCell className="whitespace-nowrap text-xs">{phone}</TableCell>

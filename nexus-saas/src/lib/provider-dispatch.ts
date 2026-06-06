@@ -1,5 +1,14 @@
 import { db } from "@/lib/db"
 import { getDispatchProviderConnection } from "@/lib/provider-connection"
+import {
+  buildProviderAuthHeaders,
+  getProviderProductMapping,
+  getProviderTemplate,
+  readProviderMessage,
+  readProviderReference,
+  readProviderStatus,
+  renderProviderRequestBody,
+} from "@/lib/provider-template"
 
 export type ProviderDispatchInput = {
   orderId: string
@@ -23,12 +32,6 @@ export type ProviderDispatchResult = {
   httpStatus?: number
   providerKey?: string
   providerName?: string
-}
-
-function toSafeStatus(value: unknown): "PENDING" | "COMPLETED" | "FAILED" {
-  if (value === "COMPLETED") return "COMPLETED"
-  if (value === "FAILED") return "FAILED"
-  return "PENDING"
 }
 
 export async function dispatchOrderToProvider(
@@ -66,6 +69,12 @@ export async function dispatchOrderToProvider(
   const providerOrderUrl = providerConfig.providerOrderUrl
   const providerApiKey = providerConfig.providerApiKey
   const providerName = providerConfig.providerName || input.providerName
+  const template = await getProviderTemplate(providerConfig.templateKey)
+  const externalProductCode = await getProviderProductMapping({
+    organizationId: input.organizationId,
+    providerKey: providerConfig.providerKey,
+    productId: input.productId,
+  })
 
   if (!providerOrderUrl) {
     await db.auditLog.create({
@@ -91,36 +100,31 @@ export async function dispatchOrderToProvider(
   }
 
   try {
+    const body = renderProviderRequestBody(template, {
+      orderId: input.orderId,
+      productId: input.productId,
+      externalProductCode: externalProductCode || input.productId,
+      network: input.network,
+      phone: input.phone,
+      quantity: input.quantity,
+      amount: input.amount,
+    })
+
     const response = await fetch(providerOrderUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(providerApiKey ? { Authorization: `Bearer ${providerApiKey}` } : {}),
+        ...buildProviderAuthHeaders(template, providerApiKey),
       },
-      body: JSON.stringify({
-        orderId: input.orderId,
-        productId: input.productId,
-        network: input.network,
-        phone: input.phone,
-        quantity: input.quantity,
-        amount: input.amount,
-      }),
+      body: JSON.stringify(body),
     })
 
     const payload = await response.json().catch(() => null)
     const accepted = response.ok
     const retryable = !accepted && (response.status === 429 || response.status >= 500)
 
-    const externalRef =
-      typeof payload?.externalRef === "string"
-        ? payload.externalRef
-        : typeof payload?.reference === "string"
-          ? payload.reference
-          : null
-
-    const immediateStatus = accepted
-      ? toSafeStatus(payload?.status)
-      : "FAILED"
+    const externalRef = readProviderReference(payload, template)
+    const immediateStatus = accepted ? readProviderStatus(payload, template) : "FAILED"
 
     await db.auditLog.create({
       data: {
@@ -131,6 +135,8 @@ export async function dispatchOrderToProvider(
         meta: JSON.stringify({
           provider: providerName,
           providerKey: providerConfig.providerKey,
+          templateKey: template.templateKey,
+          mappedProduct: externalProductCode || null,
           accepted,
           httpStatus: response.status,
           externalRef,
@@ -151,13 +157,12 @@ export async function dispatchOrderToProvider(
       providerKey: providerConfig.providerKey,
       providerName,
       message:
-        typeof payload?.message === "string"
-          ? payload.message
-          : accepted
+        readProviderMessage(payload, template) ||
+        (accepted
             ? "Submitted to provider"
             : retryable
               ? "Provider temporarily failed"
-              : "Provider rejected order",
+              : "Provider rejected order"),
     }
   } catch (error) {
     await db.auditLog.create({
@@ -169,6 +174,7 @@ export async function dispatchOrderToProvider(
         meta: JSON.stringify({
           provider: providerName,
           providerKey: providerConfig.providerKey,
+          templateKey: template.templateKey,
           error: error instanceof Error ? error.message : "Unknown dispatch error",
         }),
       },

@@ -14,6 +14,7 @@ import { formatGhanaCedis } from "@/lib/currency"
 
 export type DashboardOrderRow = {
   id: string
+  publicOrderCode: string
   createdAt: string
   buyerName: string
   phoneNumber: string
@@ -268,7 +269,7 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
                   aria-label="Select pending orders"
                 />
               </TableHead>
-              <TableHead className="w-[80px]">Order ID</TableHead>
+              <TableHead className="w-[150px]">Order ID</TableHead>
               <TableHead className="w-[104px]">Date</TableHead>
               <TableHead className="w-[150px]">Customer</TableHead>
               <TableHead className="w-[112px]">Phone</TableHead>
@@ -297,10 +298,10 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
                     disabled={!order.actionable}
                     onChange={() => toggleOrder(order)}
                     className="h-4 w-4 rounded border-border disabled:opacity-40"
-                    aria-label={`Select order ${order.id.slice(-8)}`}
+                    aria-label={`Select order ${order.publicOrderCode}`}
                   />
                 </TableCell>
-                <TableCell className="font-medium">{order.id.slice(-8)}</TableCell>
+                <TableCell className="font-mono font-medium">{order.publicOrderCode}</TableCell>
                 <TableCell>{formatDate(order.createdAt)}</TableCell>
                 <TableCell className="truncate">{order.buyerName}</TableCell>
                 <TableCell>{order.phoneNumber || "N/A"}</TableCell>

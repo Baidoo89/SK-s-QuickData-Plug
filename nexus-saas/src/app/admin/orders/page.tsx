@@ -64,6 +64,8 @@ async function getAdminOrders(filters: OrderFilters = {}) {
     if (filters.q) {
       const q = filters.q
       where.OR = [
+        { publicOrderCode: { contains: q, mode: "insensitive" } },
+        { id: { contains: q } },
         { customer: { name: { contains: q, mode: "insensitive" } } },
         { customer: { email: { contains: q, mode: "insensitive" } } },
         { phoneNumber: { contains: q } },
@@ -256,7 +258,7 @@ export default async function AdminOrdersPage({
                     <div key={order.id} className="rounded-md border bg-background p-3 text-sm">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="font-mono text-xs font-semibold">#{order.id.slice(-8)}</p>
+                          <p className="font-mono text-xs font-semibold">{order.publicOrderCode || order.id.slice(-8)}</p>
                           <p className="truncate font-medium">{orgName}</p>
                           <p className="text-xs text-muted-foreground">{format(order.createdAt, "MMM d, yyyy")}</p>
                         </div>
@@ -316,7 +318,7 @@ export default async function AdminOrdersPage({
                 const orgName = order.organization?.name || "-"
                 return (
                   <TableRow key={order.id} className="hover:bg-muted/20">
-                    <TableCell className="font-medium">{order.id.slice(-8)}</TableCell>
+                    <TableCell className="font-mono font-medium">{order.publicOrderCode || order.id.slice(-8)}</TableCell>
                     <TableCell>{format(order.createdAt, "MMM d, yyyy")}</TableCell>
                     <TableCell>{orgName}</TableCell>
                     <TableCell>

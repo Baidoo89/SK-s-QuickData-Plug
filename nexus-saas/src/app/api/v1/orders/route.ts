@@ -5,6 +5,7 @@ import { authenticateApiKey } from "@/lib/api-key-auth"
 import { assertApiOrderRateLimit, findApiOrderByExternalReference, getApiOrderCreationMeta } from "@/lib/api-order-tracking"
 import { db } from "@/lib/db"
 import { resolveOrderDispatch } from "@/lib/order-dispatch"
+import { allocatePublicOrderCode, displayOrderCode } from "@/lib/order-code"
 import { getResellerPricingProfileContext, resolveResellerBuyPrice } from "@/lib/reseller-pricing"
 import { requireActiveSubscription } from "@/lib/subscription-access"
 
@@ -42,6 +43,7 @@ function phoneMatchesProvider(phoneNumber: string, provider: string) {
 
 function toApiOrderResponse(order: {
   id: string
+  publicOrderCode?: string | null
   status: string
   phoneNumber: string | null
   total: number
@@ -50,7 +52,8 @@ function toApiOrderResponse(order: {
   const item = order.items[0]
   return apiSuccess(
     {
-      orderId: order.id,
+      orderId: displayOrderCode(order),
+      internalOrderId: order.id,
       status: order.status,
       source: "API",
       network: item?.product.provider || null,
@@ -254,8 +257,11 @@ export async function GET(req: Request) {
         })
       : await db.order.findFirst({
           where: {
-            id: orderId!,
             organizationId: apiAuth.organizationId,
+            OR: [
+              { id: orderId! },
+              { publicOrderCode: orderId! },
+            ],
           },
           include: {
             items: { include: { product: true }, take: 1 },
@@ -383,6 +389,7 @@ export async function POST(req: Request) {
 
       const created = await tx.order.create({
         data: {
+          publicOrderCode: await allocatePublicOrderCode(tx),
           organizationId: apiAuth.organizationId,
           customerId: customer.id,
           agentId: pricing.agentId ?? undefined,
@@ -451,7 +458,8 @@ export async function POST(req: Request) {
 
     return apiSuccess(
       {
-        orderId: order.id,
+        orderId: displayOrderCode(order),
+        internalOrderId: order.id,
         status: dispatch.finalStatus,
         source: "API",
         network: product.provider,

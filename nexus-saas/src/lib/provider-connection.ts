@@ -5,6 +5,8 @@ export type ProviderConnection = {
   providerName: string
   providerOrderUrl: string | null
   providerApiKey: string | null
+  templateKey: string
+  settings: string | null
   active: boolean
 }
 
@@ -13,6 +15,8 @@ type ProviderConnectionRow = {
   providerName: string
   providerOrderUrl: string | null
   providerApiKey: string | null
+  templateKey?: string | null
+  settings?: string | null
   active?: boolean | null
   updatedAt: Date | string | null
 }
@@ -31,6 +35,8 @@ export function getDefaultProviderConnection(): ProviderConnection {
     providerName: process.env.DISPATCH_PROVIDER_NAME || "Primary Provider",
     providerOrderUrl: process.env.PROVIDER_ORDER_URL?.trim() || null,
     providerApiKey: process.env.PROVIDER_API_KEY?.trim() || null,
+    templateKey: "generic-json",
+    settings: null,
     active: true,
   }
 }
@@ -43,6 +49,8 @@ function mapConnection(record: ProviderConnectionRow | null | undefined, fallbac
     providerName: record.providerName?.trim() || fallback.providerName,
     providerOrderUrl: record.providerOrderUrl?.trim() || fallback.providerOrderUrl,
     providerApiKey: record.providerApiKey?.trim() || fallback.providerApiKey,
+    templateKey: normalizeProviderKey(record.templateKey || fallback.templateKey || "generic-json"),
+    settings: record.settings || fallback.settings || null,
     active: record.active !== false,
   }
 }
@@ -58,6 +66,8 @@ export async function getEffectiveProviderConnection(organizationId: string, pro
         "providerName",
         "providerOrderUrl",
         "providerApiKey",
+        "templateKey",
+        "settings",
         "active",
         "updatedAt"
       FROM "ProviderConnection"
@@ -93,6 +103,8 @@ export async function getDispatchProviderConnection(organizationId: string, prov
         "providerName",
         "providerOrderUrl",
         "providerApiKey",
+        "templateKey",
+        "settings",
         "active",
         "updatedAt"
       FROM "ProviderConnection"
@@ -123,6 +135,8 @@ export async function listStoredProviderConnections(organizationId: string) {
         "providerName",
         "providerOrderUrl",
         "providerApiKey",
+        "templateKey",
+        "settings",
         "active",
         "updatedAt"
       FROM "ProviderConnection"
@@ -148,6 +162,8 @@ export async function getStoredProviderConnection(organizationId: string, provid
         "providerName",
         "providerOrderUrl",
         "providerApiKey",
+        "templateKey",
+        "settings",
         "active",
         "updatedAt"
       FROM "ProviderConnection"
@@ -165,6 +181,8 @@ export async function getStoredProviderConnection(organizationId: string, provid
         "providerName",
         "providerOrderUrl",
         "providerApiKey",
+        "templateKey",
+        "settings",
         "updatedAt"
       FROM "ProviderConnection"
       WHERE "organizationId" = ${organizationId}
@@ -181,10 +199,13 @@ export async function upsertProviderConnection(input: {
   providerName: string
   providerOrderUrl: string
   providerApiKey: string | null
+  templateKey?: string
+  settings?: string | null
   active?: boolean
   updatedById: string
 }) {
   const providerKey = normalizeProviderKey(input.providerKey)
+  const templateKey = normalizeProviderKey(input.templateKey || "generic-json")
 
   try {
     await db.$executeRaw`
@@ -195,6 +216,8 @@ export async function upsertProviderConnection(input: {
         "providerName",
         "providerOrderUrl",
         "providerApiKey",
+        "templateKey",
+        "settings",
         "active",
         "updatedById",
         "createdAt",
@@ -207,6 +230,8 @@ export async function upsertProviderConnection(input: {
         ${input.providerName},
         ${input.providerOrderUrl},
         ${input.providerApiKey},
+        ${templateKey},
+        ${input.settings || null},
         ${input.active ?? true},
         ${input.updatedById},
         NOW(),
@@ -216,6 +241,8 @@ export async function upsertProviderConnection(input: {
         "providerName" = EXCLUDED."providerName",
         "providerOrderUrl" = EXCLUDED."providerOrderUrl",
         "providerApiKey" = COALESCE(NULLIF(EXCLUDED."providerApiKey", ''), "ProviderConnection"."providerApiKey"),
+        "templateKey" = EXCLUDED."templateKey",
+        "settings" = EXCLUDED."settings",
         "active" = EXCLUDED."active",
         "updatedById" = EXCLUDED."updatedById",
         "updatedAt" = NOW()
@@ -234,6 +261,8 @@ export async function upsertProviderConnection(input: {
         "providerName",
         "providerOrderUrl",
         "providerApiKey",
+        "templateKey",
+        "settings",
         "updatedById",
         "createdAt",
         "updatedAt"
@@ -244,6 +273,8 @@ export async function upsertProviderConnection(input: {
         ${input.providerName},
         ${input.providerOrderUrl},
         ${input.providerApiKey},
+        ${templateKey},
+        ${input.settings || null},
         ${input.updatedById},
         NOW(),
         NOW()
@@ -252,6 +283,8 @@ export async function upsertProviderConnection(input: {
         "providerName" = EXCLUDED."providerName",
         "providerOrderUrl" = EXCLUDED."providerOrderUrl",
         "providerApiKey" = COALESCE(NULLIF(EXCLUDED."providerApiKey", ''), "ProviderConnection"."providerApiKey"),
+        "templateKey" = EXCLUDED."templateKey",
+        "settings" = EXCLUDED."settings",
         "updatedById" = EXCLUDED."updatedById",
         "updatedAt" = NOW()
     `

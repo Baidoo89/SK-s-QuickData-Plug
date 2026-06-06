@@ -1,4 +1,5 @@
 import { db } from "@/lib/db"
+import { displayOrderCode } from "@/lib/order-code"
 
 type ApiOrderMeta = {
   source?: string
@@ -135,6 +136,7 @@ export async function notifyApiOrderStatus(orderId: string, status: string) {
       where: { id: orderId },
       select: {
         id: true,
+        publicOrderCode: true,
         organizationId: true,
         phoneNumber: true,
         total: true,
@@ -150,7 +152,8 @@ export async function notifyApiOrderStatus(orderId: string, status: string) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         event: "order.status_changed",
-        orderId,
+        orderId: displayOrderCode(order),
+        internalOrderId: order.id,
         externalReference: meta.externalReference || null,
         status,
         phoneNumber: order.phoneNumber,

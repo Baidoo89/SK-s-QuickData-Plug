@@ -55,6 +55,8 @@ async function getOrders(filters: OrderFilters = {}) {
     if (filters.q) {
       const q = filters.q
       where.OR = [
+        { publicOrderCode: { contains: q, mode: "insensitive" } },
+        { id: { contains: q } },
         { customer: { name: { contains: q, mode: "insensitive" } } },
         { customer: { email: { contains: q, mode: "insensitive" } } },
         { phoneNumber: { contains: q } },
@@ -151,6 +153,7 @@ export default async function OrdersPage({
 
     return {
       id: order.id,
+      publicOrderCode: order.publicOrderCode || order.id.slice(-8),
       createdAt: order.createdAt.toISOString(),
       buyerName: order.customer?.name || "Guest Customer",
       phoneNumber: order.phoneNumber || "",

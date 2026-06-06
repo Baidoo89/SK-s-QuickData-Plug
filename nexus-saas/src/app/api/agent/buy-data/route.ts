@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { requireAuth, isAuthError, hasRole } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors } from "@/lib/api-response"
 import { resolveOrderDispatch } from "@/lib/order-dispatch"
+import { allocatePublicOrderCode, displayOrderCode } from "@/lib/order-code"
 import { requireActiveSubscription } from "@/lib/subscription-access"
 import { z } from "zod"
 
@@ -223,6 +224,7 @@ export async function POST(req: Request) {
 
       const created = await tx.order.create({
         data: {
+          publicOrderCode: await allocatePublicOrderCode(tx),
           organizationId: user.organizationId,
           agentId: resolvedAgentId,
           userId: user.id,
@@ -284,7 +286,8 @@ export async function POST(req: Request) {
 
     return apiSuccess(
       {
-        orderId: order.id,
+        orderId: displayOrderCode(order),
+        internalOrderId: order.id,
         phone: normalizedPhone,
         bundle: formatBundleLabel(product.name),
         quantity,

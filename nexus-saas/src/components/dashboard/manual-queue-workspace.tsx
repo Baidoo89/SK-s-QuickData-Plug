@@ -14,6 +14,7 @@ import { formatGhanaCedis } from "@/lib/currency"
 
 export type ManualQueueRow = {
   id: string
+  publicOrderCode: string
   createdAt: string
   customerName: string
   phoneNumber: string
@@ -259,7 +260,7 @@ export function ManualQueueWorkspace({ rows }: Props) {
                   aria-label="Select pending orders"
                 />
               </TableHead>
-              <TableHead className="w-[86px]">Order ID</TableHead>
+              <TableHead className="w-[150px]">Order ID</TableHead>
               <TableHead className="w-[110px]">Date</TableHead>
               <TableHead className="w-[150px]">Buyer</TableHead>
               <TableHead className="w-[112px]">Phone</TableHead>
@@ -281,10 +282,10 @@ export function ManualQueueWorkspace({ rows }: Props) {
                     checked={selected.has(order.id)}
                     onChange={() => toggleOrder(order.id)}
                     className="h-4 w-4 rounded border-border"
-                    aria-label={`Select order ${order.id.slice(-8)}`}
+                    aria-label={`Select order ${order.publicOrderCode}`}
                   />
                 </TableCell>
-                <TableCell className="font-medium">{order.id.slice(-8)}</TableCell>
+                <TableCell className="font-mono font-medium">{order.publicOrderCode}</TableCell>
                 <TableCell>{formatDate(order.createdAt)}</TableCell>
                 <TableCell>
                   {order.customerName}

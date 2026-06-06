@@ -3,6 +3,7 @@ import { requireAuth, hasRole, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors } from "@/lib/api-response"
 import { requireActiveSubscription } from "@/lib/subscription-access"
 import { resolveOrderDispatch } from "@/lib/order-dispatch"
+import { allocatePublicOrderCode, displayOrderCode } from "@/lib/order-code"
 
 const NETWORK_PREFIXES: Record<string, string[]> = {
   MTN: ["024", "025", "053", "054", "055", "059"],
@@ -218,6 +219,7 @@ export async function POST(req: Request) {
 
       const newOrder = await tx.order.create({
         data: {
+          publicOrderCode: await allocatePublicOrderCode(tx),
           organizationId,
           customerId: customer.id,
           agentId: resolvedAgentId ?? undefined,
@@ -276,6 +278,8 @@ export async function POST(req: Request) {
     return apiSuccess(
       {
         ...order,
+        orderId: displayOrderCode(order),
+        internalOrderId: order.id,
         status: dispatch.finalStatus,
         dispatchMode: dispatch.dispatchMode,
         dispatchProvider: dispatch.dispatchProvider,

@@ -9,6 +9,7 @@ import { PortalAccessMessage } from "@/components/access/portal-access-message";
 import { ProviderConnectionCard } from "@/components/admin/provider-connection-card";
 import { DispatchPolicyCard } from "@/components/admin/dispatch-policy-card";
 import { DispatchHealthCard } from "@/components/admin/dispatch-health-card";
+import { ProviderProductMappingCard } from "@/components/dashboard/provider-product-mapping-card";
 import { PhoneVerificationCard } from "@/components/auth/phone-verification-card";
 import { MetricCard } from "@/components/ui/metric-card";
 import { Card, CardContent } from "@/components/ui/card";
@@ -171,6 +172,7 @@ export default async function SettingsPage() {
           <div className="space-y-6">
             <ProviderConnectionCard endpoint="/api/dashboard/provider-connection" />
             <DispatchPolicyCard endpoint="/api/dashboard/dispatch-policy" />
+            <ProviderProductMappingCard />
           </div>
           <DispatchHealthCard endpoint="/api/dashboard/dispatch-health" />
         </div>
