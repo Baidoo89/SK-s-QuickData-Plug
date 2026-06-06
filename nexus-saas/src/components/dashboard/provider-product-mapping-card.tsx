@@ -213,7 +213,7 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
           </Table>
         </div>
         <p className="break-words text-[11px] text-muted-foreground">
-          If a code is empty, dispatch sends the local product ID. For most external providers, add the package code they gave you.
+          If a code is empty, dispatch sends the local product ID. For SKPlug, enter the gb_size value for each bundle, such as 1, 5, or 10.
         </p>
       </CardContent>
     </Card>

@@ -51,9 +51,38 @@ const DEFAULT_REQUEST_TEMPLATE = JSON.stringify({
   amount: "{{amount}}",
 })
 
+const SKPLUG_REQUEST_TEMPLATE = JSON.stringify({
+  recipient: "{{phone}}",
+  network: "{{network}}",
+  gb_size: "{{externalProductCode}}",
+})
+
 export function getFallbackProviderTemplate(templateKey = "generic-json"): ProviderTemplate {
+  const normalized = normalizeProviderKey(templateKey || "generic-json")
+
+  if (normalized === "skplug" || normalized === "sk-plug") {
+    return {
+      templateKey: "skplug",
+      name: "SKPlug Data API",
+      description: "Submits data orders to SKPlug using recipient, network, and gb_size.",
+      authType: "BEARER",
+      authHeader: "Authorization",
+      authPrefix: "Bearer",
+      requestTemplate: SKPLUG_REQUEST_TEMPLATE,
+      statusPath: "status",
+      referencePath: "order_id",
+      messagePath: "message",
+      statusMap: {
+        completed: ["DELIVERED", "COMPLETED", "SUCCESS", "SUCCESSFUL"],
+        failed: ["FAILED", "FAIL", "REJECTED", "CANCELLED", "CANCELED"],
+        pending: ["PENDING", "PROCESSING", "QUEUED", "ACCEPTED"],
+      },
+      active: true,
+    }
+  }
+
   return {
-    templateKey: normalizeProviderKey(templateKey || "generic-json"),
+    templateKey: normalized,
     name: "Generic JSON Provider",
     description: "Default order payload used for providers that accept the Techdalt standard JSON format.",
     authType: "BEARER",
@@ -133,6 +162,8 @@ export async function getProviderTemplate(templateKey = "generic-json") {
 }
 
 export async function listProviderTemplates() {
+  const builtInTemplates = [getFallbackProviderTemplate("generic-json"), getFallbackProviderTemplate("skplug")]
+
   try {
     const rows = await db.$queryRaw<ProviderTemplateRow[]>`
       SELECT
@@ -154,9 +185,11 @@ export async function listProviderTemplates() {
     `
 
     const templates = rows.map(mapTemplate).filter((template): template is ProviderTemplate => Boolean(template))
-    return templates.length > 0 ? templates : [getFallbackProviderTemplate()]
+    const seen = new Set(templates.map((template) => template.templateKey))
+    const missingBuiltIns = builtInTemplates.filter((template) => !seen.has(template.templateKey))
+    return [...templates, ...missingBuiltIns]
   } catch {
-    return [getFallbackProviderTemplate()]
+    return builtInTemplates
   }
 }
 
