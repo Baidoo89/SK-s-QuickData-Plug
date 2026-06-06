@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation"
-import { headers } from "next/headers"
 import { AlertCircle, CheckCircle2, CreditCard, FileText, Package, ShieldCheck } from "lucide-react"
 
 import { SimpleBuySectionsClient } from "@/components/storefront/simple-buy-sections-client"
@@ -14,7 +13,6 @@ import {
   getSubscriberStorefrontPrices,
   mapStorefrontPrices,
 } from "@/lib/storefront-pricing"
-import { isStorefrontSubdomainHost } from "@/lib/storefront-url"
 
 export const dynamic = "force-dynamic"
 
@@ -261,8 +259,7 @@ export default async function ShopPage({ params, searchParams }: ShopPageProps) 
   const orderCount = Number(searchParams?.orders || 1)
   const networkCount = new Set(bundles.map((bundle) => String(bundle.provider || "OTHER").toUpperCase())).size
   const catalogCount = bundles.length + services.length
-  const host = headers().get("host")
-  const returnPath = isStorefrontSubdomainHost(host, handle) ? "/" : `/shop/${encodeURIComponent(handle)}`
+  const returnPath = `/shop/${encodeURIComponent(handle)}`
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-background">

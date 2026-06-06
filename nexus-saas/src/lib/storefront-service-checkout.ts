@@ -10,7 +10,6 @@ import {
   getSubscriberStorefrontPrices,
   mapStorefrontPrices,
 } from "@/lib/storefront-pricing"
-import { isAllowedStorefrontReturnUrl } from "@/lib/storefront-url"
 
 const NETWORK_PREFIXES: Record<string, string[]> = {
   MTN: ["024", "025", "053", "054", "055", "059"],
@@ -23,7 +22,6 @@ export type StorefrontServiceCheckoutInput = {
   agentId?: string
   resellerId?: string
   returnPath?: string
-  returnUrl?: string
   productId: string
   customerName: string
   phoneNumber: string
@@ -371,7 +369,6 @@ export async function createStorefrontServiceCheckout(input: StorefrontServiceCh
 
   const returnPath = safeStorefrontReturnPath(input.returnPath)
     ?? resellerStorefrontReturnPath(subscriber.slug)
-  const returnUrl = isAllowedStorefrontReturnUrl(input.returnUrl) ? input.returnUrl : null
   const callbackUrl = `${baseUrl}/api/store/paystack/verify?organizationId=${encodeURIComponent(subscriber.id)}`
 
   const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {
@@ -394,7 +391,6 @@ export async function createStorefrontServiceCheckout(input: StorefrontServiceCh
         serviceRequestCount: 1,
         amountGHS: unitPrice,
         returnPath,
-        returnUrl,
       },
       callback_url: callbackUrl,
     }),
@@ -426,7 +422,6 @@ export async function createStorefrontServiceCheckout(input: StorefrontServiceCh
     serviceRequestCount: 1,
     amountGHS: unitPrice,
     returnPath,
-    returnUrl,
   }
 
   await db.$executeRaw`

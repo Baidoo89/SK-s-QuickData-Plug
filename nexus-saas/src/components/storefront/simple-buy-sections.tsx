@@ -290,7 +290,6 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
         agentId,
         resellerId,
         returnPath,
-        returnUrl: `${window.location.origin}${returnPath || window.location.pathname}`,
         items,
       }),
     })
@@ -322,7 +321,6 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
         agentId,
         resellerId,
         returnPath,
-        returnUrl: `${window.location.origin}${returnPath || window.location.pathname}`,
         productId: serviceProductId,
         customerName: serviceFullName,
         phoneNumber: servicePhone,

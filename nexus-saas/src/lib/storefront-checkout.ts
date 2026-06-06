@@ -6,7 +6,6 @@ import { getOrganizationPaymentSettings } from "@/lib/organization-payment-setti
 import { getResellerPricingProfileContext, resolveResellerBuyPrice } from "@/lib/reseller-pricing"
 import { isSubscriptionActive } from "@/lib/subscription-access"
 import { getAgentStorefrontPrices, getResellerStorefrontPrices, getSubscriberStorefrontPrices, mapStorefrontPrices } from "@/lib/storefront-pricing"
-import { isAllowedStorefrontReturnUrl } from "@/lib/storefront-url"
 
 export type StorefrontCheckoutItem = {
   productId: string
@@ -19,7 +18,6 @@ export type StorefrontCheckoutInput = {
   agentId?: string
   resellerId?: string
   returnPath?: string
-  returnUrl?: string
   items: StorefrontCheckoutItem[]
 }
 
@@ -357,7 +355,6 @@ export async function createStorefrontCheckout(input: StorefrontCheckoutInput) {
   const amountInPesewas = Math.round(total * 100)
   const firstPhone = resolvedItems[0]?.phoneNumber || "customer"
   const returnPath = safeStorefrontReturnPath(input.returnPath) ?? resellerStorefrontReturnPath(subscriber.slug)
-  const returnUrl = isAllowedStorefrontReturnUrl(input.returnUrl) ? input.returnUrl : null
   const callbackUrl = `${baseUrl}/api/store/paystack/verify?organizationId=${encodeURIComponent(subscriber.id)}`
 
   const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {
@@ -380,7 +377,6 @@ export async function createStorefrontCheckout(input: StorefrontCheckoutInput) {
         orderCount: orderIds.length,
         amountGHS: total,
         returnPath,
-        returnUrl,
       },
       callback_url: callbackUrl,
     }),
@@ -411,7 +407,6 @@ export async function createStorefrontCheckout(input: StorefrontCheckoutInput) {
     orderCount: orderIds.length,
     amountGHS: total,
     returnPath,
-    returnUrl,
   }
 
   await db.$executeRaw`
