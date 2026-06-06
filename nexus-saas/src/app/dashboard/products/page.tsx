@@ -53,6 +53,32 @@ function formatPercent(value: number) {
   return `${value.toFixed(1)}%`
 }
 
+function getBundleSizeMb(name: string) {
+  const match = name.match(/\b(\d+(?:\.\d+)?)\s*(KB|MB|GB|TB)\b/i)
+  if (!match) return Number.POSITIVE_INFINITY
+
+  const amount = Number(match[1])
+  if (!Number.isFinite(amount)) return Number.POSITIVE_INFINITY
+
+  const unit = match[2].toUpperCase()
+  if (unit === "TB") return amount * 1024 * 1024
+  if (unit === "GB") return amount * 1024
+  if (unit === "MB") return amount
+  if (unit === "KB") return amount / 1024
+  return Number.POSITIVE_INFINITY
+}
+
+function sortBundlesBySizeAsc<T extends { name?: string | null; productName?: string | null }>(rows: T[]) {
+  return [...rows].sort((a, b) => {
+    const aName = a.name ?? a.productName ?? ""
+    const bName = b.name ?? b.productName ?? ""
+    const sizeDelta = getBundleSizeMb(aName) - getBundleSizeMb(bName)
+
+    if (sizeDelta !== 0) return sizeDelta
+    return aName.localeCompare(bName, undefined, { numeric: true, sensitivity: "base" })
+  })
+}
+
 type PricingProfile = {
   id: string
   name: string
@@ -220,7 +246,7 @@ function BundlePricingContent() {
   }
 
   const networkBundles = useMemo(() => {
-    return products.filter(p => p.provider?.toUpperCase() === selectedNetwork && p.category === "DATA_BUNDLE")
+    return sortBundlesBySizeAsc(products.filter(p => p.provider?.toUpperCase() === selectedNetwork && p.category === "DATA_BUNDLE"))
   }, [products, selectedNetwork])
 
   const registrationServices = useMemo(() => {
@@ -231,7 +257,7 @@ function BundlePricingContent() {
   const NetworkLogo = currentNetwork?.logo
 
   const networkProfileRows = useMemo(() => {
-    return profileRows.filter((row) => row.network?.toUpperCase() === selectedNetwork)
+    return sortBundlesBySizeAsc(profileRows.filter((row) => row.network?.toUpperCase() === selectedNetwork))
   }, [profileRows, selectedNetwork])
 
   const totalActiveBundles = useMemo(() => {
