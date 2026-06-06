@@ -95,7 +95,7 @@ export async function PATCH(
 
   const requester = await db.user.findUnique({
     where: { id: requestLog.targetId },
-    select: { name: true, email: true },
+    select: { id: true, name: true, email: true, role: true, agentId: true, parentAgentId: true },
   })
 
   const timestamp = new Date().toISOString()
@@ -105,6 +105,19 @@ export async function PATCH(
   }
 
   if (decision === "APPROVE") {
+    if (!requester || (requestedRole !== "AGENT" && requestedRole !== "RESELLER")) {
+      return ApiErrors.BAD_REQUEST("Requester account is not valid for API access")
+    }
+
+    const ownerAgentId = requestedRole === "AGENT" ? requester.agentId : requester.parentAgentId
+    if (!ownerAgentId) {
+      return ApiErrors.BAD_REQUEST(
+        requestedRole === "AGENT"
+          ? "Agent account is not linked to an agent profile"
+          : "Reseller account is not linked to a parent agent"
+      )
+    }
+
     const apiKeyValue = `nk_${randomBytes(24).toString("hex")}`
     const suffix = requester?.name?.trim() || requester?.email || requestLog.targetId
 
@@ -113,6 +126,9 @@ export async function PATCH(
         organizationId: user.organizationId!,
         name: `API Access - ${suffix}`,
         key: apiKeyValue,
+        ownerType: requestedRole,
+        ownerUserId: requester.id,
+        ownerAgentId,
       },
     })
 

@@ -108,6 +108,14 @@ export async function POST(req: Request) {
       resolvedAgentId = fullUser.parentAgentId ?? null
     }
 
+    if (!resolvedAgentId) {
+      return ApiErrors.BAD_REQUEST(
+        fullUser.role === "RESELLER"
+          ? "Reseller account is not linked to an agent."
+          : "Agent profile is not linked to this account."
+      )
+    }
+
     const assignedProfile = await db.userPricingProfileAssignment.findFirst({
       where: { organizationId, userId: user.id },
       select: { pricingProfileId: true, strictPricing: true },

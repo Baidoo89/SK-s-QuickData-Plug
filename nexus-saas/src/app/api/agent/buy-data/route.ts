@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { requireAuth, isAuthError } from "@/lib/auth-guard"
+import { requireAuth, isAuthError, hasRole } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors } from "@/lib/api-response"
 import { resolveOrderDispatch } from "@/lib/order-dispatch"
 import { requireActiveSubscription } from "@/lib/subscription-access"
@@ -59,6 +59,10 @@ export async function POST(req: Request) {
       return ApiErrors.UNAUTHORIZED()
     }
 
+    if (!hasRole(user, "AGENT")) {
+      return ApiErrors.FORBIDDEN()
+    }
+
     const subscriptionError = await requireActiveSubscription(user.organizationId)
     if (subscriptionError) return subscriptionError
 
@@ -102,6 +106,19 @@ export async function POST(req: Request) {
           data: { agentId: fallbackAgent.id },
         })
       }
+    }
+
+    if (!resolvedAgentId) {
+      return ApiErrors.BAD_REQUEST("Agent profile is not linked to this account.")
+    }
+
+    const activeAgent = await db.agent.findFirst({
+      where: { id: resolvedAgentId, organizationId: user.organizationId, active: true },
+      select: { id: true },
+    })
+
+    if (!activeAgent) {
+      return ApiErrors.BAD_REQUEST("Agent profile is not active or does not belong to this organization.")
     }
 
     // Get product

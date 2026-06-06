@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { MetricCard } from "@/components/ui/metric-card"
 import { getOrCreateAgentStorefrontLink } from "@/lib/storefront-links"
+import { ApiAccessRequestCard } from "@/components/api-access/api-access-request-card"
 
 export default async function AgentApiDocsPage() {
   const session = await auth()
@@ -33,10 +34,11 @@ export default async function AgentApiDocsPage() {
     return <PortalAccessMessage title="Agent access required" description="This documentation is only available to approved agent accounts." />
   }
 
-  const [orderCount, walletCount, resellerCount] = await Promise.all([
+  const [orderCount, walletCount, resellerCount, apiKeyCount] = await Promise.all([
     user.agentId ? db.order.count({ where: { organizationId: user.organizationId, agentId: user.agentId } }) : Promise.resolve(0),
     db.walletTransaction.count({ where: { userId: user.id, status: "success" } }),
     user.agentId ? db.user.count({ where: { organizationId: user.organizationId, role: "RESELLER", parentAgentId: user.agentId } }) : Promise.resolve(0),
+    db.apiKey.count({ where: { organizationId: user.organizationId, ownerType: "AGENT", ownerUserId: user.id } }),
   ])
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://your-domain.com"
@@ -55,7 +57,7 @@ export default async function AgentApiDocsPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">API Docs</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Agent integration guide for creating wallet-backed VTU orders, reading wallet state, and managing reseller operations inside your organization.
+          Agent integration guide for storefront links, dashboard wallet buys, and approved external API sales that are attributed to your agent profile.
         </p>
       </div>
 
@@ -63,26 +65,29 @@ export default async function AgentApiDocsPage() {
         <MetricCard label="Access" value={active ? "Active" : "Restricted"} description={`Signup status: ${user.signupStatus}`} icon={BadgeCheck} tone={active ? "success" : "warning"} />
         <MetricCard label="Agent Orders" value={orderCount} description="Orders attributed to your agent profile" icon={ShoppingCart} tone="info" />
         <MetricCard label="Wallet Records" value={walletCount} description="Successful wallet movements" icon={Wallet} tone="success" />
-        <MetricCard label="Resellers" value={resellerCount} description="Accounts under your agent profile" icon={KeyRound} tone="primary" />
+        <MetricCard label="API Keys" value={apiKeyCount} description="Approved server keys for your own website" icon={KeyRound} tone="primary" />
+        <MetricCard label="Resellers" value={resellerCount} description="Accounts under your agent profile" icon={KeyRound} tone="info" />
       </div>
+
+      <ApiAccessRequestCard roleLabel="Agent" />
 
       <Card>
         <CardHeader>
           <CardTitle>Security Model</CardTitle>
-          <CardDescription>Endpoints are protected with authenticated sessions and role guards.</CardDescription>
+          <CardDescription>Dashboard buys use your login session; external website sales use an approved API key.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
           <ul className="list-disc space-y-1 pl-4 text-xs">
-            <li>Only authenticated AGENT and RESELLER users can create VTU orders.</li>
-            <li>Requests are organization-scoped; agents cannot place orders for another tenant.</li>
-            <li>Wallet balance is validated before order creation and debited transactionally.</li>
-            <li>Orders enter the pending manual fulfillment workflow after successful wallet debit.</li>
+            <li>Dashboard buys debit your wallet and are tagged to your agent profile.</li>
+            <li>External API sales are already paid on your website, so they do not debit your wallet.</li>
+            <li>Approved API keys are scoped to you and cannot create orders for another organization.</li>
+            <li>Fulfillment still follows the subscriber organization dispatch policy and manual queue.</li>
           </ul>
           <div className="flex flex-wrap gap-2 text-xs">
             <Badge variant="outline">Session auth</Badge>
-            <Badge variant="outline">Role guard</Badge>
-            <Badge variant="outline">Org scoped</Badge>
-            <Badge variant="outline">Transactional wallet debit</Badge>
+            <Badge variant="outline">Bearer API key</Badge>
+            <Badge variant="outline">Seller scoped</Badge>
+            <Badge variant="outline">Org fulfillment</Badge>
           </div>
         </CardContent>
       </Card>
@@ -100,6 +105,8 @@ export default async function AgentApiDocsPage() {
             <li><span className="font-medium text-foreground">GET /api/resellers</span> - List resellers owned by the current agent.</li>
             <li><span className="font-medium text-foreground">POST /api/resellers</span> - Create reseller account and invite link.</li>
             <li><span className="font-medium text-foreground">GET /api/shop/{user.organization?.slug ?? "tenant"}/agent/{user.agentId ?? "agentId"}/products</span> - Fetch public products in agent context.</li>
+            <li><span className="font-medium text-foreground">POST /api/v1/orders</span> - Create an external paid order with your approved API key.</li>
+            <li><span className="font-medium text-foreground">GET /api/v1/orders?externalReference=...</span> - Check an order created by the same API key.</li>
           </ul>
         </CardContent>
       </Card>
@@ -126,6 +133,33 @@ export default async function AgentApiDocsPage() {
 {`curl "${baseUrl}${agentStorePath}"`}
             </pre>
           ) : null}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Code2 className="h-4 w-4 text-primary" />
+            Example External API Sale
+          </CardTitle>
+          <CardDescription>Use this from your own backend after your website has collected payment.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 text-xs text-muted-foreground">
+          <pre className="table-scroll rounded-md border bg-muted/50 p-3">
+{`curl -X POST "${baseUrl}/api/v1/orders" \\
+  -H "Authorization: Bearer YOUR_APPROVED_AGENT_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "productId": "PRODUCT_ID",
+    "phoneNumber": "0244000000",
+    "quantity": 1,
+    "externalReference": "agent-site-1001",
+    "amountPaid": 120
+  }'`}
+          </pre>
+          <p>
+            The order is tagged as AGENT, profit is calculated from your agent buy price, and fulfillment goes to the subscriber organization.
+          </p>
         </CardContent>
       </Card>
     </div>

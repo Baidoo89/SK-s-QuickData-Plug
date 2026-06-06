@@ -28,6 +28,7 @@ export async function POST(req: Request) {
         name,
         key,
         organizationId: authResult.user.organizationId!,
+        ownerType: "SUBSCRIBER",
       },
     });
 

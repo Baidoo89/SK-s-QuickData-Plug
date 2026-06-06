@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { MetricCard } from "@/components/ui/metric-card"
 import { getOrCreateResellerStorefrontLink } from "@/lib/storefront-links"
+import { ApiAccessRequestCard } from "@/components/api-access/api-access-request-card"
 
 export default async function ResellerApiDocsPage() {
   const session = await auth()
@@ -33,10 +34,11 @@ export default async function ResellerApiDocsPage() {
     return <PortalAccessMessage title="Reseller access required" description="This documentation is only available to approved reseller accounts." />
   }
 
-  const [orderCount, completedOrderCount, walletCount] = await Promise.all([
+  const [orderCount, completedOrderCount, walletCount, apiKeyCount] = await Promise.all([
     db.order.count({ where: { organizationId: user.organizationId, userId: user.id } }),
     db.order.count({ where: { organizationId: user.organizationId, userId: user.id, status: "COMPLETED" } }),
     db.walletTransaction.count({ where: { userId: user.id, status: "success" } }),
+    db.apiKey.count({ where: { organizationId: user.organizationId, ownerType: "RESELLER", ownerUserId: user.id } }),
   ])
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://your-domain.com"
@@ -55,7 +57,7 @@ export default async function ResellerApiDocsPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">API Docs</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Reseller integration guide for wallet-backed VTU ordering. Server-to-server API keys remain organization-managed, so current reseller calls use the normal logged-in session.
+          Reseller integration guide for storefront links, wallet buys, and approved external API sales that are attributed to your reseller account.
         </p>
       </div>
 
@@ -63,24 +65,25 @@ export default async function ResellerApiDocsPage() {
         <MetricCard label="Access" value={active ? "Active" : "Restricted"} description={`Signup status: ${user.signupStatus}`} icon={BadgeCheck} tone={active ? "success" : "warning"} />
         <MetricCard label="Orders" value={orderCount} description={`${completedOrderCount} completed orders`} icon={ShoppingCart} tone="info" />
         <MetricCard label="Wallet Records" value={walletCount} description="Successful wallet movements" icon={Wallet} tone="success" />
-        <MetricCard label="API Keys" value={user.organization?.apiKeys.length ?? 0} description="Managed by subscriber admin" icon={KeyRound} tone="primary" />
+        <MetricCard label="API Keys" value={apiKeyCount} description="Approved server keys for your own website" icon={KeyRound} tone="primary" />
       </div>
+
+      <ApiAccessRequestCard roleLabel="Reseller" />
 
       <Card>
         <CardHeader>
           <CardTitle>Authentication</CardTitle>
-          <CardDescription>Current reseller integrations use the normal portal session.</CardDescription>
+          <CardDescription>Dashboard buys use your login session; external website sales use an approved API key.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
           <p>
-            API calls made from a browser where you are logged in automatically include the required session cookies.
-            Organization-level API keys can be issued by the subscriber admin for trusted backend integrations.
+            You can request API access from your portal. After approval, your key can submit paid orders from your own website while keeping the order under your parent agent and subscriber organization.
           </p>
           <div className="flex flex-wrap gap-2 text-xs">
             <Badge variant="outline">Cookie-based auth</Badge>
+            <Badge variant="outline">Bearer API key</Badge>
             <Badge variant="outline">Role-scoped access</Badge>
-            <Badge variant="outline">Wallet debit checks</Badge>
-            <Badge variant="outline">Manual fulfillment</Badge>
+            <Badge variant="outline">Parent-agent scoped</Badge>
           </div>
         </CardContent>
       </Card>
@@ -97,6 +100,8 @@ export default async function ResellerApiDocsPage() {
             <li><span className="font-medium text-foreground">GET /api/reseller/orders/export</span> - Export your reseller orders.</li>
             <li><span className="font-medium text-foreground">GET /api/reseller/analytics/export</span> - Export reseller performance analytics.</li>
             <li><span className="font-medium text-foreground">GET /api/shop/{user.organization?.slug ?? "tenant"}/agent/{user.parentAgentId ?? "agentId"}/products</span> - Fetch products in your parent-agent storefront context.</li>
+            <li><span className="font-medium text-foreground">POST /api/v1/orders</span> - Create an external paid order with your approved API key.</li>
+            <li><span className="font-medium text-foreground">GET /api/v1/orders?externalReference=...</span> - Check an order created by the same API key.</li>
           </ul>
         </CardContent>
       </Card>
@@ -122,6 +127,33 @@ export default async function ResellerApiDocsPage() {
 {`curl "${baseUrl}${storePath}"`}
             </pre>
           ) : null}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Code2 className="h-4 w-4 text-primary" />
+            Example External API Sale
+          </CardTitle>
+          <CardDescription>Use this from your own backend after your website has collected payment.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 text-xs text-muted-foreground">
+          <pre className="table-scroll rounded-md border bg-muted/50 p-3">
+{`curl -X POST "${baseUrl}/api/v1/orders" \\
+  -H "Authorization: Bearer YOUR_APPROVED_RESELLER_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "productId": "PRODUCT_ID",
+    "phoneNumber": "0244000000",
+    "quantity": 1,
+    "externalReference": "reseller-site-1001",
+    "amountPaid": 120
+  }'`}
+          </pre>
+          <p>
+            The order is tagged as RESELLER, profit is calculated from your reseller buy price, and fulfillment stays under your parent agent and subscriber organization.
+          </p>
         </CardContent>
       </Card>
     </div>

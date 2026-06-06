@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { requireAuth, isAuthError } from "@/lib/auth-guard"
+import { requireAuth, isAuthError, hasRole } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors } from "@/lib/api-response"
 import { resolveOrderDispatch } from "@/lib/order-dispatch"
 import { requireActiveSubscription } from "@/lib/subscription-access"
@@ -59,6 +59,10 @@ export async function POST(req: Request) {
       return ApiErrors.UNAUTHORIZED()
     }
 
+    if (!hasRole(user, "RESELLER")) {
+      return ApiErrors.FORBIDDEN()
+    }
+
     const subscriptionError = await requireActiveSubscription(user.organizationId)
     if (subscriptionError) return subscriptionError
 
@@ -77,11 +81,25 @@ export async function POST(req: Request) {
       return ApiErrors.BAD_REQUEST("Phone number must be exactly 10 digits")
     }
 
-    // Fetch full user with agentId and parentAgentId
+    // Fetch full user with parentAgentId
     const fullUser = await db.user.findUnique({
       where: { id: user.id },
-      select: { agentId: true, parentAgentId: true },
+      select: { parentAgentId: true },
     })
+
+    const agentId = fullUser?.parentAgentId ?? null
+    if (!agentId) {
+      return ApiErrors.BAD_REQUEST("Reseller account is not linked to an agent.")
+    }
+
+    const parentAgent = await db.agent.findFirst({
+      where: { id: agentId, organizationId: user.organizationId, active: true },
+      select: { id: true },
+    })
+
+    if (!parentAgent) {
+      return ApiErrors.BAD_REQUEST("Parent agent is not active or does not belong to this organization.")
+    }
 
     // Get product
     const product = await db.product.findUnique({
@@ -103,7 +121,6 @@ export async function POST(req: Request) {
     const basePrice = basePriceRecord?.price ?? product.price
 
     // Get pricing: reseller override > assigned pricing profile > parent-agent override > base price > product price
-    let agentId = fullUser?.agentId || fullUser?.parentAgentId
     let effectivePrice = basePrice
 
     const assignedProfile = await db.userPricingProfileAssignment.findFirst({

@@ -112,8 +112,45 @@ export async function resolveOrderDispatch(input: ResolveOrderDispatchInput): Pr
         meta: JSON.stringify({
           reason: dispatchReason,
           providerKeys,
+          provider: dispatchProvider,
           attemptedProviders,
           network: input.network,
+        }),
+      },
+    })
+
+    return {
+      finalStatus: "PENDING",
+      dispatchMode: "MANUAL",
+      dispatchProvider,
+      dispatchReason,
+      dispatchResult,
+    }
+  }
+
+  if (!dispatchResult.accepted && policy.mode === "HYBRID") {
+    const dispatchReason = `${dispatchResult.message}. Routed to manual fallback because dispatch mode is hybrid.`
+
+    await db.order.update({
+      where: { id: input.orderId },
+      data: { fulfillmentMode: "MANUAL", status: "PENDING" },
+      select: { id: true },
+    })
+
+    await db.auditLog.create({
+      data: {
+        action: "ORDER_DISPATCH_MANUAL_FALLBACK",
+        targetType: "ORDER",
+        targetId: input.orderId,
+        organizationId: input.organizationId,
+        meta: JSON.stringify({
+          reason: dispatchReason,
+          providerKeys,
+          provider: dispatchProvider,
+          attemptedProviders,
+          network: input.network,
+          providerRejected: true,
+          httpStatus: dispatchResult.httpStatus ?? null,
         }),
       },
     })

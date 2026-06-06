@@ -46,12 +46,12 @@ export default async function ApiDocsPage() {
       <div>
         <h1 className="mb-1 text-2xl font-bold md:text-3xl">API Docs</h1>
         <p className="max-w-2xl text-muted-foreground">
-          Integrate programmatic access to your store. Use API keys to authenticate and call endpoints for products, orders, and manual fulfillment.
+          Integrate programmatic access to your store. Use API keys to authenticate external websites, including subscriber-owned keys and approved agent/reseller keys.
         </p>
       </div>
 
       <div className="grid min-w-0 gap-4 md:grid-cols-3">
-        <MetricCard label="API Keys" value={user.organization.apiKeys.length} description="Organization-scoped credentials" icon={KeyRound} tone="primary" />
+        <MetricCard label="API Keys" value={user.organization.apiKeys.length} description="Subscriber and approved seller credentials" icon={KeyRound} tone="primary" />
         <MetricCard label="Store Slug" value={user.organization.slug} description="Tenant context for public APIs" icon={PackageSearch} tone="info" />
         <MetricCard label="Order Tools" value="CSV Ready" description="Export and import fulfillment updates" icon={UploadCloud} tone="success" />
       </div>
@@ -139,6 +139,7 @@ export default async function ApiDocsPage() {
           </pre>
           <p className="mt-2 text-xs text-muted-foreground">
             Use a unique externalReference from your website. Retrying with the same reference returns the same order instead of creating a duplicate.
+            Agent and reseller keys are scoped to the key owner, so the same reference can be reused safely by different sellers.
           </p>
         </CardContent>
       </Card>

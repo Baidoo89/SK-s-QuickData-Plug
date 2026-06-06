@@ -294,12 +294,19 @@ model ApiKey {
   key            String       @unique
   name           String
   lastUsed       DateTime?
+  ownerType      String       @default("SUBSCRIBER") // SUBSCRIBER, AGENT, RESELLER
+  ownerUserId    String?
+  ownerAgentId   String?
   
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
 
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+
+  @@index([ownerType])
+  @@index([ownerUserId])
+  @@index([ownerAgentId])
 }
 
 model PasswordResetToken {

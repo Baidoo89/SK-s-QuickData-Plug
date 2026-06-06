@@ -4,6 +4,9 @@ export type ApiKeyAuthResult = {
   apiKeyId: string
   apiKeyName: string
   organizationId: string
+  ownerType: "SUBSCRIBER" | "AGENT" | "RESELLER"
+  ownerUserId: string | null
+  ownerAgentId: string | null
 }
 
 function extractBearerToken(req: Request) {
@@ -22,6 +25,9 @@ export async function authenticateApiKey(req: Request): Promise<ApiKeyAuthResult
       id: true,
       name: true,
       organizationId: true,
+      ownerType: true,
+      ownerUserId: true,
+      ownerAgentId: true,
     },
   })
 
@@ -36,5 +42,8 @@ export async function authenticateApiKey(req: Request): Promise<ApiKeyAuthResult
     apiKeyId: apiKey.id,
     apiKeyName: apiKey.name,
     organizationId: apiKey.organizationId,
+    ownerType: apiKey.ownerType === "AGENT" || apiKey.ownerType === "RESELLER" ? apiKey.ownerType : "SUBSCRIBER",
+    ownerUserId: apiKey.ownerUserId,
+    ownerAgentId: apiKey.ownerAgentId,
   }
 }

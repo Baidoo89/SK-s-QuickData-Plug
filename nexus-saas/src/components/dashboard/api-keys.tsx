@@ -31,6 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
 
 interface ApiKey {
   id: string
@@ -38,6 +39,7 @@ interface ApiKey {
   key: string
   createdAt: Date
   lastUsed: Date | null
+  ownerType?: string | null
 }
 
 interface ApiKeysProps {
@@ -163,6 +165,9 @@ export function ApiKeys({ apiKeys }: ApiKeysProps) {
                     <p className="font-mono text-xs text-muted-foreground">
                       {apiKey.key.slice(0, 8)}...{apiKey.key.slice(-4)}
                     </p>
+                    <Badge variant="outline" className="mt-2 rounded-md px-2 py-0 text-[10px]">
+                      {apiKey.ownerType || "SUBSCRIBER"}
+                    </Badge>
                     <p className="mt-1 text-xs text-muted-foreground">{new Date(apiKey.createdAt).toLocaleDateString()}</p>
                   </div>
                   <div className="flex shrink-0 gap-1">
@@ -184,6 +189,7 @@ export function ApiKeys({ apiKeys }: ApiKeysProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
+              <TableHead>Owner</TableHead>
               <TableHead>Key</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -193,6 +199,11 @@ export function ApiKeys({ apiKeys }: ApiKeysProps) {
             {apiKeys.map((apiKey) => (
               <TableRow key={apiKey.id}>
                 <TableCell className="font-medium">{apiKey.name}</TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="rounded-md px-2 py-0 text-[10px]">
+                    {apiKey.ownerType || "SUBSCRIBER"}
+                  </Badge>
+                </TableCell>
                 <TableCell className="font-mono text-xs">
                   {apiKey.key.slice(0, 8)}...{apiKey.key.slice(-4)}
                 </TableCell>
@@ -222,7 +233,7 @@ export function ApiKeys({ apiKeys }: ApiKeysProps) {
             ))}
             {apiKeys.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                <TableCell colSpan={5} className="text-center text-muted-foreground">
                   No API keys found.
                 </TableCell>
               </TableRow>

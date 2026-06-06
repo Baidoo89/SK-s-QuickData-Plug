@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
 import { OrderTimelineDialog } from "@/components/orders/order-timeline-dialog"
 import { formatGhanaCedis } from "@/lib/currency"
+import { getDispatchMetaByOrderIds, type DispatchMeta } from "@/lib/admin-order-dispatch"
 
 type OrderFilters = {
   status?: string
@@ -24,13 +25,6 @@ type OrderFilters = {
   q?: string
   dispatch?: string
   network?: string
-}
-
-type DispatchMeta = {
-  mode?: "API" | "MANUAL"
-  provider?: string
-  network?: string
-  reason?: string
 }
 
 type AdminOrderItemRow = {
@@ -96,29 +90,7 @@ async function getAdminOrders(filters: OrderFilters = {}) {
       take: 200,
     })
 
-    const orderIds = orders.map((o) => o.id)
-    const dispatchLogs = orderIds.length
-      ? await db.auditLog.findMany({
-          where: {
-            action: "ORDER_DISPATCH_DECISION",
-            targetType: "ORDER",
-            targetId: { in: orderIds },
-          },
-          orderBy: { createdAt: "desc" },
-          select: { targetId: true, meta: true },
-        })
-      : []
-
-    const dispatchByOrderId = new Map<string, DispatchMeta>()
-    for (const log of dispatchLogs) {
-      if (dispatchByOrderId.has(log.targetId)) continue
-      try {
-        const parsed = log.meta ? (JSON.parse(log.meta) as DispatchMeta) : {}
-        dispatchByOrderId.set(log.targetId, parsed)
-      } catch {
-        dispatchByOrderId.set(log.targetId, {})
-      }
-    }
+    const dispatchByOrderId = await getDispatchMetaByOrderIds(orders.map((o) => o.id))
 
     let mapped = orders.map((order) => ({
       ...order,

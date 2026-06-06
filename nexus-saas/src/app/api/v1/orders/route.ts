@@ -5,6 +5,7 @@ import { authenticateApiKey } from "@/lib/api-key-auth"
 import { assertApiOrderRateLimit, findApiOrderByExternalReference, getApiOrderCreationMeta } from "@/lib/api-order-tracking"
 import { db } from "@/lib/db"
 import { resolveOrderDispatch } from "@/lib/order-dispatch"
+import { getResellerPricingProfileContext, resolveResellerBuyPrice } from "@/lib/reseller-pricing"
 import { requireActiveSubscription } from "@/lib/subscription-access"
 
 export const dynamic = "force-dynamic"
@@ -64,6 +65,174 @@ function toApiOrderResponse(order: {
   )
 }
 
+async function resolveApiSellerPricing(input: {
+  organizationId: string
+  productId: string
+  productPrice: number
+  quantity: number
+  amountPaid?: number
+  apiOwnerType: "SUBSCRIBER" | "AGENT" | "RESELLER"
+  ownerUserId: string | null
+  ownerAgentId: string | null
+}) {
+  const basePriceRecord = await db.basePrice.findUnique({
+    where: {
+      productId_organizationId: {
+        productId: input.productId,
+        organizationId: input.organizationId,
+      },
+    },
+    select: { price: true },
+  })
+  const basePrice = basePriceRecord?.price ?? input.productPrice
+
+  if (input.apiOwnerType === "SUBSCRIBER") {
+    const storefrontPrice = await db.subscriberStorefrontPrice.findUnique({
+      where: {
+        productId_organizationId: {
+          productId: input.productId,
+          organizationId: input.organizationId,
+        },
+      },
+      select: { price: true },
+    })
+    const defaultSellingPrice = storefrontPrice?.price ?? input.productPrice
+    const total = input.amountPaid ?? defaultSellingPrice * input.quantity
+    const sellingUnitPrice = total / input.quantity
+
+    return {
+      sellerRole: "SUBSCRIBER",
+      sellerUserId: null as string | null,
+      sellerAgentId: null as string | null,
+      agentId: null as string | null,
+      costUnitPrice: basePrice,
+      sellingUnitPrice,
+      total,
+    }
+  }
+
+  if (input.apiOwnerType === "AGENT") {
+    if (!input.ownerUserId || !input.ownerAgentId) {
+      throw new Error("API_OWNER_NOT_LINKED")
+    }
+
+    const owner = await db.user.findFirst({
+      where: {
+        id: input.ownerUserId,
+        organizationId: input.organizationId,
+        role: "AGENT",
+        agentId: input.ownerAgentId,
+        active: true,
+        signupStatus: "APPROVED",
+      },
+      select: { id: true },
+    })
+    const agent = await db.agent.findFirst({
+      where: { id: input.ownerAgentId, organizationId: input.organizationId, active: true },
+      select: { id: true },
+    })
+
+    if (!owner || !agent) {
+      throw new Error("API_OWNER_NOT_LINKED")
+    }
+
+    const [agentPrice, storefrontPrice] = await Promise.all([
+      db.agentPrice.findUnique({
+        where: { agentId_productId: { agentId: input.ownerAgentId, productId: input.productId } },
+        select: { price: true },
+      }),
+      db.agentStorefrontPrice.findUnique({
+        where: { agentId_productId: { agentId: input.ownerAgentId, productId: input.productId } },
+        select: { price: true },
+      }),
+    ])
+    const costUnitPrice = agentPrice?.price ?? basePrice
+    const defaultSellingPrice = storefrontPrice?.price ?? costUnitPrice
+    const total = input.amountPaid ?? defaultSellingPrice * input.quantity
+    const sellingUnitPrice = total / input.quantity
+
+    return {
+      sellerRole: "AGENT",
+      sellerUserId: input.ownerUserId,
+      sellerAgentId: input.ownerAgentId,
+      agentId: input.ownerAgentId,
+      costUnitPrice,
+      sellingUnitPrice,
+      total,
+    }
+  }
+
+  if (!input.ownerUserId || !input.ownerAgentId) {
+    throw new Error("API_OWNER_NOT_LINKED")
+  }
+
+  const reseller = await db.user.findFirst({
+    where: {
+      id: input.ownerUserId,
+      organizationId: input.organizationId,
+      role: "RESELLER",
+      parentAgentId: input.ownerAgentId,
+      active: true,
+      signupStatus: "APPROVED",
+    },
+    select: { id: true },
+  })
+  const parentAgent = await db.agent.findFirst({
+    where: { id: input.ownerAgentId, organizationId: input.organizationId, active: true },
+    select: { id: true },
+  })
+
+  if (!reseller || !parentAgent) {
+    throw new Error("API_OWNER_NOT_LINKED")
+  }
+
+  const [parentAgentPrice, resellerPrice, storefrontPrice, resellerProfile] = await Promise.all([
+    db.agentPrice.findUnique({
+      where: { agentId_productId: { agentId: input.ownerAgentId, productId: input.productId } },
+      select: { price: true },
+    }),
+    db.resellerPrice.findFirst({
+      where: {
+        resellerId: input.ownerUserId,
+        productId: input.productId,
+        organizationId: input.organizationId,
+      },
+      select: { price: true },
+    }),
+    db.resellerStorefrontPrice.findUnique({
+      where: { resellerId_productId: { resellerId: input.ownerUserId, productId: input.productId } },
+      select: { price: true },
+    }),
+    getResellerPricingProfileContext(input.organizationId, input.ownerUserId),
+  ])
+
+  const parentCost = parentAgentPrice?.price ?? basePrice
+  const resellerBuyPrice = resolveResellerBuyPrice({
+    overridePrice: resellerPrice?.price,
+    profilePrice: resellerProfile.profilePriceMap.get(input.productId),
+    parentCost,
+    strictPricing: resellerProfile.strictPricing,
+  })
+
+  if (resellerBuyPrice === null) {
+    throw new Error("API_PRODUCT_NOT_AVAILABLE")
+  }
+
+  const defaultSellingPrice = storefrontPrice?.price ?? resellerBuyPrice
+  const total = input.amountPaid ?? defaultSellingPrice * input.quantity
+  const sellingUnitPrice = total / input.quantity
+
+  return {
+    sellerRole: "RESELLER",
+    sellerUserId: input.ownerUserId,
+    sellerAgentId: input.ownerAgentId,
+    agentId: input.ownerAgentId,
+    costUnitPrice: resellerBuyPrice,
+    sellingUnitPrice,
+    total,
+  }
+}
+
 export async function GET(req: Request) {
   try {
     const apiAuth = await authenticateApiKey(req)
@@ -81,6 +250,7 @@ export async function GET(req: Request) {
       ? await findApiOrderByExternalReference({
           organizationId: apiAuth.organizationId,
           externalReference,
+          apiKeyId: apiAuth.apiKeyId,
         })
       : await db.order.findFirst({
           where: {
@@ -99,6 +269,9 @@ export async function GET(req: Request) {
 
     const meta = externalReference ? { externalReference } : await getApiOrderCreationMeta(order.id)
     if (!externalReference && meta.source !== "API") {
+      return ApiErrors.NOT_FOUND("API order")
+    }
+    if (!externalReference && meta.apiKeyId && meta.apiKeyId !== apiAuth.apiKeyId) {
       return ApiErrors.NOT_FOUND("API order")
     }
 
@@ -135,6 +308,7 @@ export async function POST(req: Request) {
       const existingOrder = await findApiOrderByExternalReference({
         organizationId: apiAuth.organizationId,
         externalReference,
+        apiKeyId: apiAuth.apiKeyId,
       })
 
       if (existingOrder) {
@@ -175,18 +349,17 @@ export async function POST(req: Request) {
       return ApiErrors.BAD_REQUEST("Phone number does not match selected network")
     }
 
-    const basePriceRecord = await db.basePrice.findUnique({
-      where: {
-        productId_organizationId: {
-          productId: product.id,
-          organizationId: apiAuth.organizationId,
-        },
-      },
+    const pricing = await resolveApiSellerPricing({
+      organizationId: apiAuth.organizationId,
+      productId: product.id,
+      productPrice: product.price,
+      quantity: parsed.data.quantity,
+      amountPaid: parsed.data.amountPaid,
+      apiOwnerType: apiAuth.ownerType,
+      ownerUserId: apiAuth.ownerUserId,
+      ownerAgentId: apiAuth.ownerAgentId,
     })
-
-    const unitPrice = basePriceRecord?.price ?? product.price
-    const computedTotal = unitPrice * parsed.data.quantity
-    const total = parsed.data.amountPaid ?? computedTotal
+    const computedTotal = pricing.costUnitPrice * parsed.data.quantity
 
     const order = await db.$transaction(async (tx) => {
       const customerEmail = parsed.data.customerEmail || `${normalizedPhone}@api.placeholder.com`
@@ -212,13 +385,15 @@ export async function POST(req: Request) {
         data: {
           organizationId: apiAuth.organizationId,
           customerId: customer.id,
-          total,
+          agentId: pricing.agentId ?? undefined,
+          userId: pricing.sellerUserId ?? undefined,
+          total: pricing.total,
           status: "PENDING",
           phoneNumber: normalizedPhone,
           source: "API",
-          sellerRole: "SUBSCRIBER",
-          sellerUserId: null,
-          sellerAgentId: null,
+          sellerRole: pricing.sellerRole,
+          sellerUserId: pricing.sellerUserId,
+          sellerAgentId: pricing.sellerAgentId,
           customerType: "API_CUSTOMER",
           paymentOwner: "EXTERNAL",
           paymentStatus: "PAID",
@@ -228,8 +403,8 @@ export async function POST(req: Request) {
             create: {
               productId: product.id,
               quantity: parsed.data.quantity,
-              price: unitPrice,
-              profit: Math.max(total - computedTotal, 0),
+              price: pricing.sellingUnitPrice,
+              profit: Math.max(pricing.total - computedTotal, 0),
             },
           },
         },
@@ -246,10 +421,16 @@ export async function POST(req: Request) {
           meta: JSON.stringify({
             source: "API",
             apiKeyId: apiAuth.apiKeyId,
+            apiKeyOwnerType: apiAuth.ownerType,
+            sellerRole: pricing.sellerRole,
+            sellerUserId: pricing.sellerUserId,
+            sellerAgentId: pricing.sellerAgentId,
             externalReference: externalReference || null,
             callbackUrl: parsed.data.callbackUrl || null,
-            amountPaid: total,
+            amountPaid: pricing.total,
             computedTotal,
+            costUnitPrice: pricing.costUnitPrice,
+            sellingUnitPrice: pricing.sellingUnitPrice,
             network: product.provider,
           }),
         },
@@ -277,8 +458,9 @@ export async function POST(req: Request) {
         phoneNumber: normalizedPhone,
         productId: product.id,
         quantity: parsed.data.quantity,
-        unitPrice,
+        unitPrice: pricing.sellingUnitPrice,
         total: order.total,
+        sellerRole: pricing.sellerRole,
         externalReference: externalReference || null,
         dispatchMode: dispatch.dispatchMode,
         dispatchProvider: dispatch.dispatchProvider,
@@ -288,6 +470,12 @@ export async function POST(req: Request) {
       201
     )
   } catch (error) {
+    if (error instanceof Error && error.message === "API_OWNER_NOT_LINKED") {
+      return ApiErrors.BAD_REQUEST("API key owner is not linked to an active approved seller account.")
+    }
+    if (error instanceof Error && error.message === "API_PRODUCT_NOT_AVAILABLE") {
+      return ApiErrors.BAD_REQUEST("Selected product is not available for this API key owner.")
+    }
     logApiError("[API_V1_ORDERS_POST]", error)
     return ApiErrors.INTERNAL_ERROR()
   }

@@ -23,26 +23,30 @@ function parseMeta(meta: string | null): ApiOrderMeta {
 export async function findApiOrderByExternalReference(params: {
   organizationId: string
   externalReference: string
+  apiKeyId?: string
 }) {
-  const directOrder = await db.order.findFirst({
-    where: {
-      organizationId: params.organizationId,
-      source: "API",
-      externalReference: params.externalReference,
-    },
-    include: {
-      items: { include: { product: true }, take: 1 },
-      customer: true,
-    },
-  })
+  if (!params.apiKeyId) {
+    const directOrder = await db.order.findFirst({
+      where: {
+        organizationId: params.organizationId,
+        source: "API",
+        externalReference: params.externalReference,
+      },
+      include: {
+        items: { include: { product: true }, take: 1 },
+        customer: true,
+      },
+    })
 
-  if (directOrder) return directOrder
+    if (directOrder) return directOrder
+  }
 
   const logs = await db.auditLog.findMany({
     where: {
       action: "API_ORDER_CREATED",
       targetType: "ORDER",
       organizationId: params.organizationId,
+      ...(params.apiKeyId ? { actorId: params.apiKeyId } : {}),
       meta: { contains: params.externalReference },
     },
     orderBy: { createdAt: "desc" },

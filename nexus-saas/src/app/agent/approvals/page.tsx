@@ -4,9 +4,27 @@ import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { SignupApprovalActions } from "@/components/admin/signup-approval-actions"
-import { AlertTriangle, CheckCircle2, Clock, Mail, Phone, ShieldCheck, UserRound } from "lucide-react"
+import { ApiAccessApprovalActions } from "@/components/api-access/api-access-approval-actions"
+import { AlertTriangle, CheckCircle2, Clock, KeyRound, Mail, Phone, ShieldCheck, UserRound } from "lucide-react"
 
 export const dynamic = "force-dynamic"
+
+type ApiRequestMeta = {
+  status?: string
+  requestedByRole?: string
+  requestedByEmail?: string
+  requestedByName?: string
+  parentAgentId?: string | null
+}
+
+function parseApiRequestMeta(meta: string | null): ApiRequestMeta {
+  if (!meta) return {}
+  try {
+    return JSON.parse(meta) as ApiRequestMeta
+  } catch {
+    return {}
+  }
+}
 
 export default async function AgentApprovalsPage() {
   const session = await auth()
@@ -50,6 +68,21 @@ export default async function AgentApprovalsPage() {
       parentAgent: { select: { name: true } },
     },
   })
+
+  const rawApiRequests = await db.auditLog.findMany({
+    where: {
+      action: "API_ACCESS_REQUEST",
+      targetType: "USER",
+      organizationId: currentUser.organizationId,
+      meta: { contains: '"status":"PENDING"' },
+    },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, targetId: true, createdAt: true, meta: true },
+  })
+
+  const pendingApiRequests = rawApiRequests
+    .map((request) => ({ ...request, parsedMeta: parseApiRequestMeta(request.meta) }))
+    .filter((request) => request.parsedMeta.requestedByRole === "RESELLER" && request.parsedMeta.parentAgentId === agentId)
 
   return (
     <div className="portal-page space-y-6">
@@ -151,6 +184,37 @@ export default async function AgentApprovalsPage() {
                   verificationWarning={!reseller.emailVerified ? "Email is not verified yet." : undefined}
                   requireVerified
                 />
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border border-border bg-card/95">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between text-base">
+            Reseller API access
+            <Badge variant="secondary">{pendingApiRequests.length}</Badge>
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Approve external API keys for resellers who want their own websites to submit paid orders under your agent account.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {pendingApiRequests.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No pending reseller API access requests.</p>
+          ) : (
+            pendingApiRequests.map((request) => (
+              <div key={request.id} className="grid min-w-0 gap-4 rounded-lg border border-border bg-background p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+                <div className="min-w-0">
+                  <p className="flex items-center gap-2 font-semibold text-foreground">
+                    <KeyRound className="h-4 w-4 text-primary" />
+                    {request.parsedMeta.requestedByName || "Reseller API request"}
+                  </p>
+                  <p className="mt-1 break-all text-sm text-muted-foreground">{request.parsedMeta.requestedByEmail || "-"}</p>
+                  <p className="mt-2 text-xs text-muted-foreground">Requested {new Date(request.createdAt).toLocaleDateString()}</p>
+                </div>
+                <ApiAccessApprovalActions requestId={request.id} />
               </div>
             ))
           )}
