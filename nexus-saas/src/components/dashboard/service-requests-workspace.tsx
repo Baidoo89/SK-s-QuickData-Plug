@@ -102,7 +102,7 @@ function ServiceStatusSelect({ requestId, initialStatus }: { requestId: string; 
       value={status}
       onChange={handleChange}
       disabled={saving}
-      className={`h-8 w-full rounded-full border px-2 text-center text-[11px] font-semibold shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${statusClass(status)}`}
+      className={`h-8 w-full rounded-md border px-2 text-center text-[11px] font-semibold shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${statusClass(status)}`}
     >
       {STATUS_OPTIONS.map((option) => (
         <option key={option} value={option}>
@@ -167,7 +167,7 @@ function ServiceRequestActions({ requestId, status, readOnly }: { requestId: str
 export function ServiceRequestsWorkspace({ rows, readOnly = false }: Props) {
   return (
     <div className="space-y-4">
-      <div className="min-w-0 max-w-full overflow-hidden rounded-md border bg-background">
+      <div className="ops-table-surface min-w-0 max-w-full overflow-hidden rounded-lg">
         <div className="table-scroll">
           <Table className="min-w-[1640px] table-fixed text-xs">
             <TableHeader className="bg-muted/40">
@@ -192,8 +192,8 @@ export function ServiceRequestsWorkspace({ rows, readOnly = false }: Props) {
             </TableHeader>
             <TableBody>
               {rows.map((request) => (
-                <TableRow key={request.id} className="hover:bg-muted/20">
-                  <TableCell className="font-medium">{request.id.slice(-8)}</TableCell>
+                <TableRow key={request.id}>
+                  <TableCell className="font-mono font-semibold">{request.id.slice(-8)}</TableCell>
                   <TableCell>{formatDate(request.createdAt)}</TableCell>
                   <TableCell className="truncate">
                     <div>
@@ -202,7 +202,7 @@ export function ServiceRequestsWorkspace({ rows, readOnly = false }: Props) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{request.provider || "SERVICE"}</Badge>
+                    <Badge variant="outline" className="rounded-md">{request.provider || "SERVICE"}</Badge>
                   </TableCell>
                   <TableCell className="truncate">{request.customerName}</TableCell>
                   <TableCell>{request.phoneNumber}</TableCell>
@@ -216,12 +216,12 @@ export function ServiceRequestsWorkspace({ rows, readOnly = false }: Props) {
                   <TableCell>{request.dateOfBirth || "-"}</TableCell>
                   <TableCell>
                     <div className="space-y-1">
-                      <Badge variant="secondary">{request.sellerRole}</Badge>
+                      <Badge variant="secondary" className="rounded-md">{request.sellerRole}</Badge>
                       <p className="truncate text-[10px] text-muted-foreground">{request.sellerName}</p>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={request.paymentStatus === "PAID" ? "secondary" : "outline"}>{request.paymentStatus}</Badge>
+                    <Badge variant={request.paymentStatus === "PAID" ? "secondary" : "outline"} className="rounded-md">{request.paymentStatus}</Badge>
                   </TableCell>
                   <TableCell>
                     {readOnly ? (

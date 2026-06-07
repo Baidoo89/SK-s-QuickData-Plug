@@ -254,7 +254,7 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
 
   return (
     <div className="portal-page max-w-full space-y-3 pb-24 md:pb-0">
-      <div className="flex min-w-0 flex-col gap-3 rounded-md border bg-muted/30 p-3 xl:flex-row xl:items-center xl:justify-between">
+      <div className="premium-surface flex min-w-0 flex-col gap-3 rounded-lg p-3 xl:flex-row xl:items-center xl:justify-between">
         <label className="flex items-center gap-2 text-sm font-medium">
           <input
             type="checkbox"
@@ -266,9 +266,9 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
           <Badge variant="outline" className="ml-1">{pendingRows.length}</Badge>
         </label>
         <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
-          <Badge variant="outline">Pending to pick: {pendingRows.length}</Badge>
-          <Badge variant="outline">Processing: {processingRows.length}</Badge>
-          <Badge variant="outline">Selected: {selectedRows.length}</Badge>
+          <Badge variant="outline" className="rounded-md">Pending to pick: {pendingRows.length}</Badge>
+          <Badge variant="outline" className="rounded-md">Processing: {processingRows.length}</Badge>
+          <Badge variant="outline" className="rounded-md">Selected: {selectedRows.length}</Badge>
         </div>
         <div className="grid w-full min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:w-auto xl:flex xl:flex-wrap xl:justify-end">
           <Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => setPreviewOpen((open) => !open)}>
@@ -291,7 +291,7 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
       </div>
 
       {previewOpen ? (
-        <div className="rounded-md border bg-background p-3">
+        <div className="premium-surface rounded-lg p-3">
           <div className="mb-2 flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-foreground">Copy preview</p>
@@ -299,15 +299,15 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
                 {selectedRows.length > 0 ? "Selected rows" : "Pending rows"} only. MTN copies as phone and bundle. Other networks add the network label.
               </p>
             </div>
-            <Badge variant="outline">{previewRows.length} rows</Badge>
+            <Badge variant="outline" className="rounded-md">{previewRows.length} rows</Badge>
           </div>
-          <pre className="max-h-44 overflow-auto rounded-md bg-muted/40 p-3 font-mono text-xs leading-relaxed text-foreground">
+          <pre className="max-h-44 overflow-auto rounded-lg border border-border/60 bg-muted/35 p-3 font-mono text-xs leading-relaxed text-foreground">
             {copyPreview || "No eligible rows available"}
           </pre>
         </div>
       ) : null}
 
-      <div className="min-w-0 max-w-full overflow-hidden rounded-md border bg-background">
+      <div className="ops-table-surface min-w-0 max-w-full overflow-hidden rounded-lg">
         <div className="table-scroll">
         <Table className="min-w-[1440px] table-fixed text-xs">
           <TableHeader className="bg-muted/40">
@@ -342,7 +342,7 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
               const editableStatus = canEditStatus(order)
 
               return (
-              <TableRow key={order.id} className={selected.has(order.id) ? "bg-primary/5" : "hover:bg-muted/20"}>
+              <TableRow key={order.id} className={selected.has(order.id) ? "bg-primary/10" : ""}>
                 <TableCell>
                   <input
                     type="checkbox"
@@ -360,22 +360,22 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
                 <TableCell className="truncate font-medium">{order.bundle || "Bundle N/A"}</TableCell>
                 <TableCell>{order.network || "-"}</TableCell>
                 <TableCell>
-                  <Badge variant="outline">{order.sourceLabel}</Badge>
+                  <Badge variant="outline" className="rounded-md">{order.sourceLabel}</Badge>
                 </TableCell>
                 <TableCell>
                   <div className="space-y-1">
-                    <Badge variant="secondary">{order.sellerRole}</Badge>
+                    <Badge variant="secondary" className="rounded-md">{order.sellerRole}</Badge>
                     <p className="truncate text-[10px] text-muted-foreground">{order.sellerName}</p>
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="space-y-1">
-                    <Badge variant={order.paymentStatus === "PAID" ? "secondary" : "outline"}>{order.paymentStatus}</Badge>
+                    <Badge variant={order.paymentStatus === "PAID" ? "secondary" : "outline"} className="rounded-md">{order.paymentStatus}</Badge>
                     <p className="text-[10px] text-muted-foreground">{order.paymentOwner}</p>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={order.fulfillmentMode === "MANUAL" ? "outline" : "secondary"}>{order.fulfillmentMode}</Badge>
+                  <Badge variant={order.fulfillmentMode === "MANUAL" ? "outline" : "secondary"} className="rounded-md">{order.fulfillmentMode}</Badge>
                 </TableCell>
                 <TableCell>
                   {editableStatus ? (
@@ -385,7 +385,7 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
                       endpointBase="/api/dashboard/orders"
                     />
                   ) : (
-                    <Badge variant={statusTone(order.status)}>{order.status}</Badge>
+                    <Badge variant={statusTone(order.status)} className="rounded-md">{order.status}</Badge>
                   )}
                 </TableCell>
                 <TableCell>
@@ -404,7 +404,7 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
       </div>
 
       {selectedRows.length > 0 ? (
-        <div className="fixed inset-x-0 bottom-0 z-40 max-w-full border-t bg-background/95 p-3 shadow-lg backdrop-blur md:left-auto md:right-6 md:bottom-6 md:w-[640px] md:rounded-md md:border">
+        <div className="premium-surface fixed inset-x-0 bottom-0 z-40 max-w-full border-t p-3 backdrop-blur md:left-auto md:right-6 md:bottom-6 md:w-[640px] md:rounded-lg md:border">
           <div className="mb-2 flex items-center justify-between gap-3 text-sm">
             <span className="font-semibold">
               {selectedRows.length} selected

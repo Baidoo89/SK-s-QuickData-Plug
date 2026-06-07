@@ -531,8 +531,8 @@ function BundlePricingContent() {
           <MetricCard label="Network Coverage" value={`${networksWithBundles}/${NETWORKS.length}`} description={missingNetworks.length ? `Missing ${missingNetworks.join(", ")}` : "All networks have bundles."} icon={BarChart3} tone={missingNetworks.length ? "warning" : "success"} />
         </div>
 
-        <Card>
-          <CardHeader>
+        <Card className="premium-surface rounded-lg">
+          <CardHeader className="border-b border-border/70 bg-muted/20">
             <CardTitle>Create Pricing Profile</CardTitle>
             <CardDescription>Save a reusable pricing setup with a name and tag.</CardDescription>
           </CardHeader>
@@ -560,8 +560,8 @@ function BundlePricingContent() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
+        <Card className="premium-surface rounded-lg">
+          <CardHeader className="border-b border-border/70 bg-muted/20">
             <CardTitle>Saved Profiles</CardTitle>
             <CardDescription>Select a profile and edit prices by network.</CardDescription>
           </CardHeader>
@@ -603,10 +603,10 @@ function BundlePricingContent() {
             <button
               key={network.id}
               onClick={() => setSelectedNetwork(network.id)}
-              className={`rounded-md border p-4 text-left transition-colors ${
+              className={`rounded-lg border p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 ${
                 selectedNetwork === network.id
-                  ? "border-primary bg-primary/5 shadow-sm"
-                  : "border-border bg-card hover:border-primary/30 hover:bg-muted/40"
+                  ? "border-primary/40 bg-primary/10 shadow-md shadow-primary/10"
+                  : "border-border/75 bg-card/95 hover:border-primary/30 hover:bg-muted/40"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -622,8 +622,8 @@ function BundlePricingContent() {
           ))}
         </div>
 
-        <Card>
-          <CardHeader>
+        <Card className="premium-surface rounded-lg">
+          <CardHeader className="border-b border-border/70 bg-muted/20">
             <CardTitle>{currentNetwork?.name} Profile Prices</CardTitle>
             <CardDescription>These values are what assigned users will be charged.</CardDescription>
           </CardHeader>
@@ -643,7 +643,7 @@ function BundlePricingContent() {
                 className="py-6"
               />
             ) : (
-              <div className="table-scroll rounded-md border bg-background">
+              <div className="ops-table-surface table-scroll rounded-lg">
                 <Table className="min-w-[640px]">
                   <TableHeader>
                     <TableRow>
@@ -725,7 +725,7 @@ function BundlePricingContent() {
         <MetricCard label="Pricing Profiles" value={profiles.length} description="Reusable agent/reseller price lists." icon={Tags} tone="primary" />
       </div>
 
-      <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
+      <Card className="premium-surface overflow-hidden rounded-lg">
         <CardContent className="grid min-w-0 gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="min-w-0">
             <p className="text-sm font-semibold text-foreground">Catalog readiness</p>
@@ -736,18 +736,18 @@ function BundlePricingContent() {
             </p>
           </div>
           <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap">
-            <Badge variant="outline" className="justify-center px-3 py-1">
+            <Badge variant="outline" className="justify-center rounded-md px-3 py-1">
               {currentNetwork?.name}: {networkBundles.length} bundles
             </Badge>
-            <Badge variant="outline" className="justify-center px-3 py-1">
+            <Badge variant="outline" className="justify-center rounded-md px-3 py-1">
               Storefront {formatGhanaCedis(selectedNetworkRetailValue)} / Source {formatGhanaCedis(selectedNetworkBaseValue)}
             </Badge>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
+      <Card className="premium-surface rounded-lg">
+        <CardHeader className="border-b border-border/70 bg-muted/20">
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
             <div>
@@ -757,7 +757,7 @@ function BundlePricingContent() {
           </div>
         </CardHeader>
         <CardContent className="space-y-5">
-          <div className="rounded-md border bg-muted/20 p-4 space-y-4">
+          <div className="space-y-4 rounded-lg border border-border/75 bg-muted/20 p-4 shadow-sm">
             <h3 className="font-semibold flex items-center gap-2">
               <Plus className="w-4 h-4" /> Add Registration Service
             </h3>
@@ -810,7 +810,7 @@ function BundlePricingContent() {
               <p className="text-xs text-muted-foreground">
               Registration services are separate from data orders. Customers provide full name, phone number, Ghana Card number, location, and date of birth, then the request appears under Service Requests after payment.
             </p>
-            <div className="space-y-3 rounded-md border bg-background p-3">
+            <div className="space-y-3 rounded-lg border border-border/75 bg-background/55 p-3 shadow-sm">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-foreground">Service form fields</p>
@@ -822,7 +822,7 @@ function BundlePricingContent() {
               </div>
               <div className="space-y-2">
                 {serviceFields.map((field, index) => (
-                  <div key={field.id} className="grid min-w-0 gap-2 rounded-md border bg-muted/20 p-2 md:grid-cols-[minmax(0,1.1fr)_140px_minmax(0,1fr)_96px_40px] md:items-center">
+                  <div key={field.id} className="grid min-w-0 gap-2 rounded-lg border border-border/75 bg-muted/20 p-2 md:grid-cols-[minmax(0,1.1fr)_140px_minmax(0,1fr)_96px_40px] md:items-center">
                     <Input
                       value={field.label}
                       onChange={(event) => updateServiceField(index, { label: event.target.value })}
@@ -882,7 +882,7 @@ function BundlePricingContent() {
           ) : (
             <div className="grid gap-3 lg:grid-cols-2">
               {registrationServices.map((service) => (
-                <div key={service.id} className="rounded-md border bg-background p-3 text-sm">
+                  <div key={service.id} className="rounded-lg border border-border/75 bg-background/55 p-3 text-sm shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/25">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate font-semibold">{service.name}</p>
@@ -927,10 +927,10 @@ function BundlePricingContent() {
           <button
             key={network.id}
             onClick={() => setSelectedNetwork(network.id)}
-          className={`rounded-md border p-4 text-left transition-colors ${
+          className={`rounded-lg border p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 ${
             selectedNetwork === network.id
-              ? "border-primary bg-primary/5 shadow-sm"
-              : "border-border bg-card hover:border-primary/30 hover:bg-muted/40"
+              ? "border-primary/40 bg-primary/10 shadow-md shadow-primary/10"
+              : "border-border/75 bg-card/95 hover:border-primary/30 hover:bg-muted/40"
           }`}
         >
             <div className="flex items-center gap-3">
@@ -945,8 +945,8 @@ function BundlePricingContent() {
       </div>
 
       {/* Bundle Management */}
-      <Card>
-        <CardHeader>
+      <Card className="premium-surface rounded-lg">
+        <CardHeader className="border-b border-border/70 bg-muted/20">
           <div className="flex items-center gap-2">
             {NetworkLogo && <NetworkLogo className="w-6 h-6" />}
             <div>
@@ -957,7 +957,7 @@ function BundlePricingContent() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Add New Bundle Form */}
-          <div className="rounded-md border bg-muted/20 p-4 space-y-4">
+          <div className="space-y-4 rounded-lg border border-border/75 bg-muted/20 p-4 shadow-sm">
             <h3 className="font-semibold flex items-center gap-2">
               <Plus className="w-4 h-4" /> Add New Bundle
             </h3>
@@ -1000,7 +1000,7 @@ function BundlePricingContent() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">Source cost is your provider cost. Subscriber buy price is what you pay in your dashboard. Storefront price is what public customers pay.</p>
-            <div className="rounded-md border bg-background px-3 py-2 text-xs text-muted-foreground">
+            <div className="rounded-lg border border-border/75 bg-background/55 px-3 py-2 text-xs text-muted-foreground">
               Recommended: create MTN, Telecel, and AirtelTigo bundles with matching sizes, then use pricing profiles only when agents or resellers need special prices.
             </div>
           </div>
@@ -1020,7 +1020,7 @@ function BundlePricingContent() {
           ) : (
             <div className="space-y-3">
               <h3 className="font-semibold text-sm">Current Bundles ({networkBundles.length})</h3>
-              <div className="table-scroll rounded-md border bg-background">
+              <div className="ops-table-surface table-scroll rounded-lg">
                 <Table className="min-w-[980px]">
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
@@ -1036,7 +1036,7 @@ function BundlePricingContent() {
                   </TableHeader>
                   <TableBody>
                     {networkBundles.map(bundle => (
-                      <TableRow key={bundle.id} className="hover:bg-muted/50">
+                      <TableRow key={bundle.id}>
                         <TableCell className="font-medium">
                           <Input
                             defaultValue={bundle.name}

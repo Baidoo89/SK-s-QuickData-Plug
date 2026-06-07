@@ -285,4 +285,31 @@
       linear-gradient(135deg, hsl(var(--primary) / 0.05), hsl(var(--success) / 0.035));
     box-shadow: 0 18px 48px hsl(224 35% 3% / 0.2);
   }
+
+  .ops-table-surface {
+    border: 1px solid hsl(var(--border) / 0.78);
+    background: hsl(var(--background) / 0.72);
+    box-shadow: 0 14px 38px hsl(224 35% 3% / 0.18);
+  }
+
+  .ops-table-surface thead {
+    background:
+      linear-gradient(180deg, hsl(var(--muted) / 0.58), hsl(var(--muted) / 0.34));
+  }
+
+  .ops-table-surface th {
+    color: hsl(var(--muted-foreground));
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+
+  .ops-table-surface tbody tr {
+    border-color: hsl(var(--border) / 0.62);
+  }
+
+  .ops-table-surface tbody tr:hover {
+    background: hsl(var(--muted) / 0.26);
+  }
 }
