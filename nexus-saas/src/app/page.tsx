@@ -7,46 +7,52 @@ import { Button } from "@/components/ui/button"
 const features = [
   {
     title: "Branded storefronts",
-    description: "Give every subscriber, agent, and reseller a clean customer checkout link for data bundles and service requests.",
+    description: "Give every subscriber, agent, and reseller a clean checkout link for data bundles and service requests.",
     icon: Store,
   },
   {
-    title: "Agent and reseller hierarchy",
-    description: "Keep pricing, approvals, orders, customers, and wallet activity organized under the correct business owner.",
+    title: "Hierarchy controls",
+    description: "Keep subscribers, agents, resellers, pricing, approvals, customers, and earnings in the right chain.",
     icon: UsersRound,
   },
   {
     title: "Subscriber-owned payments",
-    description: "Connect each subscriber's Paystack so customer collections go directly to the business that owns the storefront.",
+    description: "Connect each subscriber's own Paystack so storefront revenue goes directly to the business owner.",
     icon: CreditCard,
   },
   {
-    title: "Manual fulfillment control",
-    description: "Use a clean order workspace for picking, copying, processing, and updating orders across MTN, Telecel, and AirtelTigo.",
+    title: "Manual and API fulfillment",
+    description: "Route orders by network, copy pending batches, dispatch through API, or process manually when needed.",
     icon: Layers3,
   },
 ]
 
+const rows = [
+  ["MTN 10GB", "0557581711", "Pending", "Manual"],
+  ["Telecel 5GB", "0502334421", "Processing", "API"],
+  ["AT 2GB", "0274119028", "Paid", "Queue"],
+]
+
 const steps = [
-  "Create a subscriber workspace and connect Paystack.",
-  "Add products, services, base prices, and storefront prices.",
-  "Invite agents and resellers with verified signup links.",
-  "Receive paid storefront orders and fulfill them from the order workspace.",
+  "Create a subscriber workspace and approve the account.",
+  "Connect Paystack, products, prices, and storefront links.",
+  "Invite agents and resellers with controlled pricing.",
+  "Receive paid orders and fulfill them from one operations workspace.",
 ]
 
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-background pt-16 text-foreground">
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-border/70 bg-background/85 backdrop-blur-md">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2 font-semibold text-foreground" aria-label="TechDalt home">
-            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-sm font-black text-primary-foreground">
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-border/75 bg-background/88 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+          <Link href="/" className="flex min-w-0 items-center gap-2 font-semibold text-foreground" aria-label="TechDalt home">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/15 text-sm font-black text-primary shadow-sm">
               TD
             </span>
-            <span>TechDalt</span>
+            <span className="truncate text-sm sm:text-base">TechDalt</span>
           </Link>
-          <nav className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" asChild>
+          <nav className="flex shrink-0 items-center gap-2">
+            <Button variant="ghost" size="sm" className="hidden sm:inline-flex" asChild>
               <Link href="/pricing">Pricing</Link>
             </Button>
             <Button variant="outline" size="sm" asChild>
@@ -59,18 +65,18 @@ export default function HomePage() {
         </div>
       </header>
 
-      <section className="border-b border-border/70">
-        <div className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.02fr_0.98fr] lg:py-16">
+      <section className="border-b border-border/75">
+        <div className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:py-14">
           <div className="max-w-2xl space-y-6">
-            <Badge variant="outline" className="rounded-md">
+            <Badge variant="outline" className="w-fit rounded-md border-primary/30 bg-primary/10 px-3 py-1 text-primary">
               VTU SaaS for Ghanaian data sellers
             </Badge>
             <div className="space-y-4">
-              <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-                TechDalt
+              <h1 className="text-4xl font-extrabold leading-tight tracking-normal text-foreground sm:text-5xl lg:text-6xl">
+                Run a cleaner data bundle business with TechDalt.
               </h1>
-              <p className="max-w-xl text-lg leading-8 text-muted-foreground">
-                Launch a branded data bundle storefront, manage subscribers, agents, resellers, wallets, customer payments, and manual fulfillment from one clean SaaS platform.
+              <p className="max-w-xl text-base leading-8 text-muted-foreground sm:text-lg">
+                Manage subscribers, agents, resellers, storefront checkout, Paystack payments, wallets, API dispatch, and manual fulfillment from one controlled SaaS workspace.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -90,38 +96,66 @@ export default function HomePage() {
                 Superadmin controlled
               </p>
               <p className="flex items-center gap-2">
-                <WalletCards className="h-4 w-4 text-primary" />
+                <WalletCards className="h-4 w-4 text-success" />
                 Wallet separated
               </p>
               <p className="flex items-center gap-2">
-                <BadgeCheck className="h-4 w-4 text-primary" />
+                <BadgeCheck className="h-4 w-4 text-warning" />
                 Paystack ready
               </p>
             </div>
           </div>
 
-          <div className="rounded-md border border-border bg-card/95 shadow-2xl shadow-black/20">
-            <div className="border-b border-border bg-muted/35 px-5 py-4">
-              <p className="text-sm font-semibold text-foreground">Operations snapshot</p>
-              <p className="text-xs text-muted-foreground">A practical workspace for storefront orders and reseller activity.</p>
-            </div>
-            <div className="space-y-4 p-5">
-              {[
-                ["Storefront payments", "Subscriber Paystack", "Ready"],
-                ["Manual order queue", "MTN / Telecel / AT", "Active"],
-                ["Agent pricing", "Profiles + overrides", "Controlled"],
-                ["Reseller earnings", "Profit withdrawals", "Tracked"],
-              ].map(([label, detail, status]) => (
-                <div key={label} className="grid grid-cols-[1fr_auto] gap-3 rounded-md border border-border bg-background/55 p-4">
-                  <div>
-                    <p className="font-medium text-foreground">{label}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{detail}</p>
-                  </div>
-                  <span className="h-fit rounded-md border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-                    {status}
-                  </span>
+          <div className="premium-surface overflow-hidden rounded-lg">
+            <div className="border-b border-border/75 bg-muted/30 px-5 py-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Orders workspace</p>
+                  <p className="text-xs text-muted-foreground">Paid storefront orders ready for fulfillment.</p>
                 </div>
-              ))}
+                <Badge variant="outline" className="rounded-md border-success/30 bg-success/10 text-success">
+                  Live
+                </Badge>
+              </div>
+            </div>
+            <div className="grid gap-4 p-4 sm:p-5">
+              <div className="grid gap-3 sm:grid-cols-3">
+                {[
+                  ["Revenue", "GHS 4,280", "Today"],
+                  ["Pending", "18", "To pick"],
+                  ["API health", "Ready", "SKDataPlug"],
+                ].map(([label, value, detail]) => (
+                  <div key={label} className="rounded-lg border border-border/70 bg-background/55 p-4">
+                    <p className="text-[11px] font-bold uppercase text-muted-foreground">{label}</p>
+                    <p className="mt-2 text-xl font-extrabold text-foreground">{value}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="overflow-hidden rounded-lg border border-border/75">
+                <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-3 border-b border-border/75 bg-muted/35 px-4 py-3 text-[11px] font-bold uppercase text-muted-foreground">
+                  <span>Bundle</span>
+                  <span>Number</span>
+                  <span>Status</span>
+                  <span>Route</span>
+                </div>
+                {rows.map(([bundle, phone, status, route]) => (
+                  <div key={`${bundle}-${phone}`} className="grid grid-cols-[1fr_1fr_auto_auto] gap-3 border-b border-border/50 px-4 py-3 text-xs last:border-b-0">
+                    <span className="font-semibold text-foreground">{bundle}</span>
+                    <span className="text-muted-foreground">{phone}</span>
+                    <span className="rounded-md border border-primary/25 bg-primary/10 px-2 py-1 text-primary">{status}</span>
+                    <span className="rounded-md border border-border bg-background/70 px-2 py-1 text-muted-foreground">{route}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-lg border border-success/25 bg-success/10 p-4 text-sm text-success">
+                  Subscriber payments settle through each seller's own Paystack account.
+                </div>
+                <div className="rounded-lg border border-warning/25 bg-warning/10 p-4 text-sm text-warning">
+                  Manual fallback keeps orders operational when a provider API is paused.
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -129,19 +163,21 @@ export default function HomePage() {
 
       <section className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6">
         <div className="max-w-2xl space-y-3">
-          <p className="text-sm font-semibold uppercase tracking-wide text-primary">Built for operator-led launch</p>
-          <h2 className="text-3xl font-bold tracking-tight">Everything a VTU SaaS owner needs to control the platform.</h2>
-          <p className="text-muted-foreground">
-            TechDalt keeps software billing separate from seller wallets, while giving each business the storefront and operations tools needed to sell professionally.
+          <p className="text-sm font-bold uppercase text-primary">Built for operator-led launch</p>
+          <h2 className="text-3xl font-extrabold tracking-normal">Everything a VTU SaaS owner needs to control the platform.</h2>
+          <p className="leading-7 text-muted-foreground">
+            TechDalt keeps SaaS subscription billing separate from seller wallets while giving each business the storefront and operations tools needed to sell professionally.
           </p>
         </div>
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           {features.map((feature) => {
             const Icon = feature.icon
             return (
-              <article key={feature.title} className="rounded-md border border-border bg-card/90 p-5">
-                <Icon className="h-5 w-5 text-primary" />
-                <h3 className="mt-4 text-lg font-semibold">{feature.title}</h3>
+              <article key={feature.title} className="premium-surface rounded-lg p-5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-primary/25 bg-primary/10 text-primary">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="mt-4 text-lg font-bold">{feature.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{feature.description}</p>
               </article>
             )
@@ -149,19 +185,19 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="border-y border-border/70 bg-muted/20">
+      <section className="border-y border-border/75 bg-muted/15">
         <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.8fr_1.2fr]">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-primary">How it works</p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight">From setup to paid customer orders.</h2>
+            <p className="text-sm font-bold uppercase text-primary">How it works</p>
+            <h2 className="mt-3 text-3xl font-extrabold tracking-normal">From setup to paid customer orders.</h2>
           </div>
           <div className="grid gap-3">
             {steps.map((step, index) => (
-              <div key={step} className="flex gap-4 rounded-md border border-border bg-card/90 p-4">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-sm font-bold text-primary">
+              <div key={step} className="premium-surface flex gap-4 rounded-lg p-4">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-bold text-primary">
                   {index + 1}
                 </span>
-                <p className="pt-1 text-sm text-muted-foreground">{step}</p>
+                <p className="pt-1 text-sm leading-6 text-muted-foreground">{step}</p>
               </div>
             ))}
           </div>
@@ -170,8 +206,8 @@ export default function HomePage() {
 
       <section className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-14 sm:px-6 md:flex-row md:items-center md:justify-between">
         <div className="max-w-2xl">
-          <h2 className="text-3xl font-bold tracking-tight">Ready to test TechDalt?</h2>
-          <p className="mt-2 text-muted-foreground">
+          <h2 className="text-3xl font-extrabold tracking-normal">Ready to test TechDalt?</h2>
+          <p className="mt-2 leading-7 text-muted-foreground">
             Create a workspace, connect payments, configure products, and start with a clean storefront link.
           </p>
         </div>
