@@ -87,27 +87,27 @@ export default function AgentStorefrontPricingPage() {
       </div>
 
       <div className="grid min-w-0 gap-4 md:grid-cols-3">
-        <Card className="border-primary/20 bg-primary/5">
-          <CardHeader className="pb-2">
+        <Card className="premium-surface overflow-hidden rounded-lg border-primary/20 bg-primary/5">
+          <CardHeader className="border-b border-primary/10 bg-primary/5 pb-2">
             <CardTitle className="flex items-center gap-2 text-sm"><Store className="h-4 w-4" /> Pricing rule</CardTitle>
           </CardHeader>
           <CardContent className="text-xs text-muted-foreground">Customer price must be equal to or above your buy price. Profit is customer price minus buy price.</CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground">Catalog Items</CardTitle></CardHeader>
+        <Card className="premium-surface overflow-hidden rounded-lg">
+          <CardHeader className="border-b border-border/70 bg-muted/20 pb-2"><CardTitle className="text-xs text-muted-foreground">Catalog Items</CardTitle></CardHeader>
           <CardContent>
             <p className="text-xl font-semibold">{products.length}</p>
             <p className="text-xs text-muted-foreground">{serviceCount} service item{serviceCount === 1 ? "" : "s"}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground">Average profit/order</CardTitle></CardHeader>
+        <Card className="premium-surface overflow-hidden rounded-lg">
+          <CardHeader className="border-b border-border/70 bg-muted/20 pb-2"><CardTitle className="text-xs text-muted-foreground">Average profit/order</CardTitle></CardHeader>
           <CardContent><p className="text-xl font-semibold">{formatGhanaCedis(averageProfit)}</p></CardContent>
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
+      <Card className="premium-surface overflow-hidden rounded-lg">
+        <CardHeader className="border-b border-border/70 bg-muted/20">
           <CardTitle className="text-sm font-semibold">Customer-facing prices</CardTitle>
           <CardDescription className="text-xs">These prices are used only by your public storefront link.</CardDescription>
           <div className="table-scroll flex gap-2 pt-2">
@@ -119,7 +119,7 @@ export default function AgentStorefrontPricingPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           {filteredProducts.map((product) => (
-            <div key={product.id} className="grid min-w-0 gap-3 rounded-md border bg-background p-3 md:grid-cols-[minmax(0,1fr)_130px_160px_120px] md:items-center">
+            <div key={product.id} className="grid min-w-0 gap-3 rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm md:grid-cols-[minmax(0,1fr)_130px_160px_120px] md:items-center">
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold">{product.name}</p>
                 <p className="text-xs text-muted-foreground">{product.provider} · {formatCategory(product.category)}</p>

@@ -72,8 +72,8 @@ export function ApiAccessRequestCard({ roleLabel }: { roleLabel: "Agent" | "Rese
   const status = state?.status || "NOT_REQUESTED"
 
   return (
-    <Card className="border border-border bg-card/95">
-      <CardHeader>
+    <Card className="premium-surface overflow-hidden rounded-lg">
+      <CardHeader className="border-b border-border/70 bg-muted/20">
         <CardTitle className="flex items-center gap-2 text-base">
           <KeyRound className="h-4 w-4 text-primary" />
           External API Access
@@ -83,7 +83,7 @@ export function ApiAccessRequestCard({ roleLabel }: { roleLabel: "Agent" | "Rese
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-background px-3 py-2 text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/70 bg-background/80 px-3 py-2 text-sm shadow-sm">
           <div>
             <p className="text-xs text-muted-foreground">Status</p>
             <p className="font-semibold">{loading ? "Loading" : status.replaceAll("_", " ")}</p>
@@ -97,7 +97,7 @@ export function ApiAccessRequestCard({ roleLabel }: { roleLabel: "Agent" | "Rese
 
         {state?.issuedApiKey ? (
           <div className="space-y-2">
-            <p className="break-all rounded-md border bg-muted/40 px-3 py-2 font-mono text-xs">
+            <p className="break-all rounded-lg border border-border/70 bg-muted/40 px-3 py-2 font-mono text-xs shadow-sm">
               {state.issuedApiKey}
             </p>
             <Button type="button" size="sm" onClick={copyKey}>

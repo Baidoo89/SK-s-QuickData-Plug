@@ -227,8 +227,8 @@ export default function AgentsPage() {
             Onboard agents, send invite links that show your business clearly, share storefront links, and control commission and prices from one place.
           </p>
         </div>
-        <Card className="w-full max-w-md">
-          <CardHeader className="pb-2">
+        <Card className="premium-surface w-full max-w-md overflow-hidden rounded-lg">
+          <CardHeader className="border-b border-border/70 bg-muted/20 pb-2">
             <CardTitle className="text-sm font-medium">Add new agent</CardTitle>
             <CardDescription className="text-xs">
               The invite opens on TechDalt, but the signup page tells the agent they are joining your business. They verify email first, then you approve access.
@@ -308,8 +308,8 @@ export default function AgentsPage() {
 
       {/* Main layout: left = agents & stats, right = pricing */}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)]">
-        <Card className="overflow-hidden">
-          <CardHeader className="space-y-2 border-b bg-muted/40">
+        <Card className="premium-surface overflow-hidden rounded-lg">
+          <CardHeader className="space-y-2 border-b border-border/70 bg-muted/20">
             <div className="flex items-center justify-between gap-2">
               <div>
                 <CardTitle className="text-sm font-semibold">Agents</CardTitle>
@@ -399,7 +399,7 @@ export default function AgentsPage() {
                       key={agent.id}
                       type="button"
                       onClick={() => router.push(`/dashboard/agents/${agent.id}`)}
-                    className="flex w-full items-center justify-between gap-3 rounded-md border border-border bg-background/70 px-3 py-3 text-left text-xs transition-colors hover:border-primary/30 hover:bg-muted/60"
+                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-border/70 bg-background/80 px-3 py-3 text-left text-xs shadow-sm transition-colors hover:border-primary/30 hover:bg-muted/60"
                     >
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-foreground">{agent.name}</p>
@@ -428,8 +428,8 @@ export default function AgentsPage() {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden">
-          <CardHeader>
+        <Card className="premium-surface overflow-hidden rounded-lg">
+          <CardHeader className="border-b border-border/70 bg-muted/20">
             <CardTitle className="text-sm font-semibold">Pricing overrides</CardTitle>
             <CardDescription className="text-xs">
               Manage overrides from an agent&apos;s detail page where the network-specific table is easier to review.

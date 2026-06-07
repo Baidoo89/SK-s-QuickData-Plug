@@ -88,23 +88,23 @@ export default async function DashboardApprovalsPage() {
           </p>
         </div>
         <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[420px]">
-          <div className="rounded-md border bg-background px-3 py-2 text-sm">
+          <div className="rounded-lg border border-border/70 bg-background/80 px-3 py-2 text-sm shadow-sm">
             <p className="text-xs text-muted-foreground">Pending</p>
             <p className="font-semibold">{pendingAgents.length}</p>
           </div>
-          <div className="rounded-md border bg-background px-3 py-2 text-sm">
+          <div className="rounded-lg border border-border/70 bg-background/80 px-3 py-2 text-sm shadow-sm">
             <p className="text-xs text-muted-foreground">Email verified</p>
             <p className="font-semibold">{pendingAgents.filter((user) => user.emailVerified).length}</p>
           </div>
-          <div className="rounded-md border bg-background px-3 py-2 text-sm">
+          <div className="rounded-lg border border-border/70 bg-background/80 px-3 py-2 text-sm shadow-sm">
             <p className="text-xs text-muted-foreground">Phone verified</p>
             <p className="font-semibold">{pendingAgents.filter((user) => user.phoneVerified).length}</p>
           </div>
         </div>
       </div>
 
-      <Card className="border border-border bg-card/95">
-        <CardHeader>
+      <Card className="premium-surface overflow-hidden rounded-lg">
+        <CardHeader className="border-b border-border/70 bg-muted/20">
           <CardTitle className="flex items-center justify-between text-base">
             Pending agents
             <Badge variant="secondary">{pendingAgents.length}</Badge>
@@ -142,21 +142,21 @@ export default async function DashboardApprovalsPage() {
                       </p>
                       <p className="mt-1">{agentUser.emailVerified ? "Verified" : "Not verified yet"}</p>
                     </div>
-                    <div className={agentUser.phoneVerified ? "status-success rounded-md border px-3 py-2" : "rounded-md border bg-muted/30 px-3 py-2 text-muted-foreground"}>
+                    <div className={agentUser.phoneVerified ? "status-success rounded-md border px-3 py-2" : "rounded-md border border-border/70 bg-muted/30 px-3 py-2 text-muted-foreground"}>
                       <p className="flex items-center gap-1 font-semibold">
                         <Phone className="h-3.5 w-3.5" />
                         Phone
                       </p>
                       <p className="mt-1">{agentUser.phoneNumber ? agentUser.phoneNumber : "Not provided"}{agentUser.phoneVerified ? " verified" : ""}</p>
                     </div>
-                    <div className="rounded-md border bg-muted/30 px-3 py-2 text-muted-foreground">
+                    <div className="rounded-md border border-border/70 bg-muted/30 px-3 py-2 text-muted-foreground">
                       <p className="flex items-center gap-1 font-semibold">
                         <ShieldCheck className="h-3.5 w-3.5" />
                         Organization
                       </p>
                       <p className="mt-1 truncate">{agentUser.organization?.name ?? "No organization"}</p>
                     </div>
-                    <div className="rounded-md border bg-muted/30 px-3 py-2 text-muted-foreground">
+                    <div className="rounded-md border border-border/70 bg-muted/30 px-3 py-2 text-muted-foreground">
                       <p className="flex items-center gap-1 font-semibold">
                         <Mail className="h-3.5 w-3.5" />
                         Requested
@@ -186,8 +186,8 @@ export default async function DashboardApprovalsPage() {
         </CardContent>
       </Card>
 
-      <Card className="border border-border bg-card/95">
-        <CardHeader>
+      <Card className="premium-surface overflow-hidden rounded-lg">
+        <CardHeader className="border-b border-border/70 bg-muted/20">
           <CardTitle className="flex items-center justify-between text-base">
             Agent API access
             <Badge variant="secondary">{pendingApiRequests.length}</Badge>

@@ -244,7 +244,7 @@ export default async function DashboardUsersPage({
     });
 
   return (
-    <div className="flex flex-col gap-6 px-4 py-6 md:gap-10 md:p-8">
+    <div className="portal-page flex flex-col gap-6 md:gap-8">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold mb-1">All Users</h1>
         <p className="text-muted-foreground max-w-xl">
@@ -258,8 +258,8 @@ export default async function DashboardUsersPage({
         <MetricCard label="Resellers" value={countByRole.RESELLER ?? 0} description="Reseller accounts connected to agents" icon={UserCheck} tone="success" />
       </div>
 
-      <Card className="hover:shadow-lg transition-shadow overflow-hidden">
-        <CardHeader>
+      <Card className="premium-surface overflow-hidden rounded-lg">
+        <CardHeader className="border-b border-border/70 bg-muted/20">
           <CardTitle>User Directory</CardTitle>
           <CardDescription>
             All internal users under this subscriber account.
@@ -305,7 +305,7 @@ export default async function DashboardUsersPage({
                 const profileOptions = profiles.filter((p) => p.targetRole === "BOTH" || p.targetRole === u.role)
                 const roleCanAssign = u.role === "AGENT" || u.role === "RESELLER"
                 return (
-                  <div key={u.id} className="rounded-md border bg-background p-3 text-sm">
+                  <div key={u.id} className="rounded-lg border border-border/70 bg-background/80 p-3 text-sm shadow-sm">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="truncate font-semibold">{u.name ?? "Unnamed"}</p>
@@ -366,7 +366,7 @@ export default async function DashboardUsersPage({
             )}
           </div>
 
-          <div className="table-scroll hidden rounded-md border bg-background xl:block">
+          <div className="ops-table-surface table-scroll hidden rounded-lg xl:block">
           <Table className="min-w-[760px] text-sm">
             <TableHeader>
               <TableRow>

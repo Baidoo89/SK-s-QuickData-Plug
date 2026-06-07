@@ -58,9 +58,9 @@ function VerifyEmailCard() {
   const Icon = status === "success" ? CheckCircle2 : status === "error" ? XCircle : Loader2
 
   return (
-    <Card className="w-full border border-border/80 bg-card/95 shadow-xl backdrop-blur-xl">
-      <CardHeader className="text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-md bg-primary/10 text-primary">
+    <Card className="premium-surface w-full overflow-hidden rounded-lg backdrop-blur-xl">
+      <CardHeader className="border-b border-border/70 bg-muted/20 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary shadow-sm">
           <Icon className={status === "loading" ? "h-6 w-6 animate-spin" : "h-6 w-6"} />
         </div>
         <CardTitle>Verify your TechDalt email</CardTitle>
@@ -80,7 +80,7 @@ function VerifyEmailCard() {
 
 export default function VerifyEmailPage() {
   return (
-    <Suspense fallback={<Card className="w-full max-w-sm"><CardHeader><CardTitle>Email verification</CardTitle><CardDescription>Loading...</CardDescription></CardHeader></Card>}>
+    <Suspense fallback={<Card className="premium-surface w-full max-w-sm rounded-lg"><CardHeader><CardTitle>Email verification</CardTitle><CardDescription>Loading...</CardDescription></CardHeader></Card>}>
       <VerifyEmailCard />
     </Suspense>
   )

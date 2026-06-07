@@ -99,8 +99,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <Card className="min-w-0 w-full overflow-hidden border border-border/80 bg-card/95 shadow-xl backdrop-blur-xl">
-        <CardHeader className="space-y-1">
+    <Card className="premium-surface min-w-0 w-full overflow-hidden rounded-lg backdrop-blur-xl">
+        <CardHeader className="space-y-1 border-b border-border/70 bg-muted/20">
           <CardTitle className="text-2xl font-bold">Create your TechDalt workspace</CardTitle>
           <CardDescription>
             Start as the organization owner. You will verify your email, choose a plan, then invite agents and resellers from your dashboard.
@@ -108,7 +108,7 @@ export default function RegisterPage() {
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
-            <div className="rounded-md border border-primary/30 bg-primary/10 p-3 text-sm text-foreground">
+            <div className="rounded-lg border border-primary/30 bg-primary/10 p-3 text-sm text-foreground shadow-sm">
               <p className="flex items-center gap-2 font-semibold">
                 <Building2 className="h-4 w-4 text-primary" />
                 New business workspace
@@ -129,7 +129,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div className="flex gap-3 rounded-md border border-info/30 bg-info/10 px-3 py-2 text-xs text-info-foreground">
+            <div className="flex gap-3 rounded-lg border border-info/30 bg-info/10 px-3 py-2 text-xs text-info-foreground shadow-sm">
               <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <p>Joining an existing subscriber or agent? Use the invite link they sent you. Public signup creates a separate business workspace.</p>
             </div>

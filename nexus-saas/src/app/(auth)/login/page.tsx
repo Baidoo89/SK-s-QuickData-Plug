@@ -114,15 +114,15 @@ export default function LoginPage() {
   }
 
   return (
-    <Card className="min-w-0 w-full overflow-hidden border border-border/80 bg-card/95 shadow-xl backdrop-blur-xl">
-      <CardHeader className="space-y-1">
+    <Card className="premium-surface min-w-0 w-full overflow-hidden rounded-lg backdrop-blur-xl">
+      <CardHeader className="space-y-1 border-b border-border/70 bg-muted/20">
         <CardTitle className="text-center text-2xl font-bold">Sign in to TechDalt</CardTitle>
         <CardDescription className="text-center">
           Access the right portal for your role.
         </CardDescription>
       </CardHeader>
       {verifyRequiredNotice ? (
-        <div className="mx-6 mb-4 space-y-2 rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-sm">
+        <div className="mx-6 mb-4 space-y-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm shadow-sm">
           <p>Check your email and verify your account before signing in.</p>
           <Button type="button" size="sm" variant="outline" className="h-8 bg-background text-xs" onClick={handleResendVerification} disabled={isResendingVerification}>
             {isResendingVerification ? "Sending..." : "Resend verification email"}

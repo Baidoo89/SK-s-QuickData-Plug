@@ -71,8 +71,8 @@ function NewPasswordForm() {
   }
 
   return (
-    <Card className="w-full border border-border/80 bg-card/95 shadow-xl backdrop-blur-xl">
-      <CardHeader>
+    <Card className="premium-surface w-full overflow-hidden rounded-lg backdrop-blur-xl">
+      <CardHeader className="border-b border-border/70 bg-muted/20">
         <CardTitle className="text-2xl">Set a new TechDalt password</CardTitle>
         <CardDescription>
           Enter your new password below.
@@ -121,7 +121,7 @@ function NewPasswordForm() {
 
 export default function NewPasswordPage() {
   return (
-    <Suspense fallback={<Card className="w-full max-w-sm bg-[hsl(var(--blue-ice))]/80 backdrop-blur-xl border-[hsl(var(--blue-ice))]/40 shadow-lg"><CardHeader><CardTitle className="text-2xl">Reset Password</CardTitle><CardDescription>Loading…</CardDescription></CardHeader></Card>}>
+    <Suspense fallback={<Card className="premium-surface w-full max-w-sm rounded-lg backdrop-blur-xl"><CardHeader><CardTitle className="text-2xl">Reset Password</CardTitle><CardDescription>Loading...</CardDescription></CardHeader></Card>}>
       <NewPasswordForm />
     </Suspense>
   )

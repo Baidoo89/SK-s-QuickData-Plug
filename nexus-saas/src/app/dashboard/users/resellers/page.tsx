@@ -85,7 +85,7 @@ export default async function ResellersPage() {
   const totalOrders = Array.from(ordersByUserId.values()).reduce((sum, count) => sum + count, 0);
 
   return (
-    <div className="flex flex-col gap-6 px-4 py-6 md:gap-10 md:p-8">
+    <div className="portal-page flex flex-col gap-6 md:gap-8">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold mb-1">Resellers</h1>
@@ -102,8 +102,8 @@ export default async function ResellersPage() {
         <MetricCard label="Orders" value={totalOrders} description="Orders placed by reseller accounts" icon={ShoppingCart} tone="info" />
       </div>
 
-      <Card className="hover:shadow-lg transition-shadow overflow-hidden">
-        <CardHeader>
+      <Card className="premium-surface overflow-hidden rounded-lg">
+        <CardHeader className="border-b border-border/70 bg-muted/20">
           <CardTitle>Reseller Directory</CardTitle>
           <CardDescription>
             All users with the RESELLER role in this organization.
@@ -117,7 +117,7 @@ export default async function ResellersPage() {
               const resellerVolume = volumeByUserId.get(r.id) ?? 0;
               const approved = r.signupStatus === "APPROVED" && r.active;
               return (
-                <div key={r.id} className="rounded-md border bg-background p-3 text-sm">
+                <div key={r.id} className="rounded-lg border border-border/70 bg-background/80 p-3 text-sm shadow-sm">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate font-semibold">{r.name ?? "Unnamed"}</p>
@@ -155,7 +155,7 @@ export default async function ResellersPage() {
             )}
           </div>
 
-          <div className="table-scroll hidden rounded-md border bg-background xl:block">
+          <div className="ops-table-surface table-scroll hidden rounded-lg xl:block">
           <Table className="min-w-[720px] text-sm">
             <TableHeader>
               <TableRow>

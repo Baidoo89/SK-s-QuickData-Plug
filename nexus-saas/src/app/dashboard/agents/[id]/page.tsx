@@ -487,7 +487,7 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
               })}
             </div>
 
-            <div className="table-scroll hidden rounded-md border bg-background xl:block">
+            <div className="ops-table-surface table-scroll hidden rounded-lg xl:block">
             <Table className="min-w-[720px] text-xs">
               <TableHeader>
                 <TableRow>

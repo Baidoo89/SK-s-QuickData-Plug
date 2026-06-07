@@ -57,9 +57,9 @@ function SignupSuccessCard() {
   const Icon = content.icon
 
   return (
-    <Card className="w-full border border-border/80 bg-card/95 shadow-xl backdrop-blur-xl">
-      <CardHeader className="space-y-3 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-md bg-primary/10 text-primary">
+    <Card className="premium-surface w-full overflow-hidden rounded-lg backdrop-blur-xl">
+      <CardHeader className="space-y-3 border-b border-border/70 bg-muted/20 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary shadow-sm">
           <Icon className="h-6 w-6" />
         </div>
         <div>
@@ -74,15 +74,15 @@ function SignupSuccessCard() {
         </div>
         <div className="space-y-2">
           {content.steps.map((step, index) => (
-            <div key={step} className="flex gap-3 rounded-md border bg-background px-3 py-2 text-sm">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary/10 text-xs font-semibold text-primary">
+            <div key={step} className="flex gap-3 rounded-lg border border-border/70 bg-background/80 px-3 py-2 text-sm shadow-sm">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary/10 text-xs font-semibold text-primary">
                 {index + 1}
               </div>
               <p className="text-muted-foreground">{step}</p>
             </div>
           ))}
         </div>
-        <div className="flex items-start gap-2 rounded-md bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+        <div className="flex items-start gap-2 rounded-lg border border-border/70 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
           <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <p>Subscription is separate from account creation. It unlocks selling; it does not replace wallet funds.</p>
         </div>
@@ -104,7 +104,7 @@ function SignupSuccessCard() {
 
 export default function RegisterSuccessPage() {
   return (
-    <Suspense fallback={<Card className="w-full max-w-lg"><CardHeader><CardTitle>Account created</CardTitle><CardDescription>Loading...</CardDescription></CardHeader></Card>}>
+    <Suspense fallback={<Card className="premium-surface w-full max-w-lg rounded-lg"><CardHeader><CardTitle>Account created</CardTitle><CardDescription>Loading...</CardDescription></CardHeader></Card>}>
       <SignupSuccessCard />
     </Suspense>
   )

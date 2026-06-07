@@ -45,8 +45,8 @@ export default function ResetPage() {
   }
 
   return (
-    <Card className="w-full border border-border/80 bg-card/95 shadow-xl backdrop-blur-xl">
-      <CardHeader>
+    <Card className="premium-surface w-full overflow-hidden rounded-lg backdrop-blur-xl">
+      <CardHeader className="border-b border-border/70 bg-muted/20">
         <CardTitle className="text-2xl">Reset your TechDalt password</CardTitle>
         <CardDescription>
           Enter your email below. If the account exists, we will send a reset link.
