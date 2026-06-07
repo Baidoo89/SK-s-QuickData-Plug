@@ -199,7 +199,7 @@ export default function ResellerBuySinglePage() {
         ) : null}
 
         {/* Main Card */}
-        <Card className="overflow-hidden border border-border bg-card/95 shadow-md">
+        <Card className="premium-surface overflow-hidden rounded-lg">
           <CardHeader className="border-b bg-muted/20">
             <CardTitle className="text-base text-foreground">Single purchase</CardTitle>
           </CardHeader>

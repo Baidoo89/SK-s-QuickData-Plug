@@ -191,7 +191,7 @@ export default async function ServiceRequestsPage({
         </form>
       </div>
 
-      <Card className="border border-border bg-card/95 shadow-sm">
+      <Card className="premium-surface overflow-hidden rounded-lg">
         <CardContent className="space-y-3 p-4">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -227,7 +227,7 @@ export default async function ServiceRequestsPage({
         <MetricCard label="Visible Revenue" value={formatGhanaCedis(totalRevenue)} description="Service checkout value" icon={FileText} tone="info" />
       </div>
 
-      <Card className="min-w-0 max-w-full overflow-hidden border border-border bg-card/95 shadow-sm">
+      <Card className="premium-surface min-w-0 max-w-full overflow-hidden rounded-lg">
         <CardContent className="p-3 sm:p-6">
           {rows.length === 0 ? (
             <EmptyState

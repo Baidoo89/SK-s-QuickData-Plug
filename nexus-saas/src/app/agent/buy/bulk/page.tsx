@@ -431,7 +431,7 @@ export default function AgentBuyBulkPage() {
         />
       ) : null}
 
-      <Card className="overflow-hidden border border-border bg-card/95 shadow-md">
+      <Card className="premium-surface overflow-hidden rounded-lg">
         <CardHeader className="border-b bg-muted/20">
           <CardTitle className="text-sm font-semibold">Batch purchase</CardTitle>
           <CardDescription className="text-xs">
@@ -530,7 +530,7 @@ export default function AgentBuyBulkPage() {
               <h3 className="text-xs font-semibold">Results</h3>
               <div className="space-y-2 md:hidden">
                 {bulkResults.map((result, idx) => (
-                  <div key={idx} className="rounded-md border bg-background p-3 text-xs shadow-sm">
+                  <div key={idx} className="rounded-lg border border-border/70 bg-background/80 p-3 text-xs shadow-sm">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-medium">{result.phone}</p>

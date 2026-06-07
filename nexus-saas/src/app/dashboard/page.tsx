@@ -582,7 +582,7 @@ export default async function DashboardPage() {
       ) : null}
 
       {alertItems.length > 0 ? (
-        <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
+        <Card className="premium-surface overflow-hidden rounded-lg">
           <CardHeader className="border-b bg-muted/30 pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <AlertTriangle className="h-4 w-4 text-primary" />
@@ -615,7 +615,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
+      <Card className="premium-surface overflow-hidden rounded-lg">
         <CardHeader className="pb-3">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
@@ -706,7 +706,7 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
+      <Card className="premium-surface overflow-hidden rounded-lg">
         <CardHeader className="border-b bg-muted/30 pb-3">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -720,7 +720,7 @@ export default async function DashboardPage() {
         </CardHeader>
         <CardContent className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-5">
           {channelMetrics.map((channel) => (
-            <Link key={channel.key} href={channel.href} className="rounded-md border bg-background p-3 transition-colors hover:bg-muted/40">
+            <Link key={channel.key} href={channel.href} className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm transition-colors hover:bg-muted/40">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-foreground">{channel.label}</p>
@@ -743,7 +743,7 @@ export default async function DashboardPage() {
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
+      <Card className="premium-surface overflow-hidden rounded-lg">
         <CardHeader className="border-b bg-muted/30 pb-3">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -757,7 +757,7 @@ export default async function DashboardPage() {
         </CardHeader>
         <CardContent className="p-4">
           <div className="grid gap-3 md:grid-cols-3">
-            <div className="rounded-md border bg-background p-3">
+            <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
               <p className="text-xs font-medium text-muted-foreground">Today</p>
               <div className="mt-2 space-y-1 text-sm">
                 <div className="flex items-center justify-between gap-3">
@@ -770,7 +770,7 @@ export default async function DashboardPage() {
                 </div>
               </div>
             </div>
-            <div className="rounded-md border bg-background p-3">
+            <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
               <p className="text-xs font-medium text-muted-foreground">This week</p>
               <div className="mt-2 space-y-1 text-sm">
                 <div className="flex items-center justify-between gap-3">
@@ -783,7 +783,7 @@ export default async function DashboardPage() {
                 </div>
               </div>
             </div>
-            <div className="rounded-md border bg-background p-3">
+            <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
               <p className="text-xs font-medium text-muted-foreground">This month</p>
               <div className="mt-2 space-y-1 text-sm">
                 <div className="flex items-center justify-between gap-3">
@@ -803,7 +803,7 @@ export default async function DashboardPage() {
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
+      <Card className="premium-surface overflow-hidden rounded-lg">
         <CardHeader className="border-b bg-muted/30 pb-3">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -816,25 +816,25 @@ export default async function DashboardPage() {
           </div>
         </CardHeader>
         <CardContent className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-md border bg-background p-3">
+          <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
             <p className="text-xs text-muted-foreground">All-time revenue</p>
             <p className="mt-1 text-lg font-semibold">{formatGhanaCedis(totalRevenue)}</p>
           </div>
-          <div className="rounded-md border bg-background p-3">
+          <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
             <p className="text-xs text-muted-foreground">Orders and customers</p>
             <p className="mt-1 text-lg font-semibold">{totalOrders} / {totalCustomers}</p>
           </div>
-          <div className="rounded-md border bg-background p-3">
+          <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
             <p className="text-xs text-muted-foreground">Failed today</p>
             <p className={failedOrdersToday > 0 ? "mt-1 text-lg font-semibold text-amber-700" : "mt-1 text-lg font-semibold text-primary"}>{failedOrdersToday}</p>
           </div>
-          <div className="rounded-md border bg-background p-3">
+          <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
             <p className="text-xs text-muted-foreground">Wallet buys today</p>
             <p className="mt-1 text-lg font-semibold">{walletBackedPurchasesToday}</p>
             <p className="mt-1 text-[11px] text-muted-foreground">Balance {formatGhanaCedis(walletBalance)}</p>
           </div>
           {(pendingAgentApprovals + pendingResellerApprovals > 0 || totalApiKeys > 0 || apiOrdersToday > 0) ? (
-            <div className="rounded-md border bg-background p-3 sm:col-span-2 xl:col-span-4">
+            <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm sm:col-span-2 xl:col-span-4">
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <div>
                   <p className="text-xs text-muted-foreground">Approvals</p>
@@ -864,7 +864,7 @@ export default async function DashboardPage() {
 
       {/* Main Analytics Section */}
       <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-7">
-        <Card className="col-span-1 border border-border bg-card/95 lg:col-span-4">
+        <Card className="premium-surface col-span-1 rounded-lg lg:col-span-4">
           <CardHeader>
             <CardTitle>Overview</CardTitle>
           </CardHeader>
@@ -872,7 +872,7 @@ export default async function DashboardPage() {
             <Overview data={monthlySalesData} />
           </CardContent>
         </Card>
-        <Card className="col-span-1 border border-border bg-card/95 lg:col-span-3">
+        <Card className="premium-surface col-span-1 rounded-lg lg:col-span-3">
           <CardHeader>
             <CardTitle>Recent Sales</CardTitle>
             <div className="text-sm text-muted-foreground">You made {recentSales.length} sales recently.</div>

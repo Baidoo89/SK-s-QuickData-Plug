@@ -237,7 +237,7 @@ export default async function OrdersPage({
         />
       </div>
 
-      <Card className="min-w-0 max-w-full overflow-hidden border border-border bg-card/95 shadow-sm">
+      <Card className="premium-surface min-w-0 max-w-full overflow-hidden rounded-lg">
         <CardContent className="grid min-w-0 gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div>
             <p className="text-sm font-semibold text-foreground">Channel mix</p>
@@ -256,7 +256,7 @@ export default async function OrdersPage({
           </div>
         </CardContent>
       </Card>
-      <Card className="min-w-0 max-w-full overflow-hidden border border-border bg-card/95 shadow-sm">
+      <Card className="premium-surface min-w-0 max-w-full overflow-hidden rounded-lg">
         <CardHeader className="min-w-0 max-w-full overflow-hidden">
           <div className="flex min-w-0 flex-col gap-4">
             <div className="flex min-w-0 flex-col gap-2 md:flex-row md:items-end md:justify-between">

@@ -431,7 +431,7 @@ export default function ResellerBuyBulkPage() {
         />
       ) : null}
 
-      <Card className="overflow-hidden border border-border bg-card/95 shadow-md">
+      <Card className="premium-surface overflow-hidden rounded-lg">
         <CardHeader className="border-b bg-muted/20">
           <CardTitle className="text-sm font-semibold">Batch purchase</CardTitle>
         </CardHeader>
@@ -521,7 +521,7 @@ export default function ResellerBuyBulkPage() {
           {bulkResults.length > 0 && (
             <div className="mt-4 space-y-3">
               <h3 className="text-xs font-semibold">Results</h3>
-              <div className="table-scroll rounded-md border bg-background">
+              <div className="ops-table-surface table-scroll rounded-lg">
                 <table className="min-w-[760px] w-full text-xs">
                   <thead className="bg-muted/40">
                     <tr>

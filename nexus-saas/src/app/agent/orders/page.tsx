@@ -256,7 +256,7 @@ export default async function AgentOrdersPage({
               <div className="px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                 Orders table
               </div>
-              <div className="table-scroll rounded-md border bg-background">
+              <div className="ops-table-surface table-scroll rounded-lg">
                 <Table className="min-w-[720px] text-xs">
                   <TableHeader className="bg-muted/40">
                     <TableRow>

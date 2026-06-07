@@ -330,7 +330,7 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
       </div>
 
       {alertItems.length > 0 ? (
-        <Card className="border border-border bg-card/95 shadow-sm">
+        <Card className="premium-surface overflow-hidden rounded-lg">
           <CardHeader className="border-b bg-muted/30 pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <AlertTriangle className="h-4 w-4 text-primary" />
@@ -468,7 +468,7 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
         </CardHeader>
         <CardContent className="grid gap-3 p-4 md:grid-cols-3">
           {channelMetrics.map((channel) => (
-            <Link key={channel.key} href={channel.href} className="rounded-md border bg-background p-3 transition-colors hover:bg-muted/40">
+            <Link key={channel.key} href={channel.href} className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm transition-colors hover:bg-muted/40">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-foreground">{channel.label}</p>

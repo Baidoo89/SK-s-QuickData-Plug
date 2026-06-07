@@ -58,7 +58,7 @@ export default async function PricingPage() {
 
         <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3">
           {plans.map((plan) => (
-            <Card key={plan.id} className={`relative overflow-hidden border bg-card/95 ${plan.recommended ? "border-primary shadow-md" : "border-border"}`}>
+            <Card key={plan.id} className={`premium-surface relative overflow-hidden rounded-lg ${plan.recommended ? "border-primary shadow-md" : ""}`}>
               {plan.recommended ? (
                 <div className="absolute right-4 top-4">
                   <Badge className="bg-primary text-primary-foreground">Recommended</Badge>
@@ -90,7 +90,7 @@ export default async function PricingPage() {
             </Card>
           ))}
 
-          <Card className="border border-border bg-card/95 md:col-span-3">
+          <Card className="premium-surface rounded-lg md:col-span-3">
             <CardHeader>
               <CardTitle>For resellers & agents</CardTitle>
               <CardDescription>
