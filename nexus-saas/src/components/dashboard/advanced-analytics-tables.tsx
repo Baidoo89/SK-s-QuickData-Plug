@@ -68,14 +68,14 @@ export function AdvancedAnalyticsTables({
       </div>
 
       <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-1 min-w-0 overflow-hidden border border-border bg-card/95 lg:col-span-3">
-          <CardHeader>
+        <Card className="premium-surface col-span-1 min-w-0 overflow-hidden rounded-lg lg:col-span-3">
+          <CardHeader className="border-b border-border/70 bg-muted/20">
             <CardTitle>Network performance</CardTitle>
             <p className="text-xs text-muted-foreground mt-1">
               Revenue by provider in the selected period.
             </p>
           </CardHeader>
-          <CardContent className="table-scroll">
+          <CardContent className="ops-table-surface table-scroll m-4 rounded-lg p-0">
             <Table className="min-w-[320px] text-xs md:text-sm">
               <TableHeader>
                 <TableRow>
@@ -102,11 +102,11 @@ export function AdvancedAnalyticsTables({
           </CardContent>
         </Card>
 
-        <Card className="col-span-1 min-w-0 overflow-hidden border border-border bg-card/95 lg:col-span-4">
-          <CardHeader>
+        <Card className="premium-surface col-span-1 min-w-0 overflow-hidden rounded-lg lg:col-span-4">
+          <CardHeader className="border-b border-border/70 bg-muted/20">
             <CardTitle>Top agents</CardTitle>
           </CardHeader>
-          <CardContent className="table-scroll">
+          <CardContent className="ops-table-surface table-scroll m-4 rounded-lg p-0">
             <Table className="min-w-[320px] text-xs md:text-sm">
               <TableHeader>
                 <TableRow>
@@ -137,11 +137,11 @@ export function AdvancedAnalyticsTables({
       </div>
 
       <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-1 min-w-0 overflow-hidden border border-border bg-card/95 lg:col-span-4">
-          <CardHeader>
+        <Card className="premium-surface col-span-1 min-w-0 overflow-hidden rounded-lg lg:col-span-4">
+          <CardHeader className="border-b border-border/70 bg-muted/20">
             <CardTitle>Top products</CardTitle>
           </CardHeader>
-          <CardContent className="table-scroll">
+          <CardContent className="ops-table-surface table-scroll m-4 rounded-lg p-0">
             <Table className="min-w-[320px] text-xs md:text-sm">
               <TableHeader>
                 <TableRow>

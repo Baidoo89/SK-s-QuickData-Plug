@@ -8,7 +8,7 @@ const SimpleBuySections = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="rounded-md border bg-card/95 p-6 text-sm text-muted-foreground">
+      <div className="premium-surface rounded-lg p-6 text-sm text-muted-foreground">
         Loading checkout...
       </div>
     ),

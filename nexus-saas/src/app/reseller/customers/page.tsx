@@ -103,8 +103,8 @@ export default async function ResellerCustomersPage({
 
       {/* Stats Cards */}
       <div className="grid min-w-0 gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
+        <Card className="premium-surface overflow-hidden rounded-lg">
+          <CardHeader className="border-b border-border/70 bg-muted/20 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Customers</CardTitle>
           </CardHeader>
           <CardContent>
@@ -113,8 +113,8 @@ export default async function ResellerCustomersPage({
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
+        <Card className="premium-surface overflow-hidden rounded-lg">
+          <CardHeader className="border-b border-border/70 bg-muted/20 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Orders</CardTitle>
           </CardHeader>
           <CardContent>
@@ -123,8 +123,8 @@ export default async function ResellerCustomersPage({
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
+        <Card className="premium-surface overflow-hidden rounded-lg">
+          <CardHeader className="border-b border-border/70 bg-muted/20 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Avg Orders/Customer</CardTitle>
           </CardHeader>
           <CardContent>
@@ -135,8 +135,8 @@ export default async function ResellerCustomersPage({
       </div>
 
       {/* Customers Table */}
-      <Card>
-        <CardHeader>
+      <Card className="premium-surface overflow-hidden rounded-lg">
+        <CardHeader className="border-b border-border/70 bg-muted/20">
           <div className="flex flex-col gap-4">
             <div>
               <CardTitle className="text-sm font-semibold">Customer directory</CardTitle>
@@ -184,9 +184,9 @@ export default async function ResellerCustomersPage({
               <div className="px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                 Customers table
               </div>
-              <div className="table-scroll rounded-md border bg-background">
+              <div className="ops-table-surface table-scroll rounded-lg">
                 <Table className="min-w-[600px] text-xs">
-                  <TableHeader className="bg-muted/40">
+                  <TableHeader>
                     <TableRow>
                       <TableHead className="whitespace-nowrap">Customer Name</TableHead>
                       <TableHead className="whitespace-nowrap">Phone</TableHead>
@@ -201,7 +201,7 @@ export default async function ResellerCustomersPage({
                       const orderCount = customer._count?.orders ?? 0
 
                       return (
-                        <TableRow key={customer.id} className="hover:bg-muted/20">
+                        <TableRow key={customer.id}>
                           <TableCell className="font-medium text-xs">
                             {customer.name}
                             {customer.name === "Guest Customer" && (

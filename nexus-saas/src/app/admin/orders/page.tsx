@@ -162,8 +162,8 @@ export default async function AdminOrdersPage({
         Superadmin order pages are intentionally read-only. Use them to audit tenant activity, spot risk, and verify queue health without operating tenant orders directly.
       </div>
 
-      <Card className="border border-border bg-card/95 shadow-sm">
-        <CardHeader>
+      <Card className="premium-surface overflow-hidden rounded-lg">
+        <CardHeader className="border-b border-border/70 bg-muted/20">
           <div className="flex flex-col gap-4">
             <div>
               <CardTitle className="text-lg md:text-xl font-bold">Order Audit</CardTitle>
@@ -255,7 +255,7 @@ export default async function AdminOrdersPage({
                     .map((item: AdminOrderItemRow) => item.product.name.match(/\b\d+(?:\.\d+)?\s?(?:GB|MB|KB|TB)\b/i)?.[0].replace(/\s+/g, "").toUpperCase() ?? item.product.name)
                     .join(", ")
                   return (
-                    <div key={order.id} className="rounded-md border bg-background p-3 text-sm">
+                    <div key={order.id} className="rounded-lg border border-border/70 bg-background/80 p-3 text-sm shadow-sm">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="font-mono text-xs font-semibold">{order.publicOrderCode || order.id.slice(-8)}</p>
@@ -296,7 +296,7 @@ export default async function AdminOrdersPage({
                 })}
               </div>
 
-              <div className="table-scroll hidden rounded-md border bg-background xl:block">
+              <div className="ops-table-surface table-scroll hidden rounded-lg xl:block">
           <Table className="min-w-[860px] text-xs md:text-sm">
             <TableHeader className="bg-muted/40">
               <TableRow>

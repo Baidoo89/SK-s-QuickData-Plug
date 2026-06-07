@@ -112,8 +112,8 @@ export function ApiKeys({ apiKeys }: ApiKeysProps) {
   }
 
   return (
-    <Card className="min-w-0 overflow-hidden border border-border bg-card/95 shadow-sm">
-      <CardHeader className="border-b bg-muted/30 pb-3">
+    <Card className="premium-surface min-w-0 overflow-hidden rounded-lg">
+      <CardHeader className="border-b border-border/70 bg-muted/20 pb-3">
         <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <CardTitle className="text-sm font-semibold">API Keys</CardTitle>
@@ -158,7 +158,7 @@ export function ApiKeys({ apiKeys }: ApiKeysProps) {
             <p className="py-6 text-center text-sm text-muted-foreground">No API keys found.</p>
           ) : (
             apiKeys.map((apiKey) => (
-              <div key={apiKey.id} className="min-w-0 rounded-md border bg-background p-3 text-sm">
+              <div key={apiKey.id} className="min-w-0 rounded-lg border border-border/70 bg-background/80 p-3 text-sm shadow-sm">
                 <div className="flex min-w-0 items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate font-semibold">{apiKey.name}</p>
@@ -184,7 +184,7 @@ export function ApiKeys({ apiKeys }: ApiKeysProps) {
           )}
         </div>
 
-        <div className="table-scroll hidden rounded-md border bg-background md:block">
+        <div className="ops-table-surface table-scroll hidden rounded-lg md:block">
           <Table className="min-w-[620px]">
             <TableHeader>
               <TableRow>

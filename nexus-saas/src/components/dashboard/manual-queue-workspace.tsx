@@ -246,7 +246,7 @@ export function ManualQueueWorkspace({ rows }: Props) {
 
   return (
     <div className="space-y-3 pb-24 md:pb-0">
-      <div className="flex flex-col gap-3 rounded-md border bg-muted/30 p-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-3 rounded-lg border border-border/70 bg-muted/30 p-3 shadow-sm lg:flex-row lg:items-center lg:justify-between">
         <label className="flex items-center gap-2 text-sm font-medium">
           <input
             type="checkbox"
@@ -283,7 +283,7 @@ export function ManualQueueWorkspace({ rows }: Props) {
       </div>
 
       {previewOpen ? (
-        <div className="rounded-md border bg-background p-3">
+        <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
           <div className="mb-2 flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-foreground">Copy preview</p>
@@ -299,9 +299,9 @@ export function ManualQueueWorkspace({ rows }: Props) {
         </div>
       ) : null}
 
-      <div className="table-scroll rounded-md border bg-background">
+      <div className="ops-table-surface table-scroll rounded-lg">
         <Table className="min-w-[1180px] table-fixed text-xs">
-          <TableHeader className="bg-muted/40">
+          <TableHeader>
             <TableRow>
               <TableHead className="w-10">
                 <input
@@ -327,7 +327,7 @@ export function ManualQueueWorkspace({ rows }: Props) {
           </TableHeader>
           <TableBody>
             {rows.map((order) => (
-              <TableRow key={order.id} className={selected.has(order.id) ? "bg-primary/5" : "hover:bg-muted/20"}>
+              <TableRow key={order.id} className={selected.has(order.id) ? "bg-primary/10" : ""}>
                 <TableCell>
                   <input
                     type="checkbox"

@@ -178,8 +178,8 @@ export async function DashboardManualQueueSection({
         <MetricCard label="Seller Split" value={`${agentSellerCount} / ${resellerSellerCount}`} description="Agent / reseller" icon={CheckCircle2} tone="info" />
       </div>
 
-      <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
-        <CardHeader className="border-b bg-muted/30">
+      <Card className="premium-surface overflow-hidden rounded-lg">
+        <CardHeader className="border-b border-border/70 bg-muted/20">
           <div className="flex flex-col gap-4">
             <div className="max-w-3xl">
               <CardTitle className="text-lg">Pickable Orders ({rows.length})</CardTitle>

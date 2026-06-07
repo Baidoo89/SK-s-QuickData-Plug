@@ -214,8 +214,8 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: { 
         <MetricCard label="Revenue" value={formatGhanaCedis(revenue)} description="Completed orders in selected period" icon={DollarSign} tone="success" />
         <MetricCard label="Profit" value={formatGhanaCedis(profit)} description="Sum of item-level profit" icon={DollarSign} tone="primary" />
         <MetricCard label="Orders" value={orders.length} description="All statuses in selected period" icon={Activity} tone="info" />
-        <Card className="border border-border bg-card/95">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card className="premium-surface overflow-hidden rounded-lg">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b border-border/70 bg-muted/20 pb-2">
             <CardTitle className="text-xs md:text-sm text-foreground font-semibold">Success rate</CardTitle>
             <Percent className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -230,8 +230,8 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: { 
       </div>
 
       <div className="grid min-w-0 gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-1 min-w-0 overflow-hidden lg:col-span-4">
-          <CardHeader>
+        <Card className="premium-surface col-span-1 min-w-0 overflow-hidden rounded-lg lg:col-span-4">
+          <CardHeader className="border-b border-border/70 bg-muted/20">
             <CardTitle>Revenue over time</CardTitle>
           </CardHeader>
           <CardContent className="min-w-0 overflow-hidden pl-2">

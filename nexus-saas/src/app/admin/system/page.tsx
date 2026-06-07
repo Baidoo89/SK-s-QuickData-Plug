@@ -141,7 +141,7 @@ export default async function AdminSystemPage() {
         <CardContent>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {readinessItems.map((item) => (
-              <div key={item.label} className="rounded-md border bg-background p-3">
+              <div key={item.label} className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
                 <div className="flex items-start gap-3">
                   {item.ok ? (
                     <CheckCircle2 className="mt-0.5 h-5 w-5 text-primary" />
@@ -180,7 +180,7 @@ export default async function AdminSystemPage() {
               <p className="py-6 text-center text-sm text-muted-foreground">No audit logs found.</p>
             ) : (
               auditLogs.map((log) => (
-                <div key={log.id} className="rounded-md border bg-background p-3">
+                <div key={log.id} className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
                   <div className="flex items-start justify-between gap-3">
                     <Badge variant="outline" className="font-mono text-xs">
                       {log.action}

@@ -38,8 +38,8 @@ export function DispatchHealthCard({ endpoint = "/api/admin/dispatch-health" }: 
   }, [endpoint])
 
   return (
-    <Card className="min-w-0 overflow-hidden border border-border bg-card/95 shadow-sm">
-      <CardHeader className="border-b bg-muted/30 pb-3">
+    <Card className="premium-surface min-w-0 overflow-hidden rounded-lg">
+      <CardHeader className="border-b border-border/70 bg-muted/20 pb-3">
         <CardTitle className="flex min-w-0 items-center justify-between gap-2 text-sm font-semibold">
           <span className="min-w-0 break-words">Dispatch Health</span>
           {data ? (

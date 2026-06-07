@@ -118,7 +118,7 @@ export default async function AdminToolsPage() {
                 ].filter((signal): signal is string => Boolean(signal))
 
                 return (
-                  <div key={org.id} className="rounded-md border bg-background p-3 text-sm">
+                  <div key={org.id} className="rounded-lg border border-border/70 bg-background/80 p-3 text-sm shadow-sm">
                     <p className="truncate font-semibold">{org.name}</p>
                     <p className="font-mono text-xs text-muted-foreground">/{org.slug}</p>
                     <div className="mt-3 flex flex-wrap gap-1">
@@ -196,7 +196,7 @@ export default async function AdminToolsPage() {
               <p className="py-6 text-center text-sm text-muted-foreground">No zero-stock active products.</p>
             ) : (
               zeroStockProducts.map((product) => (
-                <div key={product.id} className="rounded-md border bg-background p-3 text-sm">
+                <div key={product.id} className="rounded-lg border border-border/70 bg-background/80 p-3 text-sm shadow-sm">
                   <p className="font-semibold">{product.name}</p>
                   <p className="text-xs text-muted-foreground">{product.organization?.name ?? "-"}</p>
                   <div className="mt-3 flex flex-wrap gap-1">
@@ -254,7 +254,7 @@ export default async function AdminToolsPage() {
               <p className="py-6 text-center text-sm text-muted-foreground">No stale pending orders.</p>
             ) : (
               pendingOrders.map((order) => (
-                <div key={order.id} className="rounded-md border bg-background p-3 text-sm">
+                <div key={order.id} className="rounded-lg border border-border/70 bg-background/80 p-3 text-sm shadow-sm">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-mono text-xs font-semibold">#{order.id.slice(0, 10)}</p>

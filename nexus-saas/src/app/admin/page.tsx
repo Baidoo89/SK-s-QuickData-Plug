@@ -334,8 +334,8 @@ export default async function SuperAdminPage({
         <MetricCard label="Platform Health" value={failedOrders > 0 ? "Needs review" : "Stable"} description="Based on failed order count" icon={ShieldCheck} tone={failedOrders > 0 ? "warning" : "success"} />
       </div>
 
-      <Card className="border border-border bg-card/95 shadow-sm">
-        <CardHeader>
+      <Card className="premium-surface overflow-hidden rounded-lg">
+        <CardHeader className="border-b border-border/70 bg-muted/20">
           <CardTitle>Create Subscriber Tenant</CardTitle>
           <p className="mt-1 text-sm text-muted-foreground">
             Operator-led onboarding for a new SaaS customer. Creates the organization, subscriber owner login, and optional subscription.
@@ -403,8 +403,8 @@ export default async function SuperAdminPage({
         </CardContent>
       </Card>
 
-      <Card className="border border-border bg-card/95 shadow-sm">
-        <CardHeader>
+      <Card className="premium-surface overflow-hidden rounded-lg">
+        <CardHeader className="border-b border-border/70 bg-muted/20">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <CardTitle>Tenant Control</CardTitle>
@@ -426,7 +426,7 @@ export default async function SuperAdminPage({
               organizations.map((org) => {
                 const owner = org.users.find((user) => user.role === "SUBSCRIBER") ?? org.users[0]
                 return (
-                  <div key={org.id} className="rounded-md border bg-background p-3 text-sm">
+                  <div key={org.id} className="rounded-lg border border-border/70 bg-background/80 p-3 text-sm shadow-sm">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="truncate font-semibold">{org.name}</p>
@@ -472,7 +472,7 @@ export default async function SuperAdminPage({
             )}
           </div>
 
-          <div className="table-scroll hidden rounded-md border bg-background xl:block">
+          <div className="ops-table-surface table-scroll hidden rounded-lg xl:block">
           <Table className="min-w-[900px] text-sm">
             <TableHeader>
               <TableRow>
@@ -545,8 +545,8 @@ export default async function SuperAdminPage({
       </Card>
 
       <div className="grid min-w-0 gap-4 xl:grid-cols-2">
-        <Card className="border border-border bg-card/95 shadow-sm">
-          <CardHeader>
+        <Card className="premium-surface overflow-hidden rounded-lg">
+          <CardHeader className="border-b border-border/70 bg-muted/20">
             <CardTitle>Order Activity Snapshot</CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">
               Read-only signal for platform health. Tenant teams own order fulfillment.
@@ -557,7 +557,7 @@ export default async function SuperAdminPage({
               <p className="text-sm text-muted-foreground">No orders yet.</p>
             ) : (
               recentOrders.map((order) => (
-                <div key={order.id} className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
+                <div key={order.id} className="flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{order.organization?.name ?? "No organization"}</p>
                     <p className="truncate text-xs text-muted-foreground">
@@ -576,8 +576,8 @@ export default async function SuperAdminPage({
           </CardContent>
         </Card>
 
-        <Card className="border border-border bg-card/95 shadow-sm">
-          <CardHeader>
+        <Card className="premium-surface overflow-hidden rounded-lg">
+          <CardHeader className="border-b border-border/70 bg-muted/20">
             <CardTitle>Recent System Activity</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -585,7 +585,7 @@ export default async function SuperAdminPage({
               <p className="text-sm text-muted-foreground">No audit logs yet.</p>
             ) : (
               recentAudits.map((log) => (
-                <div key={log.id} className="rounded-md border border-border p-3">
+                <div key={log.id} className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
                   <div className="flex items-center justify-between gap-2">
                     <Badge variant="outline" className="font-mono text-xs">{log.action}</Badge>
                     <span className="text-xs text-muted-foreground">{new Date(log.createdAt).toLocaleString()}</span>

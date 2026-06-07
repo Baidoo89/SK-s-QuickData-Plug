@@ -246,8 +246,8 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
   const isSkDataPlug = selectedTemplateKey === "skplug" || selectedConnection?.providerName.toLowerCase().includes("skdata")
 
   return (
-    <Card className="min-w-0 overflow-hidden border border-border bg-card/95 shadow-sm">
-      <CardHeader className="border-b bg-muted/30 pb-3">
+    <Card className="premium-surface min-w-0 overflow-hidden rounded-lg">
+      <CardHeader className="border-b border-border/70 bg-muted/20 pb-3">
         <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <CardTitle className="text-sm font-semibold">Provider Product Mapping</CardTitle>
@@ -286,7 +286,7 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
           </Button>
         </div>
 
-        <div className="grid gap-3 rounded-md border border-border bg-muted/20 p-3">
+        <div className="grid gap-3 rounded-lg border border-border/70 bg-muted/20 p-3 shadow-sm">
           <div className="flex min-w-0 gap-2 overflow-x-auto pb-1">
             <Button
               type="button"
@@ -346,7 +346,7 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
         </div>
 
         {isSkDataPlug ? (
-          <div className="grid gap-3 rounded-md border border-primary/20 bg-primary/10 p-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+          <div className="grid gap-3 rounded-lg border border-primary/20 bg-primary/10 p-3 shadow-sm md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
             <div className="min-w-0 space-y-2">
               <p className="text-xs font-semibold text-primary">SKDataPlug mapping assistant</p>
               <p className="break-words text-[11px] text-primary/80">
@@ -376,12 +376,12 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
         ) : null}
 
         {selectedConnection?.active === false ? (
-          <div className="break-words rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+          <div className="break-words rounded-lg border border-border/70 bg-muted/40 px-3 py-2 text-xs text-muted-foreground shadow-sm">
             This provider slot is paused. Mappings are saved, but dispatch will skip the slot until it is active.
           </div>
         ) : null}
 
-        <div className="table-scroll rounded-md border border-border">
+        <div className="ops-table-surface table-scroll rounded-lg">
           <Table className="min-w-[760px]">
             <TableHeader>
               <TableRow>

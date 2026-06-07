@@ -87,8 +87,8 @@ export default async function DashboardPaymentsPage() {
         <MetricCard label="Paid Revenue" value={formatGhanaCedis(totals.revenue)} description="Settled through your Paystack." icon={CircleDollarSign} tone="primary" />
       </div>
 
-      <Card>
-        <CardHeader>
+      <Card className="premium-surface overflow-hidden rounded-lg">
+        <CardHeader className="border-b border-border/70 bg-muted/20">
           <CardTitle className="text-lg">Payment History</CardTitle>
         </CardHeader>
         <CardContent>
@@ -106,7 +106,7 @@ export default async function DashboardPaymentsPage() {
               {payments.map((payment) => {
                 const orderIds = parseOrderIds(payment.orderIds)
                 return (
-                  <div key={payment.id} className="rounded-md border bg-background p-3 text-sm">
+                  <div key={payment.id} className="rounded-lg border border-border/70 bg-background/80 p-3 text-sm shadow-sm">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="font-mono text-[11px] font-semibold">{payment.reference}</p>
@@ -141,9 +141,9 @@ export default async function DashboardPaymentsPage() {
               })}
             </div>
 
-            <div className="table-scroll hidden rounded-md border bg-background xl:block">
+            <div className="ops-table-surface table-scroll hidden rounded-lg xl:block">
               <Table className="min-w-[820px] text-sm">
-                <TableHeader className="bg-muted/40">
+                <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
                     <TableHead>Reference</TableHead>

@@ -310,21 +310,21 @@ export default async function AdminSubscriptionsPage({
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-3">
-            <div className="rounded-md border bg-background p-3">
+            <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
               <div className="flex items-center gap-2 text-sm font-semibold">
                 <CreditCard className="h-4 w-4 text-primary" />
                 Platform-owned
               </div>
               <p className="mt-1 text-xs text-muted-foreground">Plans, subscription status, platform billing collections.</p>
             </div>
-            <div className="rounded-md border bg-background p-3">
+            <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
               <div className="flex items-center gap-2 text-sm font-semibold">
                 <Store className="h-4 w-4 text-primary" />
                 Subscriber-owned
               </div>
               <p className="mt-1 text-xs text-muted-foreground">Storefront prices, customer revenue, Paystack settlement, product margins.</p>
             </div>
-            <div className="rounded-md border bg-background p-3">
+            <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
               <div className="flex items-center gap-2 text-sm font-semibold">
                 <Users className="h-4 w-4 text-primary" />
                 Tenant hierarchy
@@ -353,15 +353,15 @@ export default async function AdminSubscriptionsPage({
               className="lg:col-span-2 2xl:col-span-5"
             />
             <div className="grid min-w-0 gap-3 text-sm md:grid-cols-3 lg:col-span-2 2xl:col-span-5">
-              <label className="flex items-center gap-2 rounded-md border bg-background px-3 py-2">
+              <label className="flex items-center gap-2 rounded-md border border-border/70 bg-background/80 px-3 py-2 shadow-sm">
                 <input name="active" type="checkbox" defaultChecked className="h-4 w-4" />
                 <span>Available for checkout</span>
               </label>
-              <label className="flex items-center gap-2 rounded-md border bg-background px-3 py-2">
+              <label className="flex items-center gap-2 rounded-md border border-border/70 bg-background/80 px-3 py-2 shadow-sm">
                 <input name="visible" type="checkbox" defaultChecked className="h-4 w-4" />
                 <span>Show publicly</span>
               </label>
-              <label className="flex items-center gap-2 rounded-md border bg-background px-3 py-2">
+              <label className="flex items-center gap-2 rounded-md border border-border/70 bg-background/80 px-3 py-2 shadow-sm">
                 <input name="recommended" type="checkbox" className="h-4 w-4" />
                 <span>Recommended</span>
               </label>
@@ -446,15 +446,15 @@ export default async function AdminSubscriptionsPage({
                         className="md:col-span-2"
                       />
                       <div className="grid min-w-0 gap-3 text-sm md:col-span-2 lg:grid-cols-3">
-                        <label className="flex items-center gap-2 rounded-md border bg-background px-3 py-2">
+                        <label className="flex items-center gap-2 rounded-md border border-border/70 bg-background/80 px-3 py-2 shadow-sm">
                           <input name="active" type="checkbox" defaultChecked={plan.active && !plan.retiredAt} className="h-4 w-4" />
                           <span>Available for checkout</span>
                         </label>
-                        <label className="flex items-center gap-2 rounded-md border bg-background px-3 py-2">
+                        <label className="flex items-center gap-2 rounded-md border border-border/70 bg-background/80 px-3 py-2 shadow-sm">
                           <input name="visible" type="checkbox" defaultChecked={plan.visible} className="h-4 w-4" />
                           <span>Show publicly</span>
                         </label>
-                        <label className="flex items-center gap-2 rounded-md border bg-background px-3 py-2">
+                        <label className="flex items-center gap-2 rounded-md border border-border/70 bg-background/80 px-3 py-2 shadow-sm">
                           <input name="recommended" type="checkbox" defaultChecked={plan.recommended} className="h-4 w-4" />
                           <span>Recommended badge</span>
                         </label>
@@ -485,7 +485,7 @@ export default async function AdminSubscriptionsPage({
                 subscriptions.map((subscription) => {
                   const lastPayment = subscription.payments[0]
                   return (
-                    <div key={subscription.id} className="rounded-md border bg-background p-3 text-sm">
+                    <div key={subscription.id} className="rounded-lg border border-border/70 bg-background/80 p-3 text-sm shadow-sm">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="truncate font-semibold">{subscription.organization.name}</p>
@@ -542,7 +542,7 @@ export default async function AdminSubscriptionsPage({
               )}
             </div>
 
-            <div className="table-scroll hidden rounded-md border bg-background xl:block">
+            <div className="ops-table-surface table-scroll hidden rounded-lg xl:block">
             <Table className="min-w-[960px] text-sm">
               <TableHeader>
                 <TableRow>

@@ -130,8 +130,8 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
   }
 
   return (
-    <Card className="min-w-0 overflow-hidden border border-border bg-card/95 shadow-sm">
-      <CardHeader className="border-b bg-muted/30 pb-3">
+    <Card className="premium-surface min-w-0 overflow-hidden rounded-lg">
+      <CardHeader className="border-b border-border/70 bg-muted/20 pb-3">
         <CardTitle className="break-words text-sm font-semibold">Order Dispatch Policy</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 p-4">
@@ -152,7 +152,7 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
                 type="button"
                 disabled={loading || saving}
                 onClick={() => setMode(item.value as DispatchMode)}
-                className={`min-w-0 rounded-md border px-3 py-2 text-left transition ${mode === item.value ? "border-primary bg-primary/10 text-foreground" : "border-border bg-background text-muted-foreground hover:text-foreground"}`}
+                className={`min-w-0 rounded-md border px-3 py-2 text-left shadow-sm transition ${mode === item.value ? "border-primary bg-primary/10 text-foreground" : "border-border/70 bg-background/80 text-muted-foreground hover:text-foreground"}`}
               >
                 <span className="block break-words text-xs font-semibold">{item.label}</span>
                 <span className="mt-0.5 block break-words text-[10px]">{item.detail}</span>
@@ -197,7 +197,7 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
                   type="button"
                   disabled={loading || saving}
                   onClick={() => toggleNetwork(network)}
-                  className={`min-w-0 rounded-md border px-3 py-2 text-left text-xs font-semibold transition ${enabled ? "border-primary bg-primary/10 text-foreground" : "border-border bg-background text-muted-foreground hover:text-foreground"}`}
+                  className={`min-w-0 rounded-md border px-3 py-2 text-left text-xs font-semibold shadow-sm transition ${enabled ? "border-primary bg-primary/10 text-foreground" : "border-border/70 bg-background/80 text-muted-foreground hover:text-foreground"}`}
                 >
                   <span className="flex min-w-0 items-center justify-between gap-2">
                     <span className="min-w-0 break-words">{network === "AIRTELTIGO" ? "AirtelTigo" : network.charAt(0) + network.slice(1).toLowerCase()}</span>

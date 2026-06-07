@@ -54,8 +54,8 @@ export default async function AdminApprovalsPage() {
         </p>
       </div>
 
-      <Card className="border border-border bg-card/95">
-        <CardHeader>
+      <Card className="premium-surface overflow-hidden rounded-lg">
+        <CardHeader className="border-b border-border/70 bg-muted/20">
           <CardTitle className="flex items-center justify-between gap-3 text-base">
             Pending agents
             <Badge variant="secondary">{pendingAgents.length}</Badge>
@@ -66,14 +66,14 @@ export default async function AdminApprovalsPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           {pendingAgents.length === 0 ? (
-            <div className="rounded-md border border-dashed bg-muted/25 px-4 py-6 text-sm text-muted-foreground">
+            <div className="rounded-lg border border-dashed border-border/70 bg-muted/25 px-4 py-6 text-sm text-muted-foreground">
               No pending agent requests.
             </div>
           ) : (
             pendingAgents.map((agentUser) => (
               <div
                 key={agentUser.id}
-                className="flex flex-col gap-3 rounded-md border border-border bg-background p-4 md:flex-row md:items-center md:justify-between"
+                className="flex flex-col gap-3 rounded-lg border border-border/70 bg-background/80 p-4 shadow-sm md:flex-row md:items-center md:justify-between"
               >
                 <div className="min-w-0 space-y-1">
                   <p className="font-semibold text-foreground">{agentUser.name ?? "Unnamed agent"}</p>
