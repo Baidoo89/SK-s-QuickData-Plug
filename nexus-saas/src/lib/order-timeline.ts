@@ -24,6 +24,8 @@ function labelForAction(action: string) {
   const labels: Record<string, string> = {
     STOREFRONT_CHECKOUT_CREATED: "Storefront checkout created",
     STOREFRONT_PAYMENT_SUCCESS: "Payment verified",
+    STOREFRONT_PAYMENT_FAILED: "Payment failed",
+    STOREFRONT_PAYMENT_EXPIRED: "Payment expired",
     ORDER_MANUAL_CLAIMED: "Claimed for manual fulfillment",
     ORDER_MANUAL_STATUS_UPDATE: "Status updated",
     ORDER_MANUAL_IMPORT_STATUS: "Manual result imported",

@@ -385,7 +385,7 @@ export async function createStorefrontCheckout(input: StorefrontCheckoutInput) {
   if (!paystackResponse.ok) {
     await db.order.updateMany({
       where: { id: { in: orderIds }, organizationId: subscriber.id, status: "PENDING_PAYMENT" },
-      data: { status: "PAYMENT_INIT_FAILED" },
+      data: { status: "PAYMENT_INIT_FAILED", paymentStatus: "FAILED" },
     })
     throw new StorefrontCheckoutError("Could not initialize payment", 502)
   }
@@ -394,7 +394,7 @@ export async function createStorefrontCheckout(input: StorefrontCheckoutInput) {
   if (!paystackData?.status || !paystackData.data?.authorization_url || !paystackData.data?.reference) {
     await db.order.updateMany({
       where: { id: { in: orderIds }, organizationId: subscriber.id, status: "PENDING_PAYMENT" },
-      data: { status: "PAYMENT_INIT_FAILED" },
+      data: { status: "PAYMENT_INIT_FAILED", paymentStatus: "FAILED" },
     })
     throw new StorefrontCheckoutError("Could not initialize payment", 502)
   }

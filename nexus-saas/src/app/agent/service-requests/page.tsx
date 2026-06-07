@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { db } from "@/lib/db"
 import { formatGhanaCedis } from "@/lib/currency"
+import { expireAbandonedStorefrontPayments } from "@/lib/storefront-payment-cleanup"
 import { CheckCircle2, Clock, FileText, ListFilter } from "lucide-react"
 
 function parseDetails(value: string | null) {
@@ -62,6 +63,7 @@ async function getAgentServiceRequests(status?: string, serviceId?: string) {
   })
 
   if (!user || user.role !== "AGENT" || !user.organizationId) return { rows: [], accessError: "PROFILE" as const }
+  await expireAbandonedStorefrontPayments(user.organizationId)
 
   const agentId = await resolveAgentId({ ...user, organizationId: user.organizationId })
   if (!agentId) return { rows: [], accessError: "PROFILE" as const }

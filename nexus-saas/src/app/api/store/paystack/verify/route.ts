@@ -166,9 +166,10 @@ export async function GET(req: Request) {
         : []
 
       await db.$transaction(async (tx) => {
+        const orderIds = parseJsonArray(payment.orderIds)
         await tx.order.updateMany({
           where: {
-            id: { in: parseJsonArray(payment.orderIds) },
+            id: { in: orderIds },
             organizationId,
             status: "PENDING_PAYMENT",
           },
@@ -184,6 +185,33 @@ export async function GET(req: Request) {
             },
             data: { status: "PAYMENT_FAILED", paymentStatus: "FAILED" },
           })
+        }
+
+        const auditRows = [
+          ...orderIds.map((orderId) => ({
+            action: "STOREFRONT_PAYMENT_FAILED",
+            targetType: "ORDER",
+            targetId: orderId,
+            organizationId,
+            meta: JSON.stringify({
+              reference,
+              providerStatus: data?.data?.status || "unknown",
+            }),
+          })),
+          ...serviceRequestIds.map((requestId) => ({
+            action: "SERVICE_REQUEST_PAYMENT_FAILED",
+            targetType: "SERVICE_REQUEST",
+            targetId: requestId,
+            organizationId,
+            meta: JSON.stringify({
+              reference,
+              providerStatus: data?.data?.status || "unknown",
+            }),
+          })),
+        ]
+
+        if (auditRows.length > 0) {
+          await tx.auditLog.createMany({ data: auditRows })
         }
       })
 
@@ -214,6 +242,67 @@ export async function GET(req: Request) {
 
     const amountFromResponse = typeof data.data?.amount === "number" ? data.data.amount / 100 : 0
     if (amountFromResponse < payment.amount) {
+      await db.$transaction(async (tx) => {
+        await tx.$executeRaw`
+          UPDATE "StorefrontPayment"
+          SET "status" = 'FAILED', "updatedAt" = NOW()
+          WHERE "reference" = ${reference}
+        `
+
+        if (orderIds.length > 0) {
+          await tx.order.updateMany({
+            where: {
+              id: { in: orderIds },
+              organizationId,
+              status: "PENDING_PAYMENT",
+            },
+            data: { status: "PAYMENT_FAILED", paymentStatus: "FAILED" },
+          })
+        }
+
+        if (serviceRequestIds.length > 0) {
+          await tx.serviceRequest.updateMany({
+            where: {
+              id: { in: serviceRequestIds },
+              organizationId,
+              status: "PENDING_PAYMENT",
+            },
+            data: { status: "PAYMENT_FAILED", paymentStatus: "FAILED" },
+          })
+        }
+
+        const auditRows = [
+          ...orderIds.map((orderId) => ({
+            action: "STOREFRONT_PAYMENT_FAILED",
+            targetType: "ORDER",
+            targetId: orderId,
+            organizationId,
+            meta: JSON.stringify({
+              reference,
+              reason: "amount_mismatch",
+              expectedAmount: payment.amount,
+              receivedAmount: amountFromResponse,
+            }),
+          })),
+          ...serviceRequestIds.map((requestId) => ({
+            action: "SERVICE_REQUEST_PAYMENT_FAILED",
+            targetType: "SERVICE_REQUEST",
+            targetId: requestId,
+            organizationId,
+            meta: JSON.stringify({
+              reference,
+              reason: "amount_mismatch",
+              expectedAmount: payment.amount,
+              receivedAmount: amountFromResponse,
+            }),
+          })),
+        ]
+
+        if (auditRows.length > 0) {
+          await tx.auditLog.createMany({ data: auditRows })
+        }
+      })
+
       return NextResponse.redirect(`${baseUrl}${returnPath}?checkout=failed`)
     }
 

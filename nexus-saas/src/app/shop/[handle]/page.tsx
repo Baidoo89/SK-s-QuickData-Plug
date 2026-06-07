@@ -291,7 +291,7 @@ export default async function ShopPage({ params, searchParams }: ShopPageProps) 
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <div className="min-w-0">
               <p className="font-semibold">Payment not completed</p>
-              <p className="break-words">No order has entered fulfillment.</p>
+              <p className="break-words">No order has entered fulfillment. Please try again or contact the seller if money left your account.</p>
             </div>
           </div>
         </div>

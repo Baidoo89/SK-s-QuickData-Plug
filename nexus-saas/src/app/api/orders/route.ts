@@ -2,6 +2,7 @@ import { requireAuthAndOrg, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
 import { getOrderSourceLogMap, ORDER_SOURCE_LABELS, resolveOrderSource } from "@/lib/order-source"
+import { expireAbandonedStorefrontPayments } from "@/lib/storefront-payment-cleanup"
 
 export const dynamic = "force-dynamic"
 
@@ -13,6 +14,8 @@ export async function GET(req: Request) {
     }
 
     const organizationId = authResult.user.organizationId!
+    await expireAbandonedStorefrontPayments(organizationId)
+
     const { searchParams } = new URL(req.url)
     const status = searchParams.get("status") || undefined
     const from = searchParams.get("from") || undefined

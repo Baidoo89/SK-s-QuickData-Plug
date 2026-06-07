@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { db } from "@/lib/db"
 import { formatGhanaCedis } from "@/lib/currency"
+import { expireAbandonedStorefrontPayments } from "@/lib/storefront-payment-cleanup"
 import { CheckCircle2, Clock, FileText, ListFilter } from "lucide-react"
 
 function parseDetails(value: string | null) {
@@ -111,6 +112,8 @@ export default async function ResellerServiceRequestsPage({
   if (!user || user.role !== "RESELLER" || !user.organizationId) {
     return <PortalAccessMessage title="Reseller profile unavailable" description="This account is not linked to an approved reseller profile." />
   }
+
+  await expireAbandonedStorefrontPayments(user.organizationId)
 
   const [rows, allRowsForStatus] = await Promise.all([
     getResellerServiceRequests(user.id, user.organizationId, status, serviceId),

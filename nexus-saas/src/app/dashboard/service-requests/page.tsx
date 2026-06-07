@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { MetricCard } from "@/components/ui/metric-card"
 import { ServiceRequestsWorkspace, type ServiceRequestRow } from "@/components/dashboard/service-requests-workspace"
 import { formatGhanaCedis } from "@/lib/currency"
+import { expireAbandonedStorefrontPayments } from "@/lib/storefront-payment-cleanup"
 import { CheckCircle2, Clock, FileText, ListFilter } from "lucide-react"
 
 function parseDetails(value: string | null) {
@@ -49,6 +50,7 @@ async function getServiceRequests(filters: ServiceRequestFilters = {}) {
   })
 
   if (!user?.organizationId) return []
+  await expireAbandonedStorefrontPayments(user.organizationId)
 
   const where: any = {
     organizationId: user.organizationId,
