@@ -10,6 +10,33 @@ import {
   renderProviderRequestBody,
 } from "@/lib/provider-template"
 
+function resolveProviderProductFields(input: {
+  templateKey: string
+  network: string
+  productId: string
+  externalProductCode: string | null
+}) {
+  const fallbackCode = input.externalProductCode || input.productId
+
+  if (input.templateKey !== "skplug") {
+    return {
+      externalProductCode: fallbackCode,
+      providerNetwork: input.network,
+      providerGbSize: fallbackCode,
+    }
+  }
+
+  const [networkOverride, sizeOverride] = fallbackCode.includes(":")
+    ? fallbackCode.split(":", 2).map((part) => part.trim())
+    : ["", fallbackCode.trim()]
+
+  return {
+    externalProductCode: fallbackCode,
+    providerNetwork: networkOverride || input.network,
+    providerGbSize: sizeOverride || fallbackCode,
+  }
+}
+
 export type ProviderDispatchInput = {
   orderId: string
   organizationId: string
@@ -100,10 +127,19 @@ export async function dispatchOrderToProvider(
   }
 
   try {
+    const providerFields = resolveProviderProductFields({
+      templateKey: template.templateKey,
+      network: input.network,
+      productId: input.productId,
+      externalProductCode,
+    })
+
     const body = renderProviderRequestBody(template, {
       orderId: input.orderId,
       productId: input.productId,
-      externalProductCode: externalProductCode || input.productId,
+      externalProductCode: providerFields.externalProductCode,
+      providerNetwork: providerFields.providerNetwork,
+      providerGbSize: providerFields.providerGbSize,
       network: input.network,
       phone: input.phone,
       quantity: input.quantity,

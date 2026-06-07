@@ -43,6 +43,13 @@ type ProviderTemplateSummary = {
   authType: string
 }
 
+const PROVIDER_PRESETS: Record<string, { providerName: string; providerOrderUrl: string }> = {
+  skplug: {
+    providerName: "SKDataPlug",
+    providerOrderUrl: "https://skdataplug.com/api/v1/order/",
+  },
+}
+
 export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connection" }: ProviderConnectionCardProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
@@ -155,6 +162,15 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
     }
   }
 
+  function applyProviderPreset(nextTemplateKey = templateKey) {
+    const preset = PROVIDER_PRESETS[nextTemplateKey]
+    if (!preset) return
+
+    setProviderName((current) => current.trim() && current !== "Primary Provider" && current !== "Backup Provider" ? current : preset.providerName)
+    setProviderOrderUrl(preset.providerOrderUrl)
+    setTemplateKey(nextTemplateKey)
+  }
+
   const envGuess = inferProviderEnvironment(providerOrderUrl, providerApiKey)
   const prodHost = isLikelyProductionHost(hostname)
   const showRiskWarning = prodHost && envGuess === "TEST"
@@ -173,24 +189,35 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
           <div className="min-w-0 space-y-2 rounded-md border border-border bg-muted/25 p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs font-semibold text-foreground">Saved provider slots</p>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="h-8 w-full text-[11px] sm:w-auto"
-                onClick={() => {
-                  setProviderKey("backup")
-                  setProviderName("Backup Provider")
-                  setProviderOrderUrl("")
-                  setProviderApiKey("")
-                  setTemplateKey("generic-json")
-                  setHasApiKey(false)
-                  setActive(true)
-                  setUpdatedAt(null)
-                }}
-              >
-                New slot
-              </Button>
+              <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-[11px]"
+                  onClick={() => applyProviderPreset("skplug")}
+                >
+                  Use SKDataPlug
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-[11px]"
+                  onClick={() => {
+                    setProviderKey("backup")
+                    setProviderName("Backup Provider")
+                    setProviderOrderUrl("")
+                    setProviderApiKey("")
+                    setTemplateKey("generic-json")
+                    setHasApiKey(false)
+                    setActive(true)
+                    setUpdatedAt(null)
+                  }}
+                >
+                  New slot
+                </Button>
+              </div>
             </div>
             <div className="grid min-w-0 gap-2 sm:flex sm:flex-wrap">
               {connections.map((connection) => (
@@ -309,7 +336,13 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
           <label className="text-xs font-medium">Provider Template</label>
           <select
             value={templateKey}
-            onChange={(e) => setTemplateKey(e.target.value)}
+            onChange={(e) => {
+              const nextTemplateKey = e.target.value
+              setTemplateKey(nextTemplateKey)
+              if (PROVIDER_PRESETS[nextTemplateKey]) {
+                applyProviderPreset(nextTemplateKey)
+              }
+            }}
             disabled={loading || saving}
             className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -322,6 +355,11 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
           <p className="break-words text-[11px] text-muted-foreground">
             The template defines auth headers, request payload, and response interpretation for this provider slot.
           </p>
+          {templateKey === "skplug" ? (
+            <div className="rounded-md border border-primary/20 bg-primary/10 px-3 py-2 text-[11px] text-primary">
+              SKDataPlug only needs your API token here. This preset sends orders to /api/v1/order/ with recipient, network, and gb_size.
+            </div>
+          ) : null}
         </div>
 
         <div className="space-y-1.5">

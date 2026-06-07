@@ -53,8 +53,8 @@ const DEFAULT_REQUEST_TEMPLATE = JSON.stringify({
 
 const SKPLUG_REQUEST_TEMPLATE = JSON.stringify({
   recipient: "{{phone}}",
-  network: "{{network}}",
-  gb_size: "{{externalProductCode}}",
+  network: "{{providerNetwork}}",
+  gb_size: "{{providerGbSize}}",
 })
 
 export function getFallbackProviderTemplate(templateKey = "generic-json"): ProviderTemplate {
@@ -63,8 +63,8 @@ export function getFallbackProviderTemplate(templateKey = "generic-json"): Provi
   if (normalized === "skplug" || normalized === "sk-plug") {
     return {
       templateKey: "skplug",
-      name: "SKPlug Data API",
-      description: "Submits data orders to SKPlug using recipient, network, and gb_size.",
+      name: "SKDataPlug Data API",
+      description: "Submits data orders to SKDataPlug using recipient, network, and gb_size.",
       authType: "BEARER",
       authHeader: "Authorization",
       authPrefix: "Bearer",

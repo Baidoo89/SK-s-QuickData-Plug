@@ -92,6 +92,7 @@ export async function GET(req: Request) {
       connections: connections.map((connection) => ({
         providerKey: connection.providerKey,
         providerName: connection.providerName,
+        templateKey: connection.templateKey,
         active: connection.active,
       })),
     })
