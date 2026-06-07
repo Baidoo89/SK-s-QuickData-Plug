@@ -184,8 +184,8 @@ export default function AgentWalletPage() {
         />
       </div>
       <div className="grid min-w-0 gap-4 md:grid-cols-1 lg:grid-cols-2">
-        <Card id="top-up">
-          <CardHeader>
+        <Card id="top-up" className="premium-surface overflow-hidden rounded-lg">
+          <CardHeader className="border-b border-border/70 bg-muted/20">
             <CardTitle className="text-sm font-semibold">Wallet Top Up</CardTitle>
             <CardDescription className="text-xs">
               Credit your own wallet or a linked reseller wallet by email.
@@ -383,8 +383,8 @@ export default function AgentWalletPage() {
           </CardContent>
         </Card>
       </div>
-      <Card id="transactions">
-        <CardHeader>
+      <Card id="transactions" className="premium-surface overflow-hidden rounded-lg">
+        <CardHeader className="border-b border-border/70 bg-muted/20">
           <CardTitle className="text-sm font-semibold">Transactions & activity</CardTitle>
           <CardDescription className="text-xs">
               This appears directly under top up so the flow stays simple and readable.
@@ -401,7 +401,7 @@ export default function AgentWalletPage() {
             <div className="mt-3 space-y-2 text-[11px] text-muted-foreground">
               <p className="font-semibold text-foreground">Recent Top-Ups</p>
               {topups.slice(0, 5).map((t) => (
-                <div key={t.id} className="flex flex-col gap-0.5 rounded-md border bg-background px-2 py-1 sm:flex-row sm:items-center sm:justify-between">
+                <div key={t.id} className="flex flex-col gap-0.5 rounded-lg border border-border/70 bg-background/80 px-2 py-1 shadow-sm sm:flex-row sm:items-center sm:justify-between">
                   <span className="truncate">
                     {t.method === "paystack" ? "Paystack" : "Manual"} | {t.beneficiaryEmail}
                   </span>
@@ -452,9 +452,9 @@ export default function AgentWalletPage() {
                 className="py-6"
               />
             ) : (
-              <div className="table-scroll rounded-md border bg-background">
+              <div className="ops-table-surface table-scroll rounded-lg">
                 <Table className="min-w-[920px] text-xs">
-                  <TableHeader className="bg-muted/40">
+                  <TableHeader>
                     <TableRow>
                       <TableHead className="whitespace-nowrap">User</TableHead>
                       <TableHead className="whitespace-nowrap">Date</TableHead>
@@ -466,7 +466,7 @@ export default function AgentWalletPage() {
                   </TableHeader>
                   <TableBody>
                     {activities.map((activity) => (
-                      <TableRow key={activity.id} className="hover:bg-muted/20">
+                      <TableRow key={activity.id}>
                         <TableCell className="whitespace-nowrap">
                           {activity.user?.email || activity.user?.name ? (
                             <span>

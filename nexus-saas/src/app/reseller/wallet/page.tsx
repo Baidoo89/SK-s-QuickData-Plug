@@ -138,8 +138,8 @@ export default function ResellerWalletPage() {
           />
         </div>
 
-        <Card id="top-up">
-          <CardHeader>
+        <Card id="top-up" className="premium-surface overflow-hidden rounded-lg">
+          <CardHeader className="border-b border-border/70 bg-muted/20">
             <CardTitle>Wallet Top Up</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm text-muted-foreground">
@@ -151,7 +151,7 @@ export default function ResellerWalletPage() {
                 <div className="mt-2 space-y-2 text-[11px]">
                   <p className="font-semibold text-foreground">Recent Top-Ups</p>
                   {topups.slice(0, 5).map((t) => (
-                  <p key={t.id} className="flex flex-col gap-1 rounded-md border bg-background px-2 py-1 sm:flex-row sm:items-center sm:justify-between">
+                  <p key={t.id} className="flex flex-col gap-1 rounded-lg border border-border/70 bg-background/80 px-2 py-1 shadow-sm sm:flex-row sm:items-center sm:justify-between">
                     <span>
                       {t.method === "paystack" ? "Paystack" : "Manual"} | {t.beneficiaryEmail}
                     </span>
@@ -253,9 +253,9 @@ export default function ResellerWalletPage() {
                 className="py-6"
               />
             ) : (
-              <div className="table-scroll rounded-md border bg-background">
+              <div className="ops-table-surface table-scroll rounded-lg">
                 <Table className="min-w-[760px] text-xs">
-                  <TableHeader className="bg-muted/40">
+                  <TableHeader>
                     <TableRow>
                       <TableHead className="whitespace-nowrap">Date</TableHead>
                       <TableHead className="whitespace-nowrap">Method</TableHead>
@@ -266,7 +266,7 @@ export default function ResellerWalletPage() {
                   </TableHeader>
                   <TableBody>
                     {activities.map((activity) => (
-                      <TableRow key={activity.id} className="hover:bg-muted/20">
+                      <TableRow key={activity.id}>
                         <TableCell className="whitespace-nowrap">{new Date(activity.createdAt).toLocaleString()}</TableCell>
                         <TableCell className="uppercase">{activity.method}</TableCell>
                         <TableCell>

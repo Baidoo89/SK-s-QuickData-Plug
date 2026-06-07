@@ -146,7 +146,7 @@ export default function WalletPage({
         />
       </div>
 
-      <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
+      <Card className="premium-surface overflow-hidden rounded-lg">
         <CardContent className="grid min-w-0 gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="min-w-0">
             <p className="text-sm font-semibold text-foreground">Wallet vs withdrawals</p>
@@ -161,8 +161,8 @@ export default function WalletPage({
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
-        <CardHeader className="border-b bg-muted/30 pb-3">
+      <Card className="premium-surface overflow-hidden rounded-lg">
+        <CardHeader className="border-b border-border/70 bg-muted/20 pb-3">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <ArrowRightLeft className="h-4 w-4 text-primary" />
             Manual Wallet Top Up
@@ -366,8 +366,8 @@ export default function WalletPage({
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
-        <CardHeader className="border-b bg-muted/30 pb-3">
+      <Card className="premium-surface overflow-hidden rounded-lg">
+        <CardHeader className="border-b border-border/70 bg-muted/20 pb-3">
           <CardTitle className="text-sm font-semibold">Wallet Records</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 p-4 text-sm text-muted-foreground">
@@ -386,7 +386,7 @@ export default function WalletPage({
             <>
             <div className="grid gap-3 xl:hidden lg:grid-cols-2">
               {activities.map((activity) => (
-                <div key={activity.id} className="rounded-md border bg-background p-3 text-sm">
+                <div key={activity.id} className="premium-surface rounded-lg p-3 text-sm">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-medium uppercase text-foreground">{activity.method}</p>
@@ -415,9 +415,9 @@ export default function WalletPage({
               ))}
             </div>
 
-            <div className="table-scroll hidden rounded-md border bg-background xl:block">
+            <div className="ops-table-surface table-scroll hidden rounded-lg xl:block">
               <Table className="min-w-[760px] text-xs">
-                <TableHeader className="bg-muted/40">
+                <TableHeader>
                   <TableRow>
                     <TableHead className="whitespace-nowrap">Date</TableHead>
                     <TableHead className="whitespace-nowrap">Method</TableHead>
@@ -428,7 +428,7 @@ export default function WalletPage({
                 </TableHeader>
                 <TableBody>
                   {activities.map((activity) => (
-                    <TableRow key={activity.id} className="hover:bg-muted/20">
+                    <TableRow key={activity.id}>
                       <TableCell className="whitespace-nowrap">{new Date(activity.createdAt).toLocaleString()}</TableCell>
                       <TableCell className="uppercase">{activity.method}</TableCell>
                       <TableCell>

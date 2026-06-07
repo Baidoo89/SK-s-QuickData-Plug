@@ -74,8 +74,8 @@ export function WithdrawalRequestPanel() {
   }, [])
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="premium-surface overflow-hidden rounded-lg">
+      <CardHeader className="border-b border-border/70 bg-muted/20">
         <CardTitle className="text-sm font-semibold">Profit withdrawal requests</CardTitle>
         <CardDescription className="text-xs">
           Request payout from completed customer-sale profit. Operational wallet funds stay separate.
@@ -83,15 +83,15 @@ export function WithdrawalRequestPanel() {
       </CardHeader>
       <CardContent className="space-y-4 text-xs">
         <div className="grid min-w-0 gap-3 sm:grid-cols-3">
-          <div className="rounded-md border bg-muted/35 p-3">
+          <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
             <p className="text-[11px] text-muted-foreground">Completed profit</p>
             <p className="mt-1 text-base font-semibold">{formatGhanaCedis(earningsBalance)}</p>
           </div>
-          <div className="rounded-md border bg-muted/35 p-3">
+          <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
             <p className="text-[11px] text-muted-foreground">Available to withdraw</p>
             <p className="mt-1 text-base font-semibold">{formatGhanaCedis(availableBalance)}</p>
           </div>
-          <div className="rounded-md border bg-muted/35 p-3">
+          <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
             <p className="text-[11px] text-muted-foreground">Locked / paid out</p>
             <p className="mt-1 text-base font-semibold">{formatGhanaCedis(lockedAmount)} / {formatGhanaCedis(paidOut)}</p>
           </div>
@@ -101,7 +101,7 @@ export function WithdrawalRequestPanel() {
         </p>
 
         <form
-          className="space-y-3 rounded-md border bg-background p-4"
+          className="space-y-3 rounded-lg border border-border/70 bg-background/80 p-4 shadow-sm"
           onSubmit={async (event: FormEvent) => {
             event.preventDefault()
             const numericAmount = Number(amount)
@@ -175,9 +175,9 @@ export function WithdrawalRequestPanel() {
               No withdrawal requests yet. When you submit one, review status and payout notes will appear here.
             </div>
           ) : (
-            <div className="table-scroll rounded-md border bg-background">
+            <div className="ops-table-surface table-scroll rounded-lg">
               <Table className="min-w-[760px] text-xs">
-                <TableHeader className="bg-muted/40">
+                <TableHeader>
                   <TableRow>
                     <TableHead className="whitespace-nowrap">Date</TableHead>
                     <TableHead className="whitespace-nowrap">Amount</TableHead>
@@ -188,7 +188,7 @@ export function WithdrawalRequestPanel() {
                 </TableHeader>
                 <TableBody>
                   {requests.map((request) => (
-                    <TableRow key={request.id} className="hover:bg-muted/20">
+                    <TableRow key={request.id}>
                       <TableCell className="whitespace-nowrap">{new Date(request.createdAt).toLocaleString()}</TableCell>
                       <TableCell className="whitespace-nowrap font-semibold">{formatGhanaCedis(request.amount)}</TableCell>
                       <TableCell>

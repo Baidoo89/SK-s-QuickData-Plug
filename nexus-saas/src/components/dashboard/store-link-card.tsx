@@ -35,8 +35,8 @@ export function StoreLinkCard({ storePath }: StoreLinkCardProps) {
   const displayUrl = origin ? `${origin}${storePath}` : storePath
 
   return (
-    <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
-      <CardHeader className="border-b bg-muted/30 pb-3">
+    <Card className="premium-surface overflow-hidden rounded-lg">
+      <CardHeader className="border-b border-border/70 bg-muted/20 pb-3">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <CardTitle className="text-sm font-semibold">Customer storefront</CardTitle>

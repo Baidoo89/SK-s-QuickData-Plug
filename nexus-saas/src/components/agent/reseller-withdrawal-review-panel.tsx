@@ -105,8 +105,8 @@ export function ResellerWithdrawalReviewPanel() {
   }, [statusFilter])
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="premium-surface overflow-hidden rounded-lg">
+      <CardHeader className="border-b border-border/70 bg-muted/20">
         <CardTitle className="text-sm font-semibold">Reseller withdrawal approvals</CardTitle>
         <CardDescription className="text-xs">
           Review payout requests submitted by your resellers.
@@ -114,27 +114,27 @@ export function ResellerWithdrawalReviewPanel() {
       </CardHeader>
       <CardContent className="space-y-4 text-xs">
         <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          <div className="rounded-md border bg-muted/35 p-3">
+          <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
             <p className="text-[11px] text-muted-foreground">Pending requests</p>
             <p className="mt-1 text-base font-semibold">{totals.pendingCount}</p>
           </div>
-          <div className="rounded-md border bg-muted/35 p-3">
+          <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
             <p className="text-[11px] text-muted-foreground">Approved awaiting payout</p>
             <p className="mt-1 text-base font-semibold">{totals.approvedCount}</p>
           </div>
-          <div className="rounded-md border bg-muted/35 p-3">
+          <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
             <p className="text-[11px] text-muted-foreground">Locked reseller payouts</p>
             <p className="mt-1 text-base font-semibold">{formatGhanaCedis(totals.pendingAmount)}</p>
           </div>
-          <div className="rounded-md border bg-muted/35 p-3">
+          <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
             <p className="text-[11px] text-muted-foreground">Reseller sales collected</p>
             <p className="mt-1 text-base font-semibold">{formatGhanaCedis(summary.totalCollected)}</p>
           </div>
-          <div className="rounded-md border bg-muted/35 p-3">
+          <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
             <p className="text-[11px] text-muted-foreground">Reseller profit earned</p>
             <p className="mt-1 text-base font-semibold">{formatGhanaCedis(summary.totalEarningsLiability)}</p>
           </div>
-          <div className="rounded-md border bg-muted/35 p-3">
+          <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
             <p className="text-[11px] text-muted-foreground">Paid out / outstanding</p>
             <p className="mt-1 text-base font-semibold">{formatGhanaCedis(summary.totalPaidOut)} / {formatGhanaCedis(summary.outstandingLiability)}</p>
           </div>
@@ -180,7 +180,7 @@ export function ResellerWithdrawalReviewPanel() {
           <>
           <div className="space-y-3 md:hidden">
             {requests.map((request) => (
-              <div key={request.id} className="rounded-md border bg-background p-3">
+              <div key={request.id} className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-foreground">{request.user.name || request.user.email || "Unknown"}</p>
@@ -282,9 +282,9 @@ export function ResellerWithdrawalReviewPanel() {
             ))}
           </div>
 
-          <div className="table-scroll hidden rounded-md border bg-background md:block">
+          <div className="ops-table-surface table-scroll hidden rounded-lg md:block">
             <Table className="min-w-[980px] text-xs">
-              <TableHeader className="bg-muted/40">
+              <TableHeader>
                 <TableRow>
                   <TableHead className="whitespace-nowrap">Date</TableHead>
                   <TableHead className="whitespace-nowrap">Reseller</TableHead>
@@ -297,7 +297,7 @@ export function ResellerWithdrawalReviewPanel() {
               </TableHeader>
               <TableBody>
                 {requests.map((request) => (
-                  <TableRow key={request.id} className="hover:bg-muted/20">
+                  <TableRow key={request.id}>
                     <TableCell className="whitespace-nowrap">{new Date(request.createdAt).toLocaleString()}</TableCell>
                     <TableCell>
                       <div className="flex flex-col">

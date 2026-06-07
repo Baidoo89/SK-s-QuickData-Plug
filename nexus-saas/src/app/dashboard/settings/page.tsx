@@ -112,7 +112,7 @@ export default async function SettingsPage() {
         />
       </div>
 
-      <Card className="min-w-0 overflow-hidden border border-border bg-card/95 shadow-sm">
+      <Card className="premium-surface min-w-0 overflow-hidden rounded-lg">
         <CardContent className="grid min-w-0 gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="min-w-0">
             <p className="text-sm font-semibold text-foreground">Settings map</p>
@@ -121,9 +121,9 @@ export default async function SettingsPage() {
             </p>
           </div>
           <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap">
-            <span className="min-w-0 break-words rounded-md border bg-background px-3 py-1 text-center text-xs text-muted-foreground">Storefront checkout</span>
-            <span className="min-w-0 break-words rounded-md border bg-background px-3 py-1 text-center text-xs text-muted-foreground">API sales</span>
-            <span className="min-w-0 break-words rounded-md border bg-background px-3 py-1 text-center text-xs text-muted-foreground">Manual/API dispatch</span>
+            <span className="min-w-0 break-words rounded-md border border-border/70 bg-background/80 px-3 py-1 text-center text-xs text-muted-foreground shadow-sm">Storefront checkout</span>
+            <span className="min-w-0 break-words rounded-md border border-border/70 bg-background/80 px-3 py-1 text-center text-xs text-muted-foreground shadow-sm">API sales</span>
+            <span className="min-w-0 break-words rounded-md border border-border/70 bg-background/80 px-3 py-1 text-center text-xs text-muted-foreground shadow-sm">Manual/API dispatch</span>
           </div>
         </CardContent>
       </Card>
