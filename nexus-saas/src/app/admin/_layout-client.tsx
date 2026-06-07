@@ -37,8 +37,8 @@ function NavLink({ href, label, icon: Icon, closeOnClick = false }: { href: stri
     <Link
       href={href}
       title={label}
-      className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
-        active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-primary hover:bg-muted"
+      className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+        active ? "border-primary/30 bg-primary/10 text-primary shadow-sm" : "text-muted-foreground hover:text-primary"
       }`}
     >
       <Icon className="h-4 w-4" />
@@ -54,45 +54,45 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const renderNavigation = (mobile = false) => (
     <>
       <div>
-        <p className="portal-sidebar-section px-3 pb-1 text-xs font-semibold uppercase text-muted-foreground">Control Center</p>
+        <p className="portal-sidebar-section px-3 pb-1 text-[11px] font-bold uppercase text-muted-foreground">Control Center</p>
         <NavLink href="/admin" label="Tenant Control" icon={LayoutDashboard} closeOnClick={mobile} />
       </div>
 
       <div>
-        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-xs font-semibold uppercase text-muted-foreground">Tenant Governance</p>
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Tenant Governance</p>
         <NavLink href="/admin/users" label="User Directory" icon={Users} closeOnClick={mobile} />
         <NavLink href="/admin/approvals" label="Signup Approvals" icon={UserCheck} closeOnClick={mobile} />
       </div>
 
       <div>
-        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-xs font-semibold uppercase text-muted-foreground">SaaS Billing</p>
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">SaaS Billing</p>
         <NavLink href="/admin/subscriptions" label="Plans & Subscriptions" icon={CreditCard} closeOnClick={mobile} />
       </div>
 
       <div>
-        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-xs font-semibold uppercase text-muted-foreground">Financial Audit</p>
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Financial Audit</p>
         <NavLink href="/admin/payments" label="Storefront Payment Audit" icon={CreditCard} closeOnClick={mobile} />
         <NavLink href="/admin/wallet" label="Wallet Audit" icon={Wallet} closeOnClick={mobile} />
         <NavLink href="/admin/withdrawals" label="Withdrawal Oversight" icon={Wallet} closeOnClick={mobile} />
       </div>
 
       <div>
-        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-xs font-semibold uppercase text-muted-foreground">Operations Audit</p>
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Operations Audit</p>
         <NavLink href="/admin/orders" label="Order Audit" icon={ShoppingCart} closeOnClick={mobile} />
       </div>
 
       <div>
-        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-xs font-semibold uppercase text-muted-foreground">Platform Diagnostics</p>
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Platform Diagnostics</p>
         <NavLink href="/admin/tools" label="Diagnostics" icon={Wrench} closeOnClick={mobile} />
       </div>
 
       <div>
-        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-xs font-semibold uppercase text-muted-foreground">System</p>
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">System</p>
         <NavLink href="/admin/system" label="System Health" icon={ServerCog} closeOnClick={mobile} />
       </div>
 
       <div>
-        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-xs font-semibold uppercase text-muted-foreground">Settings</p>
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Settings</p>
         <NavLink href="/admin/settings" label="Platform Settings" icon={Settings} closeOnClick={mobile} />
       </div>
     </>
@@ -102,9 +102,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="app-shell-bg min-h-screen w-full max-w-full overflow-x-hidden">
       <aside data-collapsed={sidebarCollapsed} className={`portal-sidebar app-sidebar hidden border-r border-border/70 backdrop-blur-xl md:fixed md:left-0 md:top-0 md:z-30 md:block md:h-screen ${sidebarCollapsed ? "md:w-[72px]" : "md:w-[220px] xl:w-[260px]"}`}>
         <div className={`flex h-[60px] items-center border-b border-border/70 px-4 ${sidebarCollapsed ? "justify-center" : ""}`}>
-          <div className="portal-sidebar-label flex flex-col">
-            <span className="text-xs font-semibold uppercase text-muted-foreground">Superadmin</span>
-            <span className="text-sm font-bold tracking-tight">Platform Control</span>
+          <div className="portal-sidebar-label flex min-w-0 items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-xs font-extrabold text-primary">
+              SA
+            </div>
+            <div className="min-w-0">
+              <span className="block text-[11px] font-bold uppercase text-muted-foreground">Superadmin</span>
+              <span className="block truncate text-sm font-extrabold tracking-normal">Platform Control</span>
+            </div>
           </div>
           <Button
             type="button"
@@ -135,9 +140,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </SheetTrigger>
               <SheetContent side="left" className="app-sidebar w-[min(88vw,320px)] border-r border-border/70 p-0 backdrop-blur-xl">
                 <div className="flex h-14 items-center border-b border-border/70 px-4">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-semibold uppercase text-muted-foreground">Superadmin</span>
-                    <span className="text-sm font-bold tracking-tight">Platform Control</span>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-xs font-extrabold text-primary">
+                      SA
+                    </div>
+                    <div className="min-w-0">
+                      <span className="block text-[11px] font-bold uppercase text-muted-foreground">Superadmin</span>
+                      <span className="block truncate text-sm font-extrabold tracking-normal">Platform Control</span>
+                    </div>
                   </div>
                 </div>
                 <nav className="flex max-h-[calc(100vh-3.5rem)] flex-col gap-4 overflow-y-auto px-3 py-4 text-sm">
@@ -146,7 +156,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </SheetContent>
             </Sheet>
             <div className="min-w-0">
-            <h1 className="text-lg font-semibold tracking-tight">Superadmin Control</h1>
+            <h1 className="text-lg font-extrabold tracking-normal">Superadmin Control</h1>
               <p className="hidden truncate text-xs text-muted-foreground sm:block">Platform governance, audits, subscriptions, and system health.</p>
             </div>
           </div>

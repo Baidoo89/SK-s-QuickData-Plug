@@ -52,9 +52,11 @@ function DashboardLayoutInner({
       <div data-collapsed={sidebarCollapsed} className={`portal-sidebar app-sidebar hidden border-r border-border/70 backdrop-blur-xl transition-[width] md:fixed md:left-0 md:top-0 md:z-30 md:block md:h-screen ${sidebarCollapsed ? "md:w-[72px]" : "md:w-[220px] lg:w-[280px]"}`}>
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className={`flex h-14 items-center border-b border-border/70 px-4 lg:h-[60px] ${sidebarCollapsed ? "justify-center lg:px-3" : "lg:px-6"}`}>
-            <Link href="/" className={`${sidebarCollapsed ? "hidden" : "flex"} items-center gap-2 font-bold text-xl tracking-tight`}>
-              <Package2 className="h-7 w-7 text-primary" />
-              <span className="portal-sidebar-label text-primary">TechDalt</span>
+            <Link href="/" className={`${sidebarCollapsed ? "hidden" : "flex"} min-w-0 items-center gap-3 font-extrabold text-xl tracking-normal`}>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-primary">
+                <Package2 className="h-5 w-5" />
+              </span>
+              <span className="portal-sidebar-label truncate text-primary">TechDalt</span>
             </Link>
             <Button
               type="button"

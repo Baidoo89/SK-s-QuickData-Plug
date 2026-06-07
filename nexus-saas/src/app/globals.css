@@ -156,11 +156,13 @@
     background:
       linear-gradient(180deg, hsl(224 24% 12% / 0.96), hsl(226 26% 8% / 0.94)),
       linear-gradient(135deg, hsl(186 73% 46% / 0.08), transparent 52%);
+    box-shadow: 18px 0 45px hsl(224 35% 3% / 0.18);
   }
 
   .app-topbar {
     background:
       linear-gradient(90deg, hsl(224 24% 11% / 0.88), hsl(222 19% 10% / 0.76));
+    box-shadow: 0 12px 32px hsl(224 35% 3% / 0.18);
   }
 
   .content-sheen {
@@ -195,6 +197,35 @@
   .portal-sidebar[data-collapsed="true"] .portal-sidebar-icon {
     height: 1.15rem;
     width: 1.15rem;
+  }
+
+  .portal-sidebar nav a,
+  .portal-sidebar nav button {
+    min-height: 2.15rem;
+    border: 1px solid transparent;
+  }
+
+  .portal-sidebar nav a:hover,
+  .portal-sidebar nav button:hover {
+    border-color: hsl(var(--border) / 0.72);
+    background: hsl(var(--muted) / 0.38);
+  }
+
+  .portal-sidebar nav a:focus-visible,
+  .portal-sidebar nav button:focus-visible {
+    outline: none;
+    border-color: hsl(var(--ring) / 0.5);
+    box-shadow: 0 0 0 2px hsl(var(--ring) / 0.18);
+  }
+
+  .portal-sidebar nav a svg,
+  .portal-sidebar nav button svg {
+    flex-shrink: 0;
+  }
+
+  .portal-sidebar-section,
+  .portal-sidebar nav > span {
+    letter-spacing: 0;
   }
 
   .status-success {
