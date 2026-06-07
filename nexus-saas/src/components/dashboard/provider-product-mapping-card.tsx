@@ -30,6 +30,8 @@ type ProviderProductMappingCardProps = {
   endpoint?: string
 }
 
+type MappingFilter = "ALL" | "MAPPED" | "UNMAPPED"
+
 export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider-product-mappings" }: ProviderProductMappingCardProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
@@ -37,6 +39,9 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
   const [bulkSaving, setBulkSaving] = useState(false)
   const [airtelRoute, setAirtelRoute] = useState<"AT_EXPIRY" | "AT_NOEXPIRY">("AT_EXPIRY")
   const [providerKey, setProviderKey] = useState("primary")
+  const [networkFilter, setNetworkFilter] = useState("")
+  const [mappingFilter, setMappingFilter] = useState<MappingFilter>("ALL")
+  const [query, setQuery] = useState("")
   const [connections, setConnections] = useState<ProviderConnectionSummary[]>([])
   const [rows, setRows] = useState<MappingRow[]>([])
 
@@ -49,7 +54,17 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
 
       setProviderKey(payload?.data?.providerKey || nextProviderKey)
       setConnections(Array.isArray(payload?.data?.connections) ? payload.data.connections : [])
-      setRows(Array.isArray(payload?.data?.rows) ? payload.data.rows : [])
+      const nextRows = (Array.isArray(payload?.data?.rows) ? payload.data.rows : []) as MappingRow[]
+      setRows(nextRows)
+      const nextNetworks = Array.from(new Set(nextRows.map((row) => String(row.network || "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b))
+      if (nextNetworks.length > 0) {
+        setNetworkFilter((current) => {
+          if (current === "ALL" || nextNetworks.includes(current)) return current
+          return nextNetworks.find((network) => network.toUpperCase().includes("MTN")) || nextNetworks[0]
+        })
+      } else {
+        setNetworkFilter("")
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -126,10 +141,12 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
     return size
   }
 
-  function autoFillSkDataPlugMappings() {
+  function autoFillSkDataPlugMappings(targetRows = filteredRows) {
+    const targetIds = new Set(targetRows.map((row) => row.productId))
     let filled = 0
     let skipped = 0
     const nextRows = rows.map((row) => {
+      if (!targetIds.has(row.productId)) return row
       const code = buildSkDataPlugCode(row)
       if (!code) {
         skipped += 1
@@ -151,10 +168,10 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
     })
   }
 
-  async function saveAllMappings() {
-    const mappedRows = rows.filter((row) => row.externalProductCode.trim())
+  async function saveVisibleMappings() {
+    const mappedRows = filteredRows.filter((row) => row.externalProductCode.trim())
     if (mappedRows.length === 0) {
-      toast({ title: "No mappings to save", description: "Auto-fill or enter provider codes first." })
+      toast({ title: "No visible mappings to save", description: "Auto-fill or enter provider codes in the current view first." })
       return
     }
 
@@ -179,7 +196,7 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
 
       toast({
         title: "Mappings saved",
-        description: `${saved} provider mapping${saved === 1 ? "" : "s"} saved for ${providerKey}.`,
+        description: `${saved} visible provider mapping${saved === 1 ? "" : "s"} saved for ${providerKey}.`,
       })
       await loadMappings(providerKey)
     } catch (error) {
@@ -194,6 +211,36 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
   }
 
   const mappedCount = useMemo(() => rows.filter((row) => row.externalProductCode.trim()).length, [rows])
+  const networks = useMemo(() => Array.from(new Set(rows.map((row) => row.network.trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b)), [rows])
+  const networkCounts = useMemo(() => {
+    const counts = new Map<string, { total: number; mapped: number }>()
+    for (const row of rows) {
+      const key = row.network.trim() || "Unknown"
+      const current = counts.get(key) || { total: 0, mapped: 0 }
+      current.total += 1
+      if (row.externalProductCode.trim()) current.mapped += 1
+      counts.set(key, current)
+    }
+    return counts
+  }, [rows])
+  const normalizedQuery = query.trim().toLowerCase()
+  const filteredRows = useMemo(() => {
+    return rows.filter((row) => {
+      const networkMatches = !networkFilter || networkFilter === "ALL" || row.network === networkFilter
+      const mappingMatches =
+        mappingFilter === "ALL" ||
+        (mappingFilter === "MAPPED" && row.externalProductCode.trim()) ||
+        (mappingFilter === "UNMAPPED" && !row.externalProductCode.trim())
+      const queryMatches =
+        !normalizedQuery ||
+        row.name.toLowerCase().includes(normalizedQuery) ||
+        row.network.toLowerCase().includes(normalizedQuery) ||
+        row.externalProductCode.toLowerCase().includes(normalizedQuery)
+
+      return networkMatches && mappingMatches && queryMatches
+    })
+  }, [mappingFilter, networkFilter, normalizedQuery, rows])
+  const visibleMappedCount = useMemo(() => filteredRows.filter((row) => row.externalProductCode.trim()).length, [filteredRows])
   const selectedConnection = connections.find((connection) => connection.providerKey === providerKey)
   const selectedTemplateKey = selectedConnection?.templateKey || ""
   const isSkDataPlug = selectedTemplateKey === "skplug" || selectedConnection?.providerName.toLowerCase().includes("skdata")
@@ -239,6 +286,65 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
           </Button>
         </div>
 
+        <div className="grid gap-3 rounded-md border border-border bg-muted/20 p-3">
+          <div className="flex min-w-0 gap-2 overflow-x-auto pb-1">
+            <Button
+              type="button"
+              variant={networkFilter === "ALL" ? "default" : "outline"}
+              size="sm"
+              className="h-8 shrink-0 text-xs"
+              onClick={() => setNetworkFilter("ALL")}
+            >
+              All <Badge variant="secondary" className="ml-2 rounded-md text-[10px]">{rows.length}</Badge>
+            </Button>
+            {networks.map((network) => {
+              const count = networkCounts.get(network)
+              return (
+                <Button
+                  key={network}
+                  type="button"
+                  variant={networkFilter === network ? "default" : "outline"}
+                  size="sm"
+                  className="h-8 shrink-0 text-xs"
+                  onClick={() => setNetworkFilter(network)}
+                >
+                  {network}
+                  <Badge variant="secondary" className="ml-2 rounded-md text-[10px]">
+                    {count?.mapped || 0}/{count?.total || 0}
+                  </Badge>
+                </Button>
+              )
+            })}
+          </div>
+          <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+            <Input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              className="h-9 text-xs"
+              placeholder="Search bundle, network, or provider code"
+            />
+            <div className="grid grid-cols-3 gap-2">
+              {(["ALL", "UNMAPPED", "MAPPED"] as const).map((filter) => (
+                <Button
+                  key={filter}
+                  type="button"
+                  variant={mappingFilter === filter ? "default" : "outline"}
+                  size="sm"
+                  className="h-9 text-[11px]"
+                  onClick={() => setMappingFilter(filter)}
+                >
+                  {filter === "ALL" ? "All" : filter === "UNMAPPED" ? "Unmapped" : "Mapped"}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <div className="flex min-w-0 flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+            <Badge variant="outline" className="rounded-md">Viewing {filteredRows.length}</Badge>
+            <Badge variant="outline" className="rounded-md">{visibleMappedCount}/{filteredRows.length} visible mapped</Badge>
+            <span className="min-w-0 break-words">Work one network at a time, then use All only when you need a full audit.</span>
+          </div>
+        </div>
+
         {isSkDataPlug ? (
           <div className="grid gap-3 rounded-md border border-primary/20 bg-primary/10 p-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
             <div className="min-w-0 space-y-2">
@@ -259,11 +365,11 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
               </div>
             </div>
             <div className="grid gap-2 sm:grid-cols-2 md:min-w-[17rem]">
-              <Button type="button" variant="outline" size="sm" className="border-primary/30 text-xs" onClick={autoFillSkDataPlugMappings} disabled={loading || bulkSaving}>
-                Auto-fill sizes
+              <Button type="button" variant="outline" size="sm" className="border-primary/30 text-xs" onClick={() => autoFillSkDataPlugMappings()} disabled={loading || bulkSaving || filteredRows.length === 0}>
+                Auto-fill visible
               </Button>
-              <Button type="button" size="sm" className="text-xs" onClick={saveAllMappings} disabled={loading || bulkSaving}>
-                {bulkSaving ? "Saving..." : "Save all"}
+              <Button type="button" size="sm" className="text-xs" onClick={saveVisibleMappings} disabled={loading || bulkSaving || filteredRows.length === 0}>
+                {bulkSaving ? "Saving..." : "Save visible"}
               </Button>
             </div>
           </div>
@@ -288,14 +394,14 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.length === 0 ? (
+              {filteredRows.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="py-8 text-center text-xs text-muted-foreground">
-                    {loading ? "Loading bundles..." : "No active data bundles found."}
+                    {loading ? "Loading bundles..." : rows.length === 0 ? "No active data bundles found." : "No bundles match the current filters."}
                   </TableCell>
                 </TableRow>
               ) : (
-                rows.map((row) => (
+                filteredRows.map((row) => (
                   <TableRow key={row.productId}>
                     <TableCell className="max-w-[220px] whitespace-normal break-words font-medium">{row.name}</TableCell>
                     <TableCell>
