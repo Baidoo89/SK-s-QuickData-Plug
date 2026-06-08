@@ -56,14 +56,14 @@ export default async function ApiDocsPage() {
         <MetricCard label="Order Tools" value="CSV Ready" description="Export and import fulfillment updates" icon={UploadCloud} tone="success" />
       </div>
 
-      <Card>
+      <Card className="premium-surface border-0">
         <CardHeader>
           <CardTitle>Base URL</CardTitle>
           <CardDescription>Your tenant-specific public endpoints.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           <div>
-            <p className="break-all rounded-md bg-muted px-3 py-2 font-mono">
+            <p className="break-all rounded-lg border border-border/70 bg-background/80 px-3 py-2 font-mono shadow-sm">
               {storePath ? `${baseUrl}${storePath}` : "Storefront not available yet"}
             </p>
             <p className="mt-1 text-muted-foreground">
@@ -96,7 +96,7 @@ export default async function ApiDocsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="premium-surface border-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Code2 className="h-4 w-4 text-primary" />
@@ -105,13 +105,13 @@ export default async function ApiDocsPage() {
           <CardDescription>Use this pattern from your backend or a trusted integration.</CardDescription>
         </CardHeader>
         <CardContent>
-          <pre className="table-scroll rounded-md border bg-muted/50 p-3 text-xs">
+          <pre className="table-scroll rounded-lg border border-border/70 bg-background/80 p-3 text-xs shadow-sm">
 {`curl "${baseUrl}/api/shop/${user.organization.slug}/products"`}
           </pre>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="premium-surface border-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Code2 className="h-4 w-4 text-primary" />
@@ -122,7 +122,7 @@ export default async function ApiDocsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <pre className="table-scroll rounded-md border bg-muted/50 p-3 text-xs">
+          <pre className="table-scroll rounded-lg border border-border/70 bg-background/80 p-3 text-xs shadow-sm">
 {`curl -X POST "${baseUrl}/api/v1/orders" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
@@ -144,7 +144,7 @@ export default async function ApiDocsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="premium-surface border-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Code2 className="h-4 w-4 text-primary" />
@@ -153,7 +153,7 @@ export default async function ApiDocsPage() {
           <CardDescription>Use this when your website needs to reconcile an order after a retry or timeout.</CardDescription>
         </CardHeader>
         <CardContent>
-          <pre className="table-scroll rounded-md border bg-muted/50 p-3 text-xs">
+          <pre className="table-scroll rounded-lg border border-border/70 bg-background/80 p-3 text-xs shadow-sm">
 {`curl "${baseUrl}/api/v1/orders?externalReference=website-order-1001" \\
   -H "Authorization: Bearer YOUR_API_KEY"`}
           </pre>

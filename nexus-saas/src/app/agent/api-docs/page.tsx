@@ -71,7 +71,7 @@ export default async function AgentApiDocsPage() {
 
       <ApiAccessRequestCard roleLabel="Agent" />
 
-      <Card>
+      <Card className="premium-surface border-0">
         <CardHeader>
           <CardTitle>Security Model</CardTitle>
           <CardDescription>Dashboard buys use your login session; external website sales use an approved API key.</CardDescription>
@@ -92,7 +92,7 @@ export default async function AgentApiDocsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="premium-surface border-0">
         <CardHeader>
           <CardTitle>Core Endpoints</CardTitle>
           <CardDescription>These are the stable operational endpoints your agent portal uses today.</CardDescription>
@@ -111,7 +111,7 @@ export default async function AgentApiDocsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="premium-surface border-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Code2 className="h-4 w-4 text-primary" />
@@ -121,7 +121,7 @@ export default async function AgentApiDocsPage() {
         </CardHeader>
         <CardContent className="space-y-3 text-xs text-muted-foreground">
           <p>Endpoint: <span className="font-mono">POST /api/vtu/order</span></p>
-          <pre className="table-scroll rounded-md border bg-muted/50 p-3">
+          <pre className="table-scroll rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
 {`{
   "productId": "prod_xxx",
   "phoneNumber": "0244000000",
@@ -129,14 +129,14 @@ export default async function AgentApiDocsPage() {
 }`}
           </pre>
           {agentStorePath ? (
-            <pre className="table-scroll rounded-md border bg-muted/50 p-3">
+            <pre className="table-scroll rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
 {`curl "${baseUrl}${agentStorePath}"`}
             </pre>
           ) : null}
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="premium-surface border-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Code2 className="h-4 w-4 text-primary" />
@@ -145,7 +145,7 @@ export default async function AgentApiDocsPage() {
           <CardDescription>Use this from your own backend after your website has collected payment.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-xs text-muted-foreground">
-          <pre className="table-scroll rounded-md border bg-muted/50 p-3">
+          <pre className="table-scroll rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
 {`curl -X POST "${baseUrl}/api/v1/orders" \\
   -H "Authorization: Bearer YOUR_APPROVED_AGENT_KEY" \\
   -H "Content-Type: application/json" \\

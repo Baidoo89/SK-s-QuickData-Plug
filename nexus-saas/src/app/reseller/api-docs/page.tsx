@@ -70,7 +70,7 @@ export default async function ResellerApiDocsPage() {
 
       <ApiAccessRequestCard roleLabel="Reseller" />
 
-      <Card>
+      <Card className="premium-surface border-0">
         <CardHeader>
           <CardTitle>Authentication</CardTitle>
           <CardDescription>Dashboard buys use your login session; external website sales use an approved API key.</CardDescription>
@@ -88,7 +88,7 @@ export default async function ResellerApiDocsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="premium-surface border-0">
         <CardHeader>
           <CardTitle>Core Endpoints</CardTitle>
           <CardDescription>These endpoints support reseller sales without bypassing agent/admin governance.</CardDescription>
@@ -106,7 +106,7 @@ export default async function ResellerApiDocsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="premium-surface border-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Code2 className="h-4 w-4 text-primary" />
@@ -115,7 +115,7 @@ export default async function ResellerApiDocsPage() {
           <CardDescription>Use the same order body that the reseller buy screens submit.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-xs text-muted-foreground">
-          <pre className="table-scroll rounded-md border bg-muted/50 p-3">
+          <pre className="table-scroll rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
 {`{
   "productId": "prod_xxx",
   "phoneNumber": "0244000000",
@@ -123,14 +123,14 @@ export default async function ResellerApiDocsPage() {
 }`}
           </pre>
           {storePath ? (
-            <pre className="table-scroll rounded-md border bg-muted/50 p-3">
+            <pre className="table-scroll rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
 {`curl "${baseUrl}${storePath}"`}
             </pre>
           ) : null}
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="premium-surface border-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Code2 className="h-4 w-4 text-primary" />
@@ -139,7 +139,7 @@ export default async function ResellerApiDocsPage() {
           <CardDescription>Use this from your own backend after your website has collected payment.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-xs text-muted-foreground">
-          <pre className="table-scroll rounded-md border bg-muted/50 p-3">
+          <pre className="table-scroll rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
 {`curl -X POST "${baseUrl}/api/v1/orders" \\
   -H "Authorization: Bearer YOUR_APPROVED_RESELLER_KEY" \\
   -H "Content-Type: application/json" \\

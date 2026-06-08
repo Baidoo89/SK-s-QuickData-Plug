@@ -103,7 +103,7 @@ export default async function ResellerAccountPage() {
       <PhoneVerificationCard initialPhoneNumber={user.phoneNumber} verified={Boolean(user.phoneVerified)} />
 
       <div className="grid min-w-0 gap-4 md:grid-cols-2">
-        <Card>
+        <Card className="premium-surface border-0">
           <CardHeader>
             <CardTitle className="text-sm font-semibold">Profile</CardTitle>
             <CardDescription className="text-xs">Basic information about your reseller account.</CardDescription>
@@ -130,7 +130,7 @@ export default async function ResellerAccountPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="premium-surface border-0">
           <CardHeader>
             <CardTitle className="text-sm font-semibold">Linked Agent & Organization</CardTitle>
             <CardDescription className="text-xs">Where your reseller sales are routed.</CardDescription>

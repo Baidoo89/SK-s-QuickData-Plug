@@ -41,21 +41,21 @@ export function ShareLinksCard({
   }
 
   return (
-    <Card>
+    <Card className="premium-surface border-0">
       <CardHeader>
         <CardTitle className="text-sm font-semibold">{title}</CardTitle>
         {description ? <CardDescription className="text-xs">{description}</CardDescription> : null}
       </CardHeader>
       <CardContent className="space-y-3">
         {links.length === 0 ? (
-          <div className="rounded-md border border-dashed border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+          <div className="rounded-lg border border-dashed border-border/70 bg-background/80 p-4 text-sm text-muted-foreground shadow-sm">
             No shareable customer link is available yet.
           </div>
         ) : null}
         {links.map((link) => {
           const displayUrl = origin ? `${origin}${link.path}` : link.path
           return (
-            <div key={`${link.label}:${link.path}`} className="space-y-2 rounded-lg border border-border bg-card/90 p-3">
+            <div key={`${link.label}:${link.path}`} className="space-y-2 rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
               <div className="space-y-1">
                 <p className="text-xs font-semibold text-foreground">{link.label}</p>
                 {link.description ? <p className="text-[11px] text-muted-foreground">{link.description}</p> : null}

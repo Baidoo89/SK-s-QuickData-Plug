@@ -98,7 +98,7 @@ export default async function AgentStorefrontsPage() {
       </div>
 
       <div className="grid min-w-0 gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="premium-surface border-0">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Organization</CardTitle>
           </CardHeader>
@@ -106,7 +106,7 @@ export default async function AgentStorefrontsPage() {
             <p className="text-lg font-semibold">{user.organization.name}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="premium-surface border-0">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Orders via agent link</CardTitle>
           </CardHeader>
@@ -114,7 +114,7 @@ export default async function AgentStorefrontsPage() {
             <p className="text-lg font-semibold">{agentOrderCount}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="premium-surface border-0">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Pending reseller approvals</CardTitle>
           </CardHeader>

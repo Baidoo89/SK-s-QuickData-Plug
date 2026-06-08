@@ -489,7 +489,7 @@ export default function AgentBuyBulkPage() {
             />
 
             {bulkInput.trim() && (
-              <div className="space-y-1.5 rounded-md border bg-muted/30 p-3 text-xs">
+              <div className="space-y-1.5 rounded-lg border border-border/70 bg-background/80 p-3 text-xs shadow-sm">
                 <p>
                   <strong>Orders:</strong> {preview.validRows.length} valid / {preview.invalidRows.length} invalid
                 </p>

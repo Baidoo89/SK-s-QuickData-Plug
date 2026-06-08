@@ -63,7 +63,7 @@ export default async function ResellerStorefrontsPage() {
       </div>
 
       <div className="grid min-w-0 gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="premium-surface border-0">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Organization</CardTitle>
           </CardHeader>
@@ -71,7 +71,7 @@ export default async function ResellerStorefrontsPage() {
             <p className="text-lg font-semibold">{user.organization.name}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="premium-surface border-0">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Your orders</CardTitle>
           </CardHeader>
@@ -79,7 +79,7 @@ export default async function ResellerStorefrontsPage() {
             <p className="text-lg font-semibold">{resellerOrderCount}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="premium-surface border-0">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Completed orders</CardTitle>
           </CardHeader>

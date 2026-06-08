@@ -424,7 +424,7 @@ export default async function ResellerDashboardPage({ searchParams }: { searchPa
         </Card>
       </div>
 
-      <Card>
+      <Card className="premium-surface border-0">
         <CardHeader className="border-b bg-muted/30 pb-3">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -461,7 +461,7 @@ export default async function ResellerDashboardPage({ searchParams }: { searchPa
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="premium-surface border-0">
         <CardHeader>
           <CardTitle className="text-sm font-semibold">Quick actions</CardTitle>
         </CardHeader>
@@ -495,12 +495,12 @@ export default async function ResellerDashboardPage({ searchParams }: { searchPa
       </Card>
 
       {resellerStorePath ? (
-        <Card>
+        <Card className="premium-surface border-0">
           <CardHeader>
             <CardTitle className="text-sm font-semibold">Your storefront link</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="min-w-0 truncate rounded-md border bg-muted/30 px-3 py-2 font-mono text-xs">{resellerStorePath}</p>
+            <p className="min-w-0 truncate rounded-lg border border-border/70 bg-background/80 px-3 py-2 font-mono text-xs shadow-sm">{resellerStorePath}</p>
             <Button asChild size="sm" variant="outline" className="text-xs">
               <Link href="/reseller/storefronts">Share links</Link>
             </Button>

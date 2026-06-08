@@ -88,7 +88,7 @@ export default async function AgentAccountPage() {
       <PhoneVerificationCard initialPhoneNumber={user.phoneNumber} verified={Boolean(user.phoneVerified)} />
 
       <div className="grid min-w-0 gap-4 lg:grid-cols-2">
-        <Card>
+        <Card className="premium-surface border-0">
           <CardHeader>
             <CardTitle className="text-sm font-semibold">Profile</CardTitle>
             <CardDescription className="text-xs">Basic information about your agent account.</CardDescription>
@@ -116,7 +116,7 @@ export default async function AgentAccountPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="premium-surface border-0">
           <CardHeader>
             <CardTitle className="text-sm font-semibold">Organization Access</CardTitle>
             <CardDescription className="text-xs">Where this agent account operates.</CardDescription>

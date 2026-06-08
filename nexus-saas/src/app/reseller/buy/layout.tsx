@@ -28,7 +28,7 @@ export default function ResellerBuyLayout({
             Use your reseller wallet to send single or bulk data bundles. Choose a mode below and confirm the numbers carefully.
           </p>
         </div>
-        <Card>
+        <Card className="premium-surface border-0">
           <CardHeader className="pb-0">
             <CardTitle className="text-sm font-medium">Purchase mode</CardTitle>
           </CardHeader>

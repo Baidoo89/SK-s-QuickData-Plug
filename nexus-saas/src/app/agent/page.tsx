@@ -454,7 +454,7 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
         </Card>
       </div>
 
-      <Card>
+      <Card className="premium-surface border-0">
         <CardHeader className="border-b bg-muted/30 pb-3">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -491,7 +491,7 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="premium-surface border-0">
         <CardHeader>
           <CardTitle className="text-sm font-semibold">Quick actions</CardTitle>
           <CardDescription className="text-xs">
@@ -501,7 +501,7 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
         <CardContent>
           <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-6">
             <Link href="/agent/buy/single" className="group">
-              <div className="flex items-center gap-3 rounded-md border bg-background px-3 py-2 transition-colors group-hover:border-primary">
+              <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-background/80 px-3 py-2 shadow-sm transition-colors group-hover:border-primary">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <ShoppingBag className="h-4 w-4" />
                 </div>
@@ -512,7 +512,7 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
               </div>
             </Link>
             <Link href="/agent/buy/bulk" className="group">
-              <div className="flex items-center gap-3 rounded-md border bg-background px-3 py-2 transition-colors group-hover:border-primary">
+              <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-background/80 px-3 py-2 shadow-sm transition-colors group-hover:border-primary">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <ShoppingBag className="h-4 w-4" />
                 </div>
@@ -523,7 +523,7 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
               </div>
             </Link>
             <Link href="/agent/wallet" className="group">
-              <div className="flex items-center gap-3 rounded-md border bg-background px-3 py-2 transition-colors group-hover:border-primary">
+              <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-background/80 px-3 py-2 shadow-sm transition-colors group-hover:border-primary">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Wallet className="h-4 w-4" />
                 </div>
@@ -534,7 +534,7 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
               </div>
             </Link>
             <Link href="/agent/orders" className="group">
-              <div className="flex items-center gap-3 rounded-md border bg-background px-3 py-2 transition-colors group-hover:border-primary">
+              <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-background/80 px-3 py-2 shadow-sm transition-colors group-hover:border-primary">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <FileText className="h-4 w-4" />
                 </div>
@@ -545,7 +545,7 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
               </div>
             </Link>
             <Link href="/agent/service-requests" className="group">
-              <div className="flex items-center gap-3 rounded-md border bg-background px-3 py-2 transition-colors group-hover:border-primary">
+              <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-background/80 px-3 py-2 shadow-sm transition-colors group-hover:border-primary">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <FileText className="h-4 w-4" />
                 </div>
@@ -556,7 +556,7 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
               </div>
             </Link>
             <Link href="/agent/storefront-pricing" className="group">
-              <div className="flex items-center gap-3 rounded-md border bg-background px-3 py-2 transition-colors group-hover:border-primary">
+              <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-background/80 px-3 py-2 shadow-sm transition-colors group-hover:border-primary">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Megaphone className="h-4 w-4" />
                 </div>
@@ -571,7 +571,7 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
       </Card>
 
       {agentStorePath && (
-        <Card>
+        <Card className="premium-surface border-0">
           <CardHeader>
             <CardTitle className="text-sm font-semibold">Your storefront link</CardTitle>
             <CardDescription className="text-xs">

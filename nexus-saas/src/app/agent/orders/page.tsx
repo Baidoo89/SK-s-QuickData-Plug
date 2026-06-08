@@ -186,7 +186,7 @@ export default async function AgentOrdersPage({
           All completed storefront orders that used your agent link will appear here.
         </p>
       </div>
-      <Card>
+      <Card className="premium-surface border-0">
         <CardHeader>
           <div className="flex flex-col gap-4">
             <div>

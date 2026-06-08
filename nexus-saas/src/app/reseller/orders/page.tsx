@@ -132,7 +132,7 @@ export default async function ResellerOrdersPage({
             </Button>
           </a>
         </div>
-        <Card>
+        <Card className="premium-surface border-0">
           <CardHeader>
             <div className="flex flex-col gap-4">
               <CardTitle>Recent orders</CardTitle>
