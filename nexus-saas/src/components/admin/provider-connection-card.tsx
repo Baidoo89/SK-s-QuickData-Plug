@@ -78,7 +78,7 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
       setLoading(true)
       try {
         const res = await fetch(endpoint)
-        if (!res.ok) throw new Error("Could not load provider connection")
+        if (!res.ok) throw new Error("Could not load delivery account")
         const payload = await res.json()
         const data = payload.data
 
@@ -94,7 +94,7 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
       } catch (error) {
         toast({
           title: "Error",
-          description: error instanceof Error ? error.message : "Failed to load provider connection",
+          description: error instanceof Error ? error.message : "Failed to load delivery account",
           variant: "destructive",
         })
       } finally {
@@ -112,7 +112,7 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
     if (prodHost && envGuess === "TEST" && !allowTestInProd) {
       toast({
         title: "Confirmation required",
-        description: "You appear to be on a production host with test/sandbox provider credentials. Tick the confirmation box to continue.",
+        description: "You appear to be on a production host with test/sandbox delivery credentials. Tick the confirmation box to continue.",
         variant: "destructive",
       })
       return
@@ -135,7 +135,7 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
 
       const payload = await res.json().catch(() => null)
       if (!res.ok) {
-        throw new Error(payload?.error?.message || "Failed to save provider connection")
+        throw new Error(payload?.error?.message || "Failed to save delivery account")
       }
 
       setHasApiKey(Boolean(payload?.data?.hasApiKey))
@@ -149,12 +149,12 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
       setAllowTestInProd(false)
       toast({
         title: "Saved",
-        description: "Provider connection updated successfully",
+        description: "Delivery account updated successfully",
       })
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Could not save provider connection",
+        description: error instanceof Error ? error.message : "Could not save delivery account",
         variant: "destructive",
       })
     } finally {
@@ -178,17 +178,17 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
   return (
     <Card className="premium-surface min-w-0 overflow-hidden rounded-lg">
       <CardHeader className="border-b border-border/70 bg-muted/20 pb-3">
-        <CardTitle className="break-words text-sm font-semibold">Provider Connection</CardTitle>
+        <CardTitle className="break-words text-sm font-semibold">Automatic Delivery Account</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 p-4">
         <p className="break-words text-xs text-muted-foreground">
-          Store the provider endpoint and secret securely on the server. This is used only for API-routed orders.
+          Save the delivery API details securely. This is used only when orders are sent for automatic delivery.
         </p>
 
         {connections.length > 0 ? (
           <div className="min-w-0 space-y-2 rounded-lg border border-border/70 bg-muted/25 p-3 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs font-semibold text-foreground">Saved provider slots</p>
+              <p className="text-xs font-semibold text-foreground">Saved delivery accounts</p>
               <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-2">
                 <Button
                   type="button"
@@ -215,7 +215,7 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
                     setUpdatedAt(null)
                   }}
                 >
-                  New slot
+                  New account
                 </Button>
               </div>
             </div>
@@ -248,7 +248,7 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
         ) : null}
 
         <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs">
-          <span className="text-muted-foreground">Detected provider environment:</span>
+          <span className="text-muted-foreground">Detected delivery environment:</span>
           <Badge
             variant="secondary"
             className={envGuess === "TEST" ? "bg-accent/70 text-accent-foreground" : envGuess === "LIVE" ? "bg-primary/15 text-foreground" : "bg-muted text-foreground"}
@@ -263,7 +263,7 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
         {showRiskWarning ? (
           <div className="space-y-2 rounded-lg border border-border/70 bg-accent/60 px-3 py-2 shadow-sm">
             <p className="break-words text-[11px] text-foreground">
-              Warning: this looks like a production host, but provider URL/key looks like test or sandbox credentials.
+              Warning: this looks like a production host, but the delivery URL/key looks like test or sandbox credentials.
             </p>
             <label className="flex items-center gap-2 text-[11px] text-foreground">
               <input
@@ -278,7 +278,7 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
         ) : null}
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium">Provider Slot Key</label>
+          <label className="text-xs font-medium">Delivery Account Key</label>
           <Input
             value={providerKey}
             onChange={(e) => setProviderKey(e.target.value)}
@@ -287,12 +287,12 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
             placeholder="primary"
           />
           <p className="break-words text-[11px] text-muted-foreground">
-            Use short keys like primary, backup, mtn-main. Network routing uses this key.
+            Use short keys like primary, backup, mtn-main. Network delivery rules use this key.
           </p>
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium">Provider Name</label>
+          <label className="text-xs font-medium">Delivery Account Name</label>
           <Input
             value={providerName}
             onChange={(e) => setProviderName(e.target.value)}
@@ -303,7 +303,7 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium">Provider Order URL</label>
+          <label className="text-xs font-medium">Order API URL</label>
           <Input
             value={providerOrderUrl}
             onChange={(e) => setProviderOrderUrl(e.target.value)}
@@ -314,17 +314,17 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium">Provider API Key</label>
+          <label className="text-xs font-medium">API Token / Secret</label>
           <Input
             type="password"
             value={providerApiKey}
             onChange={(e) => setProviderApiKey(e.target.value)}
             disabled={loading || saving}
             className="text-xs"
-            placeholder={hasApiKey ? "Leave blank to keep saved key" : "Enter provider secret"}
+            placeholder={hasApiKey ? "Leave blank to keep saved key" : "Enter API token or secret"}
           />
           <p className="break-words text-[11px] text-muted-foreground">
-            {hasApiKey ? "A provider secret is already saved on the server." : "No provider secret saved yet."}
+            {hasApiKey ? "An API token is already saved on the server." : "No API token saved yet."}
           </p>
         </div>
 
@@ -333,7 +333,7 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium">Provider Template</label>
+          <label className="text-xs font-medium">API Type</label>
           <select
             value={templateKey}
             onChange={(e) => {
@@ -353,7 +353,7 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
             ))}
           </select>
           <p className="break-words text-[11px] text-muted-foreground">
-            The template defines auth headers, request payload, and response interpretation for this provider slot.
+            The API type tells TechDalt how to authenticate, send orders, and read responses.
           </p>
           {templateKey === "skplug" ? (
             <div className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-[11px] text-primary shadow-sm">
@@ -363,7 +363,7 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium">Provider Slot Status</label>
+          <label className="text-xs font-medium">Delivery Account Status</label>
           <div className="grid grid-cols-2 rounded-md border border-border bg-muted/30 p-1">
             <button
               type="button"
@@ -383,12 +383,12 @@ export function ProviderConnectionCard({ endpoint = "/api/admin/provider-connect
             </button>
           </div>
           <p className="break-words text-[11px] text-muted-foreground">
-            Paused provider slots are skipped during dispatch and fallback routing.
+            Paused delivery accounts are skipped when orders are sent automatically.
           </p>
         </div>
 
         <Button onClick={saveConnection} disabled={loading || saving} className="w-full text-xs sm:w-auto">
-          {saving ? "Saving..." : "Save Provider Connection"}
+          {saving ? "Saving..." : "Save Delivery Account"}
         </Button>
       </CardContent>
     </Card>

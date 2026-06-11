@@ -146,7 +146,7 @@ export function ManualQueueWorkspace({ rows }: Props) {
     await navigator.clipboard.writeText(buildCopyText(copyRows))
     toast({
       title: "Copied",
-      description: `${copyRows.length} order${copyRows.length === 1 ? "" : "s"} copied for manual processing.`,
+      description: `${copyRows.length} order${copyRows.length === 1 ? "" : "s"} copied for processing.`,
     })
   }
 
@@ -201,13 +201,13 @@ export function ManualQueueWorkspace({ rows }: Props) {
     if (selectedRows.length === 0) {
       toast({
         title: "No orders selected",
-        description: "Select paid manual pending or processing orders first.",
+        description: "Select paid pending or processing orders first.",
       })
       return
     }
 
     const confirmed = window.confirm(
-      `Send ${selectedRows.length} selected manual order${selectedRows.length === 1 ? "" : "s"} through the active API dispatch policy?`,
+      `Send ${selectedRows.length} selected order${selectedRows.length === 1 ? "" : "s"} through automatic delivery?`,
     )
     if (!confirmed) return
 
@@ -223,19 +223,19 @@ export function ManualQueueWorkspace({ rows }: Props) {
 
       const payload = await res.json().catch(() => null)
       if (!res.ok) {
-        throw new Error(payload?.error?.message || "API dispatch failed")
+        throw new Error(payload?.error?.message || "Automatic delivery failed")
       }
 
       const data = payload?.data || {}
       toast({
-        title: "API dispatch complete",
-        description: `${data.sentToApi ?? 0} sent to API, ${data.stayedManual ?? 0} stayed manual, ${data.skipped ?? 0} skipped.`,
+        title: "Automatic delivery complete",
+        description: `${data.sentToApi ?? 0} sent automatically, ${data.stayedManual ?? 0} stayed manual, ${data.skipped ?? 0} skipped.`,
       })
       setSelected(new Set())
       router.refresh()
     } catch (error) {
       toast({
-        title: "API dispatch failed",
+        title: "Automatic delivery failed",
         description: error instanceof Error ? error.message : "Could not send selected orders to API.",
         variant: "destructive",
       })
@@ -382,7 +382,7 @@ export function ManualQueueWorkspace({ rows }: Props) {
             {rows.length === 0 && (
               <TableRow>
                 <TableCell colSpan={12} className="text-center text-muted-foreground">
-                  No manual pending orders found.
+                  No pending orders found.
                 </TableCell>
               </TableRow>
             )}

@@ -26,11 +26,11 @@ export function DispatchHealthCard({ endpoint = "/api/admin/dispatch-health" }: 
         const res = await fetch(endpoint)
         const payload = await res.json().catch(() => null)
         if (!res.ok) {
-          throw new Error(payload?.error?.message || "Failed to load dispatch health")
+          throw new Error(payload?.error?.message || "Failed to load delivery health")
         }
         setData(payload.data)
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Could not load dispatch health")
+        setError(err instanceof Error ? err.message : "Could not load delivery health")
       }
     }
 
@@ -41,7 +41,7 @@ export function DispatchHealthCard({ endpoint = "/api/admin/dispatch-health" }: 
     <Card className="premium-surface min-w-0 overflow-hidden rounded-lg">
       <CardHeader className="border-b border-border/70 bg-muted/20 pb-3">
         <CardTitle className="flex min-w-0 items-center justify-between gap-2 text-sm font-semibold">
-          <span className="min-w-0 break-words">Dispatch Health</span>
+          <span className="min-w-0 break-words">Delivery Health</span>
           {data ? (
             <Badge className={data.alert ? "shrink-0 bg-destructive/15 text-destructive" : "shrink-0 bg-primary/15 text-foreground"}>
               {data.alert ? "Alert" : "Healthy"}
@@ -53,14 +53,14 @@ export function DispatchHealthCard({ endpoint = "/api/admin/dispatch-health" }: 
         {error ? (
           <p className="break-words text-xs text-destructive">{error}</p>
         ) : !data ? (
-          <p className="text-xs text-muted-foreground">Loading dispatch health...</p>
+          <p className="text-xs text-muted-foreground">Loading delivery health...</p>
         ) : (
           <div className="space-y-1 text-xs">
-            <div className="flex min-w-0 justify-between gap-2"><span className="min-w-0 break-words">Attempts (24h):</span><span className="shrink-0 font-semibold">{data.attempts24h}</span></div>
-            <div className="flex min-w-0 justify-between gap-2"><span className="min-w-0 break-words">Failed dispatches (24h):</span><span className="shrink-0 font-semibold">{data.failedDispatches24h}</span></div>
-            <div className="flex min-w-0 justify-between gap-2"><span className="min-w-0 break-words">Stale API pending:</span><span className="shrink-0 font-semibold">{data.stalePendingApiOrders}</span></div>
+            <div className="flex min-w-0 justify-between gap-2"><span className="min-w-0 break-words">Delivery attempts (24h):</span><span className="shrink-0 font-semibold">{data.attempts24h}</span></div>
+            <div className="flex min-w-0 justify-between gap-2"><span className="min-w-0 break-words">Failed deliveries (24h):</span><span className="shrink-0 font-semibold">{data.failedDispatches24h}</span></div>
+            <div className="flex min-w-0 justify-between gap-2"><span className="min-w-0 break-words">Old pending API orders:</span><span className="shrink-0 font-semibold">{data.stalePendingApiOrders}</span></div>
             <p className="break-words pt-1 text-[11px] text-muted-foreground">
-              Stale means API-routed orders pending longer than {data.staleMinutes} minutes.
+              Old pending means API orders still waiting after {data.staleMinutes} minutes.
             </p>
           </div>
         )}

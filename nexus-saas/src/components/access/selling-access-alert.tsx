@@ -26,7 +26,7 @@ export function SellingAccessAlert({
         </div>
         <div className="min-w-0">
           <p className="font-semibold">Selling access is active</p>
-          {!compact ? <p className="break-words opacity-90">Checkout, agent sales, reseller sales, and wallet-backed VTU ordering are available.</p> : null}
+          {!compact ? <p className="break-words opacity-90">Shop checkout, team sales, reseller sales, and wallet purchases are available.</p> : null}
         </div>
       </div>
     )

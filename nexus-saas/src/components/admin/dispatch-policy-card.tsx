@@ -54,7 +54,7 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
       } catch (error) {
         toast({
           title: "Error",
-          description: error instanceof Error ? error.message : "Failed to load dispatch policy",
+          description: error instanceof Error ? error.message : "Failed to load order processing rules",
           variant: "destructive",
         })
       } finally {
@@ -101,12 +101,12 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
 
       toast({
         title: "Saved",
-        description: "Dispatch policy updated successfully",
+        description: "Order processing rules updated successfully",
       })
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Could not save dispatch policy",
+        description: error instanceof Error ? error.message : "Could not save order processing rules",
         variant: "destructive",
       })
     } finally {
@@ -132,20 +132,20 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
   return (
     <Card className="premium-surface min-w-0 overflow-hidden rounded-lg">
       <CardHeader className="border-b border-border/70 bg-muted/20 pb-3">
-        <CardTitle className="break-words text-sm font-semibold">Order Dispatch Policy</CardTitle>
+        <CardTitle className="break-words text-sm font-semibold">Order Processing Rules</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 p-4">
         <p className="break-words text-xs text-muted-foreground">
-          Control which networks go through provider API and which stay manual.
+          Choose which networks use automatic delivery and which ones stay manual.
         </p>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium">Dispatch Mode</label>
+          <label className="text-xs font-medium">Processing Mode</label>
           <div className="grid gap-2 sm:grid-cols-3">
             {[
-              { value: "HYBRID", label: "Hybrid", detail: "API + manual fallback" },
-              { value: "MANUAL_ONLY", label: "Manual", detail: "No provider API" },
-              { value: "API_ONLY", label: "API only", detail: "Strict automation" },
+              { value: "HYBRID", label: "Flexible", detail: "Auto when possible, manual fallback" },
+              { value: "MANUAL_ONLY", label: "Manual only", detail: "Process everything yourself" },
+              { value: "API_ONLY", label: "Automatic only", detail: "Send all selected networks to API" },
             ].map((item) => (
               <button
                 key={item.value}
@@ -162,7 +162,7 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium">Default Provider Slot</label>
+          <label className="text-xs font-medium">Default Delivery Account</label>
           <Input
             value={providerKey}
             onChange={(e) => setProviderKey(e.target.value)}
@@ -171,12 +171,12 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
             placeholder="primary"
           />
           <p className="break-words text-[11px] text-muted-foreground">
-            This must match a saved provider slot key. Example: primary, backup, mtn-main.
+            This must match a saved delivery account key. Example: primary, backup, mtn-main.
           </p>
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium">Provider Display Name</label>
+          <label className="text-xs font-medium">Delivery Account Name</label>
           <Input
             value={providerName}
             onChange={(e) => setProviderName(e.target.value)}
@@ -187,7 +187,7 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium">API Enabled Networks</label>
+          <label className="text-xs font-medium">Automatic Networks</label>
           <div className="grid gap-2 sm:grid-cols-3">
             {NETWORKS.map((network) => {
               const enabled = enabledNetworks.includes(network)
@@ -202,7 +202,7 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
                   <span className="flex min-w-0 items-center justify-between gap-2">
                     <span className="min-w-0 break-words">{network === "AIRTELTIGO" ? "AirtelTigo" : network.charAt(0) + network.slice(1).toLowerCase()}</span>
                     <Badge variant={enabled ? "secondary" : "outline"} className="shrink-0 rounded-md px-2 py-0 text-[10px]">
-                      {enabled ? "API on" : "Manual"}
+                      {enabled ? "Auto" : "Manual"}
                     </Badge>
                   </span>
                 </button>
@@ -217,12 +217,12 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
             placeholder="MTN, AIRTELTIGO, TELECEL"
           />
           <p className="break-words text-[11px] text-muted-foreground">
-            Comma-separated. Example: MTN for MTN-only API routing.
+            Comma-separated. Example: MTN if only MTN should use automatic delivery.
           </p>
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium">Network Provider Routing</label>
+          <label className="text-xs font-medium">Network Delivery Order</label>
           <Input
             value={networkProviderText}
             onChange={(e) => setNetworkProviderText(e.target.value)}
@@ -231,12 +231,12 @@ export function DispatchPolicyCard({ endpoint = "/api/admin/dispatch-policy" }: 
             placeholder="MTN=primary>backup, TELECEL=backup, AIRTELTIGO=primary"
           />
           <p className="break-words text-[11px] text-muted-foreground">
-            Optional. Use &gt; for fallback order. Example: MTN tries primary first, then backup.
+            Optional. Use &gt; for backup order. Example: MTN tries primary first, then backup.
           </p>
         </div>
 
         <Button onClick={savePolicy} disabled={loading || saving} className="w-full text-xs sm:w-auto">
-          {saving ? "Saving..." : "Save Dispatch Policy"}
+          {saving ? "Saving..." : "Save Processing Rules"}
         </Button>
       </CardContent>
     </Card>

@@ -68,7 +68,7 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to load provider mappings",
+        description: error instanceof Error ? error.message : "Failed to load package codes",
         variant: "destructive",
       })
     } finally {
@@ -171,7 +171,7 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
   async function saveVisibleMappings() {
     const mappedRows = filteredRows.filter((row) => row.externalProductCode.trim())
     if (mappedRows.length === 0) {
-      toast({ title: "No visible mappings to save", description: "Auto-fill or enter provider codes in the current view first." })
+      toast({ title: "No visible codes to save", description: "Auto-fill or enter package codes in the current view first." })
       return
     }
 
@@ -195,14 +195,14 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
       }
 
       toast({
-        title: "Mappings saved",
-        description: `${saved} visible provider mapping${saved === 1 ? "" : "s"} saved for ${providerKey}.`,
+        title: "Package codes saved",
+        description: `${saved} visible package code${saved === 1 ? "" : "s"} saved for ${providerKey}.`,
       })
       await loadMappings(providerKey)
     } catch (error) {
       toast({
         title: "Bulk save failed",
-        description: error instanceof Error ? error.message : "Could not save provider mappings.",
+        description: error instanceof Error ? error.message : "Could not save package codes.",
         variant: "destructive",
       })
     } finally {
@@ -250,9 +250,9 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
       <CardHeader className="border-b border-border/70 bg-muted/20 pb-3">
         <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <CardTitle className="text-sm font-semibold">Provider Product Mapping</CardTitle>
+            <CardTitle className="text-sm font-semibold">Package Code Matching</CardTitle>
             <p className="mt-1 break-words text-xs text-muted-foreground">
-              Match your local bundles to the package codes required by the selected provider slot.
+              Match your TechDalt bundles to the package codes required by the selected delivery account.
             </p>
           </div>
           <Badge variant="secondary" className="w-fit rounded-md">
@@ -263,7 +263,7 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
       <CardContent className="space-y-4 p-4">
         <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium">Provider Slot</label>
+            <label className="text-xs font-medium">Delivery Account</label>
             <select
               value={providerKey}
               disabled={loading}
@@ -321,7 +321,7 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               className="h-9 text-xs"
-              placeholder="Search bundle, network, or provider code"
+              placeholder="Search bundle, network, or package code"
             />
             <div className="grid grid-cols-3 gap-2">
               {(["ALL", "UNMAPPED", "MAPPED"] as const).map((filter) => (
@@ -348,7 +348,7 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
         {isSkDataPlug ? (
           <div className="grid gap-3 rounded-lg border border-primary/20 bg-primary/10 p-3 shadow-sm md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
             <div className="min-w-0 space-y-2">
-              <p className="text-xs font-semibold text-primary">SKDataPlug mapping assistant</p>
+              <p className="text-xs font-semibold text-primary">SKDataPlug code helper</p>
               <p className="break-words text-[11px] text-primary/80">
                 MTN and Telecel map to the gb_size only. AirtelTigo must choose an SKDataPlug route because they publish AT_EXPIRY and AT_NOEXPIRY separately.
               </p>
@@ -377,7 +377,7 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
 
         {selectedConnection?.active === false ? (
           <div className="break-words rounded-lg border border-border/70 bg-muted/40 px-3 py-2 text-xs text-muted-foreground shadow-sm">
-            This provider slot is paused. Mappings are saved, but dispatch will skip the slot until it is active.
+            This delivery account is paused. Saved codes stay here, but automatic delivery will skip it until it is active.
           </div>
         ) : null}
 
@@ -388,7 +388,7 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
                 <TableHead>Bundle</TableHead>
                 <TableHead>Network</TableHead>
                 <TableHead>Price</TableHead>
-                <TableHead>Provider Package Code</TableHead>
+                <TableHead>Package Code</TableHead>
                 <TableHead>Notes</TableHead>
                 <TableHead className="text-right">State</TableHead>
               </TableRow>
@@ -446,7 +446,7 @@ export function ProviderProductMappingCard({ endpoint = "/api/dashboard/provider
           </Table>
         </div>
         <p className="break-words text-[11px] text-muted-foreground">
-          If a code is empty, dispatch sends the local product ID. For SKDataPlug, use gb_size such as 1, 5, or 10. For AirtelTigo, use AT_EXPIRY:5 or AT_NOEXPIRY:5.
+          If a code is empty, TechDalt sends the local product ID. For SKDataPlug, use gb_size such as 1, 5, or 10. For AirtelTigo, use AT_EXPIRY:5 or AT_NOEXPIRY:5.
         </p>
       </CardContent>
     </Card>

@@ -245,42 +245,42 @@ export default async function DashboardPage() {
 
         onboardingItems = [
           {
-            label: "Active subscription",
-            description: subscriptionActive ? "Selling access is active." : "Choose or activate a SaaS plan.",
+            label: "Subscription active",
+            description: subscriptionActive ? "Selling is active." : "Choose or activate a plan.",
             href: "/dashboard/subscription",
             complete: subscriptionActive,
             icon: CreditCard,
           },
           {
-            label: "Paystack connected",
+            label: "Payment account connected",
             description: paystackConnected ? "Customer payments settle to your Paystack." : "Connect your Paystack public and secret keys.",
             href: "/dashboard/settings",
             complete: paystackConnected,
             icon: WalletCards,
           },
           {
-            label: "Products created",
-            description: productsReady ? `${productCount} active product${productCount === 1 ? "" : "s"} available.` : "Create active bundles or products for your storefront.",
+            label: "Products added",
+            description: productsReady ? `${productCount} active product${productCount === 1 ? "" : "s"} available.` : "Create bundles or services for your shop link.",
             href: "/dashboard/products",
             complete: productsReady,
             icon: Package,
           },
           {
-            label: "Base pricing set",
+            label: "Prices set",
             description: pricingReady ? `${basePriceCount} price record${basePriceCount === 1 ? "" : "s"} configured.` : "Set the prices customers will pay.",
             href: "/dashboard/products",
             complete: pricingReady,
             icon: Settings,
           },
           {
-            label: "Storefront ready",
-            description: storefrontReady ? "Public checkout can accept paid orders." : "Requires subscription, Paystack, products, and prices.",
+            label: "Shop link ready",
+            description: storefrontReady ? "Customers can pay and place orders." : "Requires subscription, Paystack, products, and prices.",
             href: storeUrl !== "#" ? storeUrl : "/dashboard/settings",
             complete: storefrontReady,
             icon: ExternalLink,
           },
           {
-            label: "Sales channels",
+            label: "Team sellers",
             description: agentsReady ? `${agentCount} active agent${agentCount === 1 ? "" : "s"} available.` : "Optional: add agents or resellers for wider selling.",
             href: "/dashboard/agents",
             complete: agentsReady,
@@ -288,8 +288,8 @@ export default async function DashboardPage() {
             icon: Users,
           },
           {
-            label: "API access",
-            description: apiReady ? `${apiKeys.length} API key${apiKeys.length === 1 ? "" : "s"} created.` : "Optional: create an API key for programmatic orders.",
+            label: "Website API",
+            description: apiReady ? `${apiKeys.length} API key${apiKeys.length === 1 ? "" : "s"} created.` : "Optional: connect an external website.",
             href: "/dashboard/settings",
             complete: apiReady,
             required: false,
@@ -343,9 +343,9 @@ export default async function DashboardPage() {
         failedOrdersToday = todayOrders.filter((order) => ["FAILED", "CANCELLED", "REFUNDED", "PAYMENT_FAILED"].includes(order.status)).length;
         walletBackedPurchasesToday = todayOrders.filter((order) => order.paymentOwner === "WALLET").length;
         channelMetrics = [
-          { key: "api", label: "API sales", ...apiSummary, href: "/dashboard/orders?source=API" },
-          { key: "storefront", label: "Storefront sales", ...storefrontSummary, href: "/dashboard/orders?source=STOREFRONT" },
-          { key: "dashboard", label: "Dashboard buys", ...dashboardBuySummary, href: "/dashboard/orders?source=DASHBOARD" },
+          { key: "api", label: "Website sales", ...apiSummary, href: "/dashboard/orders?source=API" },
+          { key: "storefront", label: "Shop link sales", ...storefrontSummary, href: "/dashboard/orders?source=STOREFRONT" },
+          { key: "dashboard", label: "Direct buys", ...dashboardBuySummary, href: "/dashboard/orders?source=DASHBOARD" },
           { key: "agent", label: "Agent activity", ...agentSummary, href: "/dashboard/orders?source=AGENT" },
           { key: "reseller", label: "Reseller activity", ...resellerSummary, href: "/dashboard/orders?source=RESELLER" },
         ];
@@ -353,27 +353,27 @@ export default async function DashboardPage() {
         alertItems = [
           ...(!subscriptionActive ? [{
             label: "Subscription inactive",
-            description: "Selling channels are blocked until your SaaS plan is active.",
+            description: "Selling is blocked until your plan is active.",
             href: "/dashboard/subscription",
             action: "Manage subscription",
             tone: "warning" as const,
           }] : []),
           ...(!paystackConnected ? [{
             label: "Paystack not connected",
-            description: "Storefront customer payments need your own Paystack keys.",
+            description: "Customer payments need your own Paystack keys.",
             href: "/dashboard/settings",
             action: "Connect Paystack",
             tone: "warning" as const,
           }] : []),
           ...(!providerConnected ? [{
-            label: "Provider API not connected",
-            description: "Orders will stay manual until provider dispatch is configured.",
+            label: "Automatic delivery not connected",
+            description: "Orders will stay manual until a delivery API is connected.",
             href: "/dashboard/settings",
-            action: "Review provider",
+            action: "Review delivery",
             tone: "info" as const,
           }] : []),
           ...(pendingManualOrders > 0 ? [{
-            label: "Orders need fulfillment",
+            label: "Orders need processing",
             description: `${pendingManualOrders} paid order${pendingManualOrders === 1 ? "" : "s"} waiting to be claimed.`,
             href: "/dashboard/orders",
             action: "Open orders",
@@ -388,7 +388,7 @@ export default async function DashboardPage() {
           }] : []),
           ...(!productsReady ? [{
             label: "No active products",
-            description: "Create active bundles before sharing your storefront.",
+            description: "Create active bundles before sharing your shop link.",
             href: "/dashboard/products",
             action: "Add products",
             tone: "warning" as const,
@@ -550,9 +550,9 @@ export default async function DashboardPage() {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-primary">Subscriber workspace</p>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Command Center</h2>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Home</h2>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Watch selling access, customer payments, manual fulfillment, and channel performance from one place.
+            Track sales, payments, orders, team sellers, and setup progress from one place.
           </p>
         </div>
         <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-2">
@@ -562,7 +562,7 @@ export default async function DashboardPage() {
           {storeUrl !== "#" && (
             <Link href={storeUrl} target="_blank">
               <Button variant="outline" className="gap-2 w-full justify-center">
-                View Store <ExternalLink className="h-4 w-4" />
+                View Shop <ExternalLink className="h-4 w-4" />
               </Button>
             </Link>
           )}
@@ -586,7 +586,7 @@ export default async function DashboardPage() {
           <CardHeader className="border-b bg-muted/30 pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <AlertTriangle className="h-4 w-4 text-primary" />
-              Operational alerts
+               Things to fix
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
@@ -610,7 +610,7 @@ export default async function DashboardPage() {
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
             <p className="font-semibold">Operations look clean</p>
-            <p>No urgent setup, payment, or manual fulfillment alerts are active.</p>
+            <p>No urgent setup, payment, or order processing alerts are active.</p>
           </div>
         </div>
       )}
@@ -624,7 +624,7 @@ export default async function DashboardPage() {
                 Launch checklist
               </CardTitle>
               <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                Complete the required checks before sharing your storefront for paid customer orders. Agent and API channels can come after launch.
+                Complete the required checks before sharing your shop link. Team sellers and website API can come after launch.
               </p>
             </div>
             <Badge variant={onboardingIsReady ? "secondary" : "outline"} className={onboardingIsReady ? "bg-primary/10 text-primary" : ""}>
@@ -651,17 +651,17 @@ export default async function DashboardPage() {
           ) : null}
           {!onboardingIsReady ? (
             <div className="status-warning mt-4 rounded-md border px-4 py-3 text-sm">
-              Selling is blocked until the required billing, Paystack, product, and pricing steps are complete.
+              Selling is blocked until the required plan, Paystack, product, and pricing steps are complete.
             </div>
           ) : (
             <div className="status-success mt-4 rounded-md border px-4 py-3 text-sm">
-              Your storefront is ready to accept paid orders into the manual fulfillment queue.
+              Your shop link is ready to accept paid customer orders.
             </div>
           )}
           <div className="mt-4">
             <Button asChild variant={onboardingIsReady ? "outline" : "default"} size="sm">
               <Link href="/dashboard/setup">
-                {onboardingIsReady ? "Review Launch Setup" : "Continue Launch Setup"}
+                {onboardingIsReady ? "Review Setup Guide" : "Continue Setup Guide"}
               </Link>
             </Button>
           </div>
@@ -684,16 +684,16 @@ export default async function DashboardPage() {
           tone="primary"
         />
         <MetricCard
-          label="Fulfillment Work"
+          label="Orders To Process"
           value={pendingManualOrders + processingManualOrders}
           description={`${pendingManualOrders} pending, ${processingManualOrders} processing`}
           icon={Wrench}
           tone={pendingManualOrders > 0 ? "warning" : "success"}
         />
         <MetricCard
-          label="External Sales"
+          label="Online Sales"
           value={apiOrdersToday + storefrontSalesToday}
-          description={`${apiOrdersToday} API, ${storefrontSalesToday} storefront`}
+          description={`${apiOrdersToday} website, ${storefrontSalesToday} shop link`}
           icon={Zap}
           tone="primary"
         />
@@ -710,11 +710,11 @@ export default async function DashboardPage() {
         <CardHeader className="border-b bg-muted/30 pb-3">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <CardTitle className="text-sm font-semibold text-foreground">Channel performance today</CardTitle>
-              <p className="text-xs text-muted-foreground">Source-aware sales, buys, profit, and pending work using the new order metadata.</p>
+              <CardTitle className="text-sm font-semibold text-foreground">Sales by source today</CardTitle>
+              <p className="text-xs text-muted-foreground">See where today&apos;s orders came from and what still needs attention.</p>
             </div>
             <Badge variant="outline" className="w-fit text-xs">
-              {dashboardBuysToday} dashboard buy{dashboardBuysToday === 1 ? "" : "s"}
+              {dashboardBuysToday} direct buy{dashboardBuysToday === 1 ? "" : "s"}
             </Badge>
           </div>
         </CardHeader>

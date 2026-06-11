@@ -85,7 +85,7 @@ export function OrderTimelineDialog({ orderId, endpointBase = "/api/orders" }: P
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Order Timeline</DialogTitle>
-          <DialogDescription>Audit trail, payment reference, and fulfillment history for this order.</DialogDescription>
+          <DialogDescription>Order activity, payment reference, and processing history.</DialogDescription>
         </DialogHeader>
 
         {loading ? (
@@ -131,7 +131,7 @@ export function OrderTimelineDialog({ orderId, endpointBase = "/api/orders" }: P
               <div className="border-b px-3 py-2">
                 <p className="text-sm font-semibold">Pricing context</p>
                 <p className="text-xs text-muted-foreground">
-                  Dashboard buys show zero withdrawable profit. Storefront/API customer sales show seller margin where applicable.
+                  Direct buys show zero withdrawable profit. Shop link and website sales show seller margin where applicable.
                 </p>
               </div>
               <div className="divide-y">
