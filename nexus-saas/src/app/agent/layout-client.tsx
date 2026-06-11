@@ -63,11 +63,11 @@ export default function AgentLayout({
     () => [
       { href: "/agent", label: "Dashboard", icon: Home },
       {
-        label: "Finance",
+        label: "Money",
         icon: Wallet,
         key: "wallet",
         children: [
-          { href: "/agent/wallet", label: "Wallet Top Up" },
+          { href: "/agent/wallet", label: "Add Wallet Funds" },
           { href: "/agent/withdrawals", label: "Withdrawals" },
         ],
       },
@@ -76,33 +76,33 @@ export default function AgentLayout({
         icon: ShoppingBag,
         key: "buy",
         children: [
-          { href: "/agent/buy/single", label: "Single Purchase" },
-          { href: "/agent/buy/bulk", label: "Bulk Purchase" },
+          { href: "/agent/buy/single", label: "Buy One" },
+          { href: "/agent/buy/bulk", label: "Buy Many" },
         ],
       },
       { href: "/agent/orders", label: "Orders", icon: FileText },
       {
-        label: "Reseller Network",
+        label: "My Resellers",
         icon: Users,
         key: "resellers",
         children: [
-          { href: "/agent/resellers", label: "Manage Resellers" },
-          { href: "/agent/approvals", label: "Reseller Approvals" },
+          { href: "/agent/resellers", label: "Resellers" },
+          { href: "/agent/approvals", label: "Approvals" },
         ],
       },
       { href: "/agent/customers", label: "Customers", icon: Users },
       {
-        label: "Storefront",
+        label: "Shop Link",
         icon: Store,
         key: "storefront",
         children: [
-          { href: "/agent/storefronts", label: "Share Links" },
+          { href: "/agent/storefronts", label: "Share Shop Link" },
           { href: "/agent/storefront-pricing", label: "Customer Prices" },
-          { href: "/agent/service-requests", label: "Service Requests" },
+          { href: "/agent/service-requests", label: "Forms & Requests" },
         ],
       },
-      { href: "/agent/api-docs", label: "API Docs", icon: FileText },
-      { href: "/agent/account", label: "Account", icon: CreditCard },
+      { href: "/agent/api-docs", label: "Website API", icon: FileText },
+      { href: "/agent/account", label: "Profile", icon: CreditCard },
     ],
     [],
   )
@@ -214,7 +214,7 @@ export default function AgentLayout({
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-primary">
                 <Package2 className="h-5 w-5" />
               </span>
-              <span className="portal-sidebar-label truncate text-primary">Agent Panel</span>
+              <span className="portal-sidebar-label truncate text-primary">Agent</span>
             </Link>
             <Button
               type="button"
@@ -248,7 +248,7 @@ export default function AgentLayout({
                 <div className="flex h-14 items-center border-b border-border/70 px-4">
                   <Link href="/agent" className="flex items-center gap-2 font-bold text-lg tracking-tight text-primary">
                     <Package2 className="h-5 w-5" />
-                    <span>Agent Panel</span>
+                    <span>Agent</span>
                   </Link>
                 </div>
                 <nav className="max-h-[calc(100vh-3.5rem)] space-y-1 overflow-y-auto px-3 py-4 text-sm">
@@ -258,9 +258,9 @@ export default function AgentLayout({
             </Sheet>
 
             <div className="min-w-0 flex flex-col">
-              <span className="truncate text-sm font-semibold leading-tight">Agent Portal</span>
+              <span className="truncate text-sm font-semibold leading-tight">Agent</span>
               <span className="hidden truncate text-xs leading-tight text-muted-foreground sm:block">
-                Sell data, manage resellers, and track wallet activity.
+                Sell data, manage resellers, and track money.
               </span>
             </div>
           </div>
@@ -276,7 +276,7 @@ export default function AgentLayout({
               <DropdownMenuLabel>Agent</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/agent/storefronts">Storefront Links</Link>
+                <Link href="/agent/storefronts">Shop Link</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

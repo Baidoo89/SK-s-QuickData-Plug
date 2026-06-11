@@ -8,7 +8,7 @@ import { getOrCreateResellerStorefrontLink } from "@/lib/storefront-links"
 export default async function ResellerStorefrontsPage() {
   const session = await auth()
   if (!session?.user?.email) {
-    return <PortalAccessMessage title="Login required" description="Sign in with an approved reseller account to view storefront links." />
+    return <PortalAccessMessage title="Login required" description="Sign in with an approved reseller account to view shop links." />
   }
 
   const user = await db.user.findUnique({
@@ -25,7 +25,7 @@ export default async function ResellerStorefrontsPage() {
   })
 
   if (!user || user.role !== "RESELLER" || !user.organizationId || !user.organization?.slug) {
-    return <PortalAccessMessage title="Storefront unavailable" description="This reseller account is not fully linked to an organization storefront. Ask your agent or subscriber admin to complete setup." />
+    return <PortalAccessMessage title="Shop link unavailable" description="This reseller account is not fully linked to an organization shop. Ask your agent or subscriber admin to complete setup." />
   }
 
   const resellerOrderCount = await db.order.count({
@@ -45,20 +45,20 @@ export default async function ResellerStorefrontsPage() {
 
   const storefrontLinks = [
     {
-      label: "Your customer storefront",
+      label: "Your customer shop link",
       path: resellerStorePath,
       description: user.parentAgentId
         ? "Share this link with customers. Your own customer prices and profit tracking are applied here."
-        : "Your customer storefront needs parent-agent linkage before it can be shared confidently.",
+        : "Your customer shop link needs parent-agent linkage before it can be shared confidently.",
     },
   ]
 
   return (
     <div className="portal-page space-y-6">
       <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Storefronts</h1>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Shop Links</h1>
         <p className="text-sm text-muted-foreground">
-          Share clean customer links like techdalt.com/shop/your-name and track how your reseller orders are performing.
+          Share your clean customer link like techdalt.com/shop/your-name and track your reseller sales.
         </p>
       </div>
 
@@ -90,8 +90,8 @@ export default async function ResellerStorefrontsPage() {
       </div>
 
       <ShareLinksCard
-        title="Shareable storefront links"
-        description="Customers only see your clean storefront handle. Technical API URLs stay in API Docs."
+        title="Shareable shop links"
+        description="Customers only see your clean shop handle. Technical API URLs stay in Website API."
         links={storefrontLinks}
       />
 

@@ -3,26 +3,27 @@ import { ArrowRight, BadgeCheck, CreditCard, Layers3, ShieldCheck, Store, UsersR
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { WhatsAppSupportButton } from "@/components/support/whatsapp-support-button"
 
 const features = [
   {
-    title: "Branded storefronts",
-    description: "Give every subscriber, agent, and reseller a clean checkout link for data bundles and service requests.",
+    title: "Branded shop links",
+    description: "Give every subscriber, agent, and reseller a clean customer link for data bundles and service requests.",
     icon: Store,
   },
   {
-    title: "Hierarchy controls",
-    description: "Keep subscribers, agents, resellers, pricing, approvals, customers, and earnings in the right chain.",
+    title: "Simple team control",
+    description: "Manage subscribers, agents, resellers, prices, approvals, customers, and earnings in the right order.",
     icon: UsersRound,
   },
   {
     title: "Subscriber-owned payments",
-    description: "Connect each subscriber's own Paystack so storefront revenue goes directly to the business owner.",
+    description: "Connect each subscriber's own Paystack so customer payments go directly to the business owner.",
     icon: CreditCard,
   },
   {
-    title: "Manual and API fulfillment",
-    description: "Route orders by network, copy pending batches, dispatch through API, or process manually when needed.",
+    title: "Easy order processing",
+    description: "Pick pending orders, copy batches, send through API, or process manually when needed.",
     icon: Layers3,
   },
 ]
@@ -35,7 +36,7 @@ const rows = [
 
 const steps = [
   "Create a subscriber workspace and approve the account.",
-  "Connect Paystack, products, prices, and storefront links.",
+  "Connect Paystack, products, prices, and shop links.",
   "Invite agents and resellers with controlled pricing.",
   "Receive paid orders and fulfill them from one operations workspace.",
 ]
@@ -55,6 +56,7 @@ export default function HomePage() {
             <Button variant="ghost" size="sm" className="hidden sm:inline-flex" asChild>
               <Link href="/pricing">Pricing</Link>
             </Button>
+            <WhatsAppSupportButton label="WhatsApp" className="hidden h-9 px-3 sm:inline-flex" />
             <Button variant="outline" size="sm" asChild>
               <Link href="/login">Sign in</Link>
             </Button>
@@ -76,7 +78,7 @@ export default function HomePage() {
                 Run a cleaner data bundle business with TechDalt.
               </h1>
               <p className="max-w-xl text-base leading-8 text-muted-foreground sm:text-lg">
-                Manage subscribers, agents, resellers, storefront checkout, Paystack payments, wallets, API dispatch, and manual fulfillment from one controlled SaaS workspace.
+                Manage sellers, agents, resellers, shop links, Paystack payments, wallets, API delivery, and manual order processing from one clean workspace.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -89,11 +91,12 @@ export default function HomePage() {
               <Button size="lg" variant="outline" asChild>
                 <Link href="/pricing">View pricing</Link>
               </Button>
+              <WhatsAppSupportButton label="Talk to TechDalt" className="h-11 px-5" />
             </div>
             <div className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-3">
               <p className="flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4 text-primary" />
-                Superadmin controlled
+                Owner controlled
               </p>
               <p className="flex items-center gap-2">
                 <WalletCards className="h-4 w-4 text-success" />
@@ -111,7 +114,7 @@ export default function HomePage() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-foreground">Orders workspace</p>
-                  <p className="text-xs text-muted-foreground">Paid storefront orders ready for fulfillment.</p>
+                  <p className="text-xs text-muted-foreground">Paid customer orders ready to process.</p>
                 </div>
                 <Badge variant="outline" className="rounded-md border-success/30 bg-success/10 text-success">
                   Live
@@ -150,10 +153,10 @@ export default function HomePage() {
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-lg border border-success/25 bg-success/10 p-4 text-sm text-success">
-                  Subscriber payments settle through each seller's own Paystack account.
+                  Customer payments settle through each seller's own Paystack account.
                 </div>
                 <div className="rounded-lg border border-warning/25 bg-warning/10 p-4 text-sm text-warning">
-                  Manual fallback keeps orders operational when a provider API is paused.
+                  Manual processing keeps orders moving when a provider API is paused.
                 </div>
               </div>
             </div>
@@ -164,9 +167,9 @@ export default function HomePage() {
       <section className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6">
         <div className="max-w-2xl space-y-3">
           <p className="text-sm font-bold uppercase text-primary">Built for operator-led launch</p>
-          <h2 className="text-3xl font-extrabold tracking-normal">Everything a VTU SaaS owner needs to control the platform.</h2>
+          <h2 className="text-3xl font-extrabold tracking-normal">Everything you need to run the platform clearly.</h2>
           <p className="leading-7 text-muted-foreground">
-            TechDalt keeps SaaS subscription billing separate from seller wallets while giving each business the storefront and operations tools needed to sell professionally.
+            TechDalt keeps subscription billing separate from seller wallets while giving each business the shop links and order tools needed to sell professionally.
           </p>
         </div>
         <div className="mt-8 grid gap-4 md:grid-cols-2">
@@ -208,7 +211,7 @@ export default function HomePage() {
         <div className="max-w-2xl">
           <h2 className="text-3xl font-extrabold tracking-normal">Ready to test TechDalt?</h2>
           <p className="mt-2 leading-7 text-muted-foreground">
-            Create a workspace, connect payments, configure products, and start with a clean storefront link.
+            Create a workspace, connect payments, configure products, and start with a clean shop link.
           </p>
         </div>
         <Button size="lg" asChild>

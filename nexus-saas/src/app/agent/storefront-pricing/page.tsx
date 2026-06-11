@@ -82,8 +82,8 @@ export default function AgentStorefrontPricingPage() {
   return (
     <div className="portal-page space-y-6">
       <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Storefront Pricing</h1>
-        <p className="text-sm text-muted-foreground">Set the prices customers pay on your agent storefront. Your dashboard buy price stays separate.</p>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Customer Prices</h1>
+        <p className="text-sm text-muted-foreground">Set the prices customers see on your shop link. Your dashboard buy price stays separate.</p>
       </div>
 
       <div className="grid min-w-0 gap-4 md:grid-cols-3">
@@ -94,7 +94,7 @@ export default function AgentStorefrontPricingPage() {
           <CardContent className="text-xs text-muted-foreground">Customer price must be equal to or above your buy price. Profit is customer price minus buy price.</CardContent>
         </Card>
         <Card className="premium-surface overflow-hidden rounded-lg">
-          <CardHeader className="border-b border-border/70 bg-muted/20 pb-2"><CardTitle className="text-xs text-muted-foreground">Catalog Items</CardTitle></CardHeader>
+          <CardHeader className="border-b border-border/70 bg-muted/20 pb-2"><CardTitle className="text-xs text-muted-foreground">Products</CardTitle></CardHeader>
           <CardContent>
             <p className="text-xl font-semibold">{products.length}</p>
             <p className="text-xs text-muted-foreground">{serviceCount} service item{serviceCount === 1 ? "" : "s"}</p>
@@ -109,7 +109,7 @@ export default function AgentStorefrontPricingPage() {
       <Card className="premium-surface overflow-hidden rounded-lg">
         <CardHeader className="border-b border-border/70 bg-muted/20">
           <CardTitle className="text-sm font-semibold">Customer-facing prices</CardTitle>
-          <CardDescription className="text-xs">These prices are used only by your public storefront link.</CardDescription>
+          <CardDescription className="text-xs">These prices are used only by your public shop link.</CardDescription>
           <div className="table-scroll flex gap-2 pt-2">
             <Button size="sm" variant={selectedNetwork === "ALL" ? "default" : "outline"} onClick={() => setSelectedNetwork("ALL")}>All</Button>
             {networks.map((network) => (

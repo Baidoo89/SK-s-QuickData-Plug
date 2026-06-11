@@ -25,7 +25,7 @@ export function StoreLinkCard({ storePath }: StoreLinkCardProps) {
     try {
       const fullUrl = `${origin}${storePath}`
       await navigator.clipboard.writeText(fullUrl)
-      toast({ title: "Store link copied", description: "Share this clean storefront link with customers." })
+      toast({ title: "Shop link copied", description: "Share this clean shop link with customers." })
     } catch {
       toast({ variant: "destructive", title: "Copy failed", description: "Could not copy link to clipboard." })
     }
@@ -39,8 +39,8 @@ export function StoreLinkCard({ storePath }: StoreLinkCardProps) {
       <CardHeader className="border-b border-border/70 bg-muted/20 pb-3">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <CardTitle className="text-sm font-semibold">Customer storefront</CardTitle>
-            <CardDescription className="text-xs">Share this clean storefront link with customers when your launch checks are ready.</CardDescription>
+            <CardTitle className="text-sm font-semibold">Customer shop link</CardTitle>
+            <CardDescription className="text-xs">Share this clean shop link with customers when your launch checks are ready.</CardDescription>
           </div>
           <span className="w-fit rounded-md border border-primary/20 bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
             Customer checkout

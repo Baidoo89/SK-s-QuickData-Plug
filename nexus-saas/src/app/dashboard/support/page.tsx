@@ -2,38 +2,35 @@ import { AlertCircle, CreditCard, Mail, MessageSquare, PackageCheck, ShieldCheck
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { supportEmail } from "@/lib/support-contact"
+import { WhatsAppSupportButton } from "@/components/support/whatsapp-support-button"
+import { WhatsAppIcon } from "@/components/support/whatsapp-icon"
 
 export default function DashboardSupportPage() {
-  const supportEmail = "support@techdalt.com"
   const mailto = `mailto:${supportEmail}?subject=${encodeURIComponent("Techdalt support request")}`
 
   return (
     <div className="portal-page space-y-6">
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end">
         <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-wide text-primary">Help desk</p>
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Support</h1>
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary">Get help</p>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Help & Support</h1>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            Get help with subscriptions, storefront setup, Paystack connection, wallet activity, orders, agents, and resellers.
+            Message TechDalt for subscription help, software development, account setup, payments, orders, agents, and reseller issues.
           </p>
         </div>
         <Card className="premium-surface rounded-lg">
           <CardContent className="space-y-3 p-4">
             <div className="flex items-center gap-2">
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
-                <Mail className="h-4 w-4" />
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#25D366]/25 bg-[#25D366]/10 text-[#168a43]">
+                <WhatsAppIcon className="h-4 w-4" />
               </span>
               <div className="min-w-0">
-                <p className="text-sm font-semibold">Primary support email</p>
-                <p className="break-all text-xs text-muted-foreground">{supportEmail}</p>
+                <p className="text-sm font-semibold">Fast support on WhatsApp</p>
+                <p className="text-xs text-muted-foreground">Subscriptions, setup, software, and urgent help.</p>
               </div>
             </div>
-            <Button asChild className="w-full">
-              <a href={mailto}>
-                <Mail className="mr-2 h-4 w-4" />
-                Open Email
-              </a>
-            </Button>
+            <WhatsAppSupportButton className="w-full" />
           </CardContent>
         </Card>
       </div>
@@ -42,11 +39,27 @@ export default function DashboardSupportPage() {
         <Card className="premium-surface overflow-hidden rounded-lg">
           <CardHeader className="border-b border-border/70 bg-muted/20">
             <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+              <WhatsAppIcon className="h-4 w-4 text-[#168a43]" />
+              WhatsApp Support
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Best for quick questions, subscription activation, setup guidance, and software work.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">Send one clear message and include your business name if you already have an account.</p>
+            <WhatsAppSupportButton className="w-full" />
+          </CardContent>
+        </Card>
+
+        <Card className="premium-surface overflow-hidden rounded-lg">
+          <CardHeader className="border-b border-border/70 bg-muted/20">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
               <Mail className="h-4 w-4 text-primary" />
               Email Support
             </CardTitle>
             <CardDescription className="text-xs">
-              Use this for account, billing, storefront, and setup issues.
+              Use this for account, billing, shop link, and setup issues.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -71,7 +84,7 @@ export default function DashboardSupportPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p className="rounded-lg border border-border/70 bg-background/80 px-3 py-2">Organization name or storefront link.</p>
+            <p className="rounded-lg border border-border/70 bg-background/80 px-3 py-2">Business name or shop link.</p>
             <p className="rounded-lg border border-border/70 bg-background/80 px-3 py-2">Order ID, phone number, or Paystack reference if payment/order related.</p>
             <p className="rounded-lg border border-border/70 bg-background/80 px-3 py-2">A short description of what happened and what you expected.</p>
           </CardContent>
@@ -106,7 +119,7 @@ export default function DashboardSupportPage() {
         </CardHeader>
         <CardContent className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
           {[
-            { icon: Store, title: "Storefront", copy: "Links, branding, checkout, customer payments." },
+            { icon: Store, title: "Shop Link", copy: "Links, branding, checkout, customer payments." },
             { icon: PackageCheck, title: "Orders", copy: "Pending, processing, failed, delivered, API dispatch." },
             { icon: CreditCard, title: "Payments", copy: "Paystack, wallet top-ups, settlement references." },
             { icon: ShieldCheck, title: "Access", copy: "Login, email verification, approvals, roles." },

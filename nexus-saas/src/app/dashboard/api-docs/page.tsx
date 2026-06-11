@@ -44,9 +44,9 @@ export default async function ApiDocsPage() {
   return (
     <div className="flex max-w-5xl flex-col gap-6 px-4 py-6 md:gap-8 md:p-8">
       <div>
-        <h1 className="mb-1 text-2xl font-bold md:text-3xl">API Docs</h1>
+        <h1 className="mb-1 text-2xl font-bold md:text-3xl">Website API</h1>
         <p className="max-w-2xl text-muted-foreground">
-          Integrate programmatic access to your store. Use API keys to authenticate external websites, including subscriber-owned keys and approved agent/reseller keys.
+          Connect your website to TechDalt. Use API keys for external websites, including your own keys and approved agent or reseller keys.
         </p>
       </div>
 
@@ -67,7 +67,7 @@ export default async function ApiDocsPage() {
               {storePath ? `${baseUrl}${storePath}` : "Storefront not available yet"}
             </p>
             <p className="mt-1 text-muted-foreground">
-              This is your public storefront URL. You can share it with customers or call it from your systems.
+              This is your public shop link. You can share it with customers or call it from your systems.
             </p>
           </div>
           <div className="space-y-1">

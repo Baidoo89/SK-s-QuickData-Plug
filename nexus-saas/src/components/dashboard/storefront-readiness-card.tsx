@@ -115,7 +115,7 @@ export function StorefrontReadinessCard({
 
         <div className={ready ? "status-success break-words rounded-lg border p-3 text-sm shadow-sm" : "status-warning break-words rounded-lg border p-3 text-sm shadow-sm"}>
           {ready
-            ? "Your storefront can accept paid orders. Customers will pay first, then orders enter manual fulfillment."
+            ? "Your shop link can accept paid orders. Customers pay first, then orders enter processing."
             : "Customers cannot complete checkout yet. Finish the missing setup items above before sharing the store link."}
         </div>
 
@@ -124,7 +124,7 @@ export function StorefrontReadinessCard({
             <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
               <Link href={storePath} target="_blank">
                 <ExternalLink className="mr-2 h-4 w-4" />
-                Open Storefront
+                Open Shop Link
               </Link>
             </Button>
           ) : null}

@@ -85,14 +85,14 @@ function DashboardLayoutInner({
                 className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-muted-foreground transition-all hover:text-primary"
               >
                 <Rocket className="h-4 w-4" />
-                <span className="portal-sidebar-label">Launch Setup</span>
+                <span className="portal-sidebar-label">Setup Guide</span>
               </Link>
               <Link
                 href="/dashboard/analytics"
                 className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-muted-foreground transition-all hover:text-primary"
               >
                 <LineChart className="h-4 w-4" />
-                <span className="portal-sidebar-label">Advanced Analytics</span>
+                <span className="portal-sidebar-label">Reports</span>
               </Link>
 
               <span className="mt-3 px-3 text-[10px] font-semibold uppercase text-muted-foreground">Selling</span>
@@ -122,13 +122,13 @@ function DashboardLayoutInner({
                     href="/dashboard/service-requests"
                     className="rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:text-primary"
                   >
-                    Service Requests
+                    Forms & Requests
                   </Link>
                   <Link
                     href="/dashboard/payments"
                     className="rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:text-primary"
                   >
-                    Payment Records
+                    Customer Payments
                   </Link>
                 </div>
               )}
@@ -137,12 +137,12 @@ function DashboardLayoutInner({
               <button
                 type="button"
                 onClick={() => sidebarCollapsed ? router.push("/dashboard/agents") : setUsersOpen((prev) => !prev)}
-                title="Channels"
+                title="Team"
                 className="mt-2 flex items-center justify-between rounded-lg px-3 py-1.5 text-[11px] font-semibold text-muted-foreground hover:text-primary"
               >
                 <span className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  <span className="portal-sidebar-label">Channels</span>
+                  <span className="portal-sidebar-label">Team</span>
                 </span>
                 <ChevronDown className={`portal-sidebar-chevron h-3.5 w-3.5 transition-transform ${usersOpen ? "rotate-180" : "rotate-0"}`} />
               </button>
@@ -152,7 +152,7 @@ function DashboardLayoutInner({
                     href="/dashboard/users"
                     className="rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:text-primary"
                   >
-                    User Directory
+                    All Users
                   </Link>
                   <Link
                     href="/dashboard/agents"
@@ -164,7 +164,7 @@ function DashboardLayoutInner({
                     href="/dashboard/approvals"
                     className="rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:text-primary"
                   >
-                    Channel Approvals
+                    Approvals
                   </Link>
                   <Link
                     href="/dashboard/users/resellers"
@@ -179,12 +179,12 @@ function DashboardLayoutInner({
               <button
                 type="button"
                 onClick={() => sidebarCollapsed ? router.push("/dashboard/products") : setPricingOpen((prev) => !prev)}
-                title="Catalog"
+                title="Products"
                 className="mt-2 flex items-center justify-between rounded-lg px-3 py-1.5 text-[11px] font-semibold text-muted-foreground hover:text-primary"
               >
                 <span className="flex items-center gap-2">
                   <Package className="h-4 w-4" />
-                  <span className="portal-sidebar-label">Catalog</span>
+                  <span className="portal-sidebar-label">Products</span>
                 </span>
                 <ChevronDown className={`portal-sidebar-chevron h-3.5 w-3.5 transition-transform ${pricingOpen ? "rotate-180" : "rotate-0"}`} />
               </button>
@@ -200,7 +200,7 @@ function DashboardLayoutInner({
                     href="/dashboard/products?tab=pricing_profiles"
                     className="rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:text-primary"
                   >
-                    Pricing Profiles
+                    Price Groups
                   </Link>
                 </div>
               )}
@@ -209,12 +209,12 @@ function DashboardLayoutInner({
               <button
                 type="button"
                 onClick={() => sidebarCollapsed ? router.push("/dashboard/wallet") : setWalletOpen((prev) => !prev)}
-                title="Finance"
+                title="Money"
                 className="mt-2 flex items-center justify-between rounded-lg px-3 py-1.5 text-[11px] font-semibold text-muted-foreground hover:text-primary"
               >
                 <span className="flex items-center gap-2">
                   <Wallet className="h-4 w-4" />
-                  <span className="portal-sidebar-label">Finance</span>
+                  <span className="portal-sidebar-label">Money</span>
                 </span>
                 <ChevronDown className={`portal-sidebar-chevron h-3.5 w-3.5 transition-transform ${walletOpen ? "rotate-180" : "rotate-0"}`} />
               </button>
@@ -230,7 +230,7 @@ function DashboardLayoutInner({
                     href="/dashboard/wallet?tab=manual_credit"
                     className="rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:text-primary"
                   >
-                    Wallet Top Up
+                    Add Wallet Funds
                   </Link>
                   <Link
                     href="/dashboard/subscription"
@@ -262,7 +262,7 @@ function DashboardLayoutInner({
                     href="/dashboard/system/logs"
                     className="rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:text-primary"
                   >
-                    Audit Logs
+                    Activity Logs
                   </Link>
                 </div>
               )}
@@ -288,13 +288,13 @@ function DashboardLayoutInner({
                     href="/dashboard/settings?tab=api"
                     className="rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:text-primary"
                   >
-                    API Settings
+                    API Connections
                   </Link>
                   <Link
                     href="/dashboard/settings?tab=system"
                     className="rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:text-primary"
                   >
-                    System Settings
+                    Business Settings
                   </Link>
                 </div>
               )}
@@ -344,7 +344,7 @@ function DashboardLayoutInner({
                     className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
                   >
                     <Rocket className="h-5 w-5" />
-                    Launch Setup
+                    Setup Guide
                   </Link>
                 </SheetClose>
                 <SheetClose asChild>
@@ -353,7 +353,7 @@ function DashboardLayoutInner({
                     className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
                   >
                     <LineChart className="h-5 w-5" />
-                    Advanced Analytics
+                    Reports
                   </Link>
                 </SheetClose>
 
@@ -386,7 +386,7 @@ function DashboardLayoutInner({
                       href="/dashboard/service-requests"
                       className="rounded-xl px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
                     >
-                      Service Requests
+                      Forms & Requests
                     </Link>
                   </SheetClose>
                   <SheetClose asChild>
@@ -394,7 +394,7 @@ function DashboardLayoutInner({
                       href="/dashboard/payments"
                       className="rounded-xl px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
                     >
-                      Payment Records
+                      Customer Payments
                     </Link>
                   </SheetClose>
                 </div>
@@ -408,7 +408,7 @@ function DashboardLayoutInner({
                 >
                   <span className="flex items-center gap-3">
                     <Users className="h-5 w-5" />
-                    Channels
+                    Team
                   </span>
                   <ChevronDown className={`h-3.5 w-3.5 transition-transform ${usersOpen ? "rotate-180" : "rotate-0"}`} />
                 </button>
@@ -419,7 +419,7 @@ function DashboardLayoutInner({
                         href="/dashboard/users"
                         className="rounded-xl px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
                       >
-                        User Directory
+                        All Users
                       </Link>
                     </SheetClose>
                     <SheetClose asChild>
@@ -427,7 +427,7 @@ function DashboardLayoutInner({
                         href="/dashboard/approvals"
                         className="block rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                       >
-                        Channel Approvals
+                        Approvals
                       </Link>
                     </SheetClose>
                     <SheetClose asChild>
@@ -457,7 +457,7 @@ function DashboardLayoutInner({
                 >
                   <span className="flex items-center gap-3">
                     <Package className="h-5 w-5" />
-                    Catalog
+                    Products
                   </span>
                   <ChevronDown className={`h-3.5 w-3.5 transition-transform ${pricingOpen ? "rotate-180" : "rotate-0"}`} />
                 </button>
@@ -476,7 +476,7 @@ function DashboardLayoutInner({
                         href="/dashboard/products?tab=pricing_profiles"
                         className="rounded-xl px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
                       >
-                        Pricing Profiles
+                        Price Groups
                       </Link>
                     </SheetClose>
                   </div>
@@ -490,7 +490,7 @@ function DashboardLayoutInner({
                 >
                   <span className="flex items-center gap-3">
                     <Wallet className="h-5 w-5" />
-                    Finance
+                    Money
                   </span>
                   <ChevronDown className={`h-3.5 w-3.5 transition-transform ${walletOpen ? "rotate-180" : "rotate-0"}`} />
                 </button>
@@ -509,7 +509,7 @@ function DashboardLayoutInner({
                         href="/dashboard/wallet?tab=manual_credit"
                         className="rounded-xl px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
                       >
-                        Wallet Top Up
+                        Add Wallet Funds
                       </Link>
                     </SheetClose>
                     <SheetClose asChild>
@@ -544,7 +544,7 @@ function DashboardLayoutInner({
                         href="/dashboard/system/logs"
                         className="rounded-xl px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
                       >
-                        Audit Logs
+                        Activity Logs
                       </Link>
                     </SheetClose>
                   </div>
@@ -571,7 +571,7 @@ function DashboardLayoutInner({
                         href="/dashboard/settings?tab=api"
                         className="rounded-xl px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
                       >
-                        API Settings
+                        API Connections
                       </Link>
                     </SheetClose>
                     <SheetClose asChild>
@@ -579,7 +579,7 @@ function DashboardLayoutInner({
                         href="/dashboard/settings?tab=system"
                         className="rounded-xl px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
                       >
-                        System Settings
+                        Business Settings
                       </Link>
                     </SheetClose>
                   </div>
@@ -592,7 +592,7 @@ function DashboardLayoutInner({
                     className="mt-1 mx-[-0.65rem] flex w-[calc(100%+1.3rem)] items-center rounded-xl px-3 py-2 text-[11px] font-semibold text-muted-foreground hover:text-foreground"
                   >
                     <Settings className="mr-3 h-5 w-5" />
-                    Profile & Settings
+                    Profile
                   </Link>
                 </SheetClose>
                 <SheetClose asChild>
@@ -616,7 +616,7 @@ function DashboardLayoutInner({
                 <Input
                   type="search"
                   name="q"
-                  placeholder="Search orders, customers, phones..."
+                  placeholder="Search orders, customers, phone numbers..."
                   className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
                 />
               </div>

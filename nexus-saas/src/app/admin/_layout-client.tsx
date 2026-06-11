@@ -55,45 +55,45 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <>
       <div>
         <p className="portal-sidebar-section px-3 pb-1 text-[11px] font-bold uppercase text-muted-foreground">Control Center</p>
-        <NavLink href="/admin" label="Tenant Control" icon={LayoutDashboard} closeOnClick={mobile} />
+        <NavLink href="/admin" label="Businesses" icon={LayoutDashboard} closeOnClick={mobile} />
       </div>
 
       <div>
-        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Tenant Governance</p>
-        <NavLink href="/admin/users" label="User Directory" icon={Users} closeOnClick={mobile} />
-        <NavLink href="/admin/approvals" label="Signup Approvals" icon={UserCheck} closeOnClick={mobile} />
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Users</p>
+        <NavLink href="/admin/users" label="All Users" icon={Users} closeOnClick={mobile} />
+        <NavLink href="/admin/approvals" label="Approvals" icon={UserCheck} closeOnClick={mobile} />
       </div>
 
       <div>
-        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">SaaS Billing</p>
-        <NavLink href="/admin/subscriptions" label="Plans & Subscriptions" icon={CreditCard} closeOnClick={mobile} />
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Subscriptions</p>
+        <NavLink href="/admin/subscriptions" label="Plans" icon={CreditCard} closeOnClick={mobile} />
       </div>
 
       <div>
-        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Financial Audit</p>
-        <NavLink href="/admin/payments" label="Storefront Payment Audit" icon={CreditCard} closeOnClick={mobile} />
-        <NavLink href="/admin/wallet" label="Wallet Audit" icon={Wallet} closeOnClick={mobile} />
-        <NavLink href="/admin/withdrawals" label="Withdrawal Oversight" icon={Wallet} closeOnClick={mobile} />
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Money</p>
+        <NavLink href="/admin/payments" label="Customer Payments" icon={CreditCard} closeOnClick={mobile} />
+        <NavLink href="/admin/wallet" label="Wallets" icon={Wallet} closeOnClick={mobile} />
+        <NavLink href="/admin/withdrawals" label="Withdrawals" icon={Wallet} closeOnClick={mobile} />
       </div>
 
       <div>
-        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Operations Audit</p>
-        <NavLink href="/admin/orders" label="Order Audit" icon={ShoppingCart} closeOnClick={mobile} />
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Orders</p>
+        <NavLink href="/admin/orders" label="Order Review" icon={ShoppingCart} closeOnClick={mobile} />
       </div>
 
       <div>
-        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Platform Diagnostics</p>
-        <NavLink href="/admin/tools" label="Diagnostics" icon={Wrench} closeOnClick={mobile} />
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Tools</p>
+        <NavLink href="/admin/tools" label="System Tools" icon={Wrench} closeOnClick={mobile} />
       </div>
 
       <div>
         <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">System</p>
-        <NavLink href="/admin/system" label="System Health" icon={ServerCog} closeOnClick={mobile} />
+        <NavLink href="/admin/system" label="Health Check" icon={ServerCog} closeOnClick={mobile} />
       </div>
 
       <div>
         <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Settings</p>
-        <NavLink href="/admin/settings" label="Platform Settings" icon={Settings} closeOnClick={mobile} />
+        <NavLink href="/admin/settings" label="Settings" icon={Settings} closeOnClick={mobile} />
       </div>
     </>
   );
@@ -108,7 +108,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             <div className="min-w-0">
               <span className="block text-[11px] font-bold uppercase text-muted-foreground">Superadmin</span>
-              <span className="block truncate text-sm font-extrabold tracking-normal">Platform Control</span>
+              <span className="block truncate text-sm font-extrabold tracking-normal">Owner Control</span>
             </div>
           </div>
           <Button
@@ -146,7 +146,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </div>
                     <div className="min-w-0">
                       <span className="block text-[11px] font-bold uppercase text-muted-foreground">Superadmin</span>
-                      <span className="block truncate text-sm font-extrabold tracking-normal">Platform Control</span>
+                      <span className="block truncate text-sm font-extrabold tracking-normal">Owner Control</span>
                     </div>
                   </div>
                 </div>
@@ -156,12 +156,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </SheetContent>
             </Sheet>
             <div className="min-w-0">
-            <h1 className="text-lg font-extrabold tracking-normal">Superadmin Control</h1>
-              <p className="hidden truncate text-xs text-muted-foreground sm:block">Platform governance, audits, subscriptions, and system health.</p>
+            <h1 className="text-lg font-extrabold tracking-normal">Owner Control</h1>
+              <p className="hidden truncate text-xs text-muted-foreground sm:block">Businesses, users, subscriptions, money, and system health.</p>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <Button variant="outline" size="sm" className="hidden sm:inline-flex">Oversight View</Button>
+            <Button variant="outline" size="sm" className="hidden sm:inline-flex">Owner View</Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="secondary" size="icon" className="rounded-full">
@@ -173,7 +173,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <DropdownMenuLabel>Superadmin</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/admin/settings">Platform Settings</Link>
+                  <Link href="/admin/settings">Settings</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem

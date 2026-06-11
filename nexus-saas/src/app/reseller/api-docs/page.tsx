@@ -55,9 +55,9 @@ export default async function ResellerApiDocsPage() {
   return (
     <div className="portal-page space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">API Docs</h1>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Website API</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Reseller integration guide for storefront links, wallet buys, and approved external API sales that are attributed to your reseller account.
+          Connect your own website to TechDalt. Orders created with your approved key stay under your reseller account.
         </p>
       </div>
 

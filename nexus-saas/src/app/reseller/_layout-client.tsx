@@ -19,28 +19,28 @@ import {
 const navItems = [
   { href: "/reseller", label: "Dashboard", icon: LayoutDashboard },
   {
-    label: "Finance",
+    label: "Money",
     icon: Wallet,
     key: "wallet",
     children: [
-      { href: "/reseller/wallet", label: "Wallet Top Up" },
+      { href: "/reseller/wallet", label: "Add Wallet Funds" },
       { href: "/reseller/withdrawals", label: "Withdrawals" },
     ],
   },
   {
-    label: "Storefront",
+    label: "Shop Link",
     icon: Store,
     key: "storefront",
     children: [
-      { href: "/reseller/storefronts", label: "Share Links" },
+      { href: "/reseller/storefronts", label: "Share Shop Link" },
       { href: "/reseller/storefront-pricing", label: "Customer Prices" },
-      { href: "/reseller/service-requests", label: "Service Requests" },
+      { href: "/reseller/service-requests", label: "Forms & Requests" },
     ],
   },
-  { href: "/reseller/buy/single", label: "Sales", icon: ShoppingBag },
+  { href: "/reseller/buy/single", label: "Buy Data", icon: ShoppingBag },
   { href: "/reseller/orders", label: "Orders", icon: ListChecks },
-  { href: "/reseller/api-docs", label: "API Docs", icon: FileText },
-  { href: "/reseller/account", label: "Account", icon: User },
+  { href: "/reseller/api-docs", label: "Website API", icon: FileText },
+  { href: "/reseller/account", label: "Profile", icon: User },
 ];
 
 export default function ResellerLayout({
@@ -81,7 +81,7 @@ export default function ResellerLayout({
           </div>
           <nav className="flex-1 overflow-y-auto px-3 py-4 text-sm">
             <p className="portal-sidebar-section mb-3 px-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Reseller Workspace
+              Reseller
             </p>
             <div className="space-y-1">
               {navItems.map((item) => {
@@ -266,8 +266,8 @@ export default function ResellerLayout({
               </SheetContent>
             </Sheet>
             <div className="min-w-0 flex flex-col">
-              <span className="truncate text-sm font-semibold leading-tight">Reseller Portal</span>
-              <span className="hidden truncate text-xs text-muted-foreground leading-tight sm:block">Sell data, track wallet, manage your API.</span>
+              <span className="truncate text-sm font-semibold leading-tight">Reseller</span>
+              <span className="hidden truncate text-xs text-muted-foreground leading-tight sm:block">Sell data, track money, manage your shop link.</span>
             </div>
           </div>
           <div className="ml-auto shrink-0">
@@ -282,7 +282,7 @@ export default function ResellerLayout({
               <DropdownMenuLabel>Reseller</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/reseller/account">Account Settings</Link>
+                <Link href="/reseller/account">Profile</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
