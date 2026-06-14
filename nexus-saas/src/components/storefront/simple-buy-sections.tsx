@@ -593,7 +593,7 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
       {!storeActive && (
         <SellingAccessAlert
           canSell={false}
-          reason={storeInactiveReason || "This storefront is currently inactive. Purchases are disabled."}
+          reason={storeInactiveReason || "This shop is currently inactive. Purchases are disabled."}
         />
       )}
 
@@ -604,7 +604,7 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
           </div>
           <div className="min-w-0">
             <p className="font-semibold">No products or services available</p>
-            <p className="break-words">This storefront is active, but no public bundles or service requests are available yet.</p>
+            <p className="break-words">This shop is active, but no bundles or services are available yet.</p>
           </div>
         </div>
       )}
@@ -616,7 +616,7 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
           </div>
           <div className="min-w-0">
             <p className="font-semibold">Secure payment first</p>
-            <p className="break-words">Your order is sent to the seller only after Paystack confirms payment.</p>
+            <p className="break-words">After payment, the seller receives your order.</p>
           </div>
         </div>
       )}
@@ -646,10 +646,10 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
                 <CardHeader className="border-b border-border/70 bg-muted/20">
                   <CardTitle className="flex min-w-0 items-center gap-2 text-lg sm:text-xl">
                     <ShoppingBag className="h-5 w-5 shrink-0 text-primary" />
-                    <span className="min-w-0 break-words">Buy Single Bundle</span>
+                    <span className="min-w-0 break-words">Buy Data</span>
                   </CardTitle>
                   <CardDescription className="break-words">
-                    Select a network, choose a bundle, enter the number, and pay securely. No account required.
+                    Choose a network, enter the number, and pay securely.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-5 p-4 sm:p-6">
@@ -732,7 +732,7 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
                       disabled={!storefrontCanSellBundles || submittingSingle || !selectedBundleId || !singlePhone.trim()}
                     >
                       {submittingSingle ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                      {submittingSingle ? "Redirecting..." : "Buy Now"}
+                      {submittingSingle ? "Redirecting..." : "Pay Now"}
                     </Button>
                   </form>
                 </CardContent>
@@ -747,7 +747,7 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
                     <span className="min-w-0 break-words">Bulk Buy</span>
                   </CardTitle>
                   <CardDescription className="break-words">
-                    Add one order per line using phone and size, then review the validation summary before submitting.
+                    Add one order per line, then pay once.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4 p-4 sm:p-6">
@@ -800,7 +800,7 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
                       disabled={!storefrontCanSellBundles || submittingBulk || !bulkInput.trim()}
                     >
                       {submittingBulk ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Layers3 className="mr-2 h-4 w-4" />}
-                      {submittingBulk ? "Redirecting..." : "Review & Pay Bulk Orders"}
+                      {submittingBulk ? "Redirecting..." : "Pay for Bulk"}
                     </Button>
                   </form>
 
@@ -887,10 +887,10 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
                   <CardHeader className="border-b border-border/70 bg-muted/20">
                     <CardTitle className="flex min-w-0 items-center gap-2 text-lg sm:text-xl">
                       <FileText className="h-5 w-5 shrink-0 text-primary" />
-                      <span className="min-w-0 break-words">Registration Services</span>
+                      <span className="min-w-0 break-words">Services</span>
                     </CardTitle>
                     <CardDescription className="break-words">
-                      Complete the required customer details, then pay securely before submission.
+                      Fill the form and pay securely.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-5 p-4 sm:p-6">
@@ -1044,7 +1044,7 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
                 </div>
                 <div className="flex min-w-0 gap-3 rounded-lg border border-border/60 bg-muted/35 p-3">
                   <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">3</div>
-                  <p className="min-w-0 break-words">After payment, the seller receives the order for fulfillment.</p>
+                  <p className="min-w-0 break-words">After payment, the seller receives the order.</p>
                 </div>
               </CardContent>
             </Card>
@@ -1052,7 +1052,7 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
             <Card className="premium-surface min-w-0 rounded-lg">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Available catalog</CardTitle>
-                <CardDescription>{productCount} public item{productCount === 1 ? "" : "s"} loaded from this storefront.</CardDescription>
+                <CardDescription>{productCount} item{productCount === 1 ? "" : "s"} available in this shop.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
                 {bundles.slice(0, 5).map((bundle) => (

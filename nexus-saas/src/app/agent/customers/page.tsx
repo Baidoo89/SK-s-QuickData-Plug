@@ -44,7 +44,7 @@ export default async function AgentCustomersPage({
   })
 
   if (!user || user.role !== "AGENT" || !user.organizationId) {
-    return <PortalAccessMessage title="Agent profile unavailable" description="This account is not linked to an approved agent profile. Ask the subscriber admin to review the account." />
+    return <PortalAccessMessage title="Agent profile unavailable" description="This account is not linked to an approved agent profile. Ask the business owner to review the account." />
   }
 
   let agentId = user.agentId
@@ -120,7 +120,7 @@ export default async function AgentCustomersPage({
       <div className="space-y-1 max-w-2xl mx-auto text-center">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Customers</h1>
         <p className="text-sm text-muted-foreground">
-          All customers who purchased through your storefront link are listed here.
+          Customers who bought through your shop link are listed here.
         </p>
       </div>
 
@@ -164,7 +164,7 @@ export default async function AgentCustomersPage({
             <div>
               <CardTitle className="text-sm font-semibold">Customer directory</CardTitle>
               <CardDescription className="text-xs">
-                Browse all customers who have made purchases using your storefront link.
+                Browse customers who bought from your shop link.
               </CardDescription>
             </div>
             <form className="flex flex-wrap gap-2 md:gap-3 items-end" method="GET">
@@ -195,9 +195,9 @@ export default async function AgentCustomersPage({
               description={
                 q
                   ? "Clear the search or try a different name, email, or phone number."
-                  : "Customers appear here after they buy through your storefront link."
+                  : "Customers appear here after they buy from your shop."
               }
-              action={q ? { label: "Clear Search", href: "/agent/customers" } : { label: "Open Storefronts", href: "/agent/storefronts" }}
+              action={q ? { label: "Clear Search", href: "/agent/customers" } : { label: "Open Shop", href: "/agent/storefronts" }}
               secondaryAction={q ? undefined : { label: "View Orders", href: "/agent/orders" }}
               className="py-6"
             />

@@ -75,7 +75,7 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
   })
 
   if (!user || user.role !== "AGENT") {
-    return <PortalAccessMessage title="Agent profile unavailable" description="This account is not linked to an approved agent profile. Ask the subscriber admin to review the account." />
+    return <PortalAccessMessage title="Agent profile unavailable" description="This account is not linked to an approved agent profile. Ask the business owner to review the account." />
   }
 
   let agentId = user.agentId
@@ -88,7 +88,7 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
   }
 
   if (!agentId || !user.organizationId) {
-    return <PortalAccessMessage title="Agent profile unavailable" description="This account is not linked to an agent profile yet. Ask the subscriber admin to complete the agent setup." />
+    return <PortalAccessMessage title="Agent profile unavailable" description="This account is not linked to an agent profile yet. Ask the business owner to complete the agent setup." />
   }
 
   const now = new Date()
@@ -249,51 +249,51 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
   }
 
   const channelMetrics: ChannelMetric[] = [
-    { key: "buys", label: "Dashboard buys", ...summarize(todayBuys), href: "/agent/orders" },
-    { key: "storefront", label: "Storefront sales", ...summarize(todayStorefrontSales), href: "/agent/orders" },
-    { key: "services", label: "Service requests", count: todayServiceRequests.length, revenue: serviceRevenueToday, profit: serviceProfitToday, pending: pendingServiceRequestCount, href: "/agent/service-requests" },
-    { key: "resellers", label: "Reseller activity", ...summarize(todayResellerActivity), href: "/agent/resellers" },
+    { key: "buys", label: "My buys", ...summarize(todayBuys), href: "/agent/orders" },
+    { key: "storefront", label: "Shop sales", ...summarize(todayStorefrontSales), href: "/agent/orders" },
+    { key: "services", label: "Services", count: todayServiceRequests.length, revenue: serviceRevenueToday, profit: serviceProfitToday, pending: pendingServiceRequestCount, href: "/agent/service-requests" },
+    { key: "resellers", label: "Resellers", ...summarize(todayResellerActivity), href: "/agent/resellers" },
   ]
 
   const alertItems: AlertItem[] = [
     ...(walletBalance <= 0 ? [{
       label: "Wallet needs funding",
-      description: "Your dashboard buys need wallet balance before orders can be placed.",
+      description: "Top up before buying data.",
       href: "/agent/wallet",
       action: "Open wallet",
       tone: "warning" as const,
     }] : []),
     ...(storefrontPriceTotal === 0 ? [{
-      label: "No storefront customer prices",
-      description: "Set customer-facing prices before sharing your agent storefront.",
+      label: "No customer prices",
+      description: "Set prices before sharing your shop.",
       href: "/agent/storefront-pricing",
       action: "Set prices",
       tone: "warning" as const,
     }] : []),
     ...(pendingResellerApprovals > 0 ? [{
-      label: "Reseller approvals waiting",
-      description: `${pendingResellerApprovals} reseller request${pendingResellerApprovals === 1 ? "" : "s"} need review.`,
+      label: "Reseller approvals",
+      description: `${pendingResellerApprovals} waiting.`,
       href: "/agent/approvals",
       action: "Review",
       tone: "warning" as const,
     }] : []),
     ...(pendingResellerWithdrawals > 0 ? [{
-      label: "Withdrawal reviews waiting",
-      description: `${pendingResellerWithdrawals} reseller payout request${pendingResellerWithdrawals === 1 ? "" : "s"} are pending or approved.`,
+      label: "Payout reviews",
+      description: `${pendingResellerWithdrawals} waiting.`,
       href: "/agent/withdrawals",
       action: "Review payouts",
       tone: "warning" as const,
     }] : []),
     ...(manualWorkCount > 0 ? [{
-      label: "Manual work in progress",
-      description: `${manualWorkCount} paid manual order${manualWorkCount === 1 ? "" : "s"} are tied to your agent channel.`,
+      label: "Orders in progress",
+      description: `${manualWorkCount} order${manualWorkCount === 1 ? "" : "s"} waiting.`,
       href: "/agent/orders",
       action: "View orders",
       tone: "info" as const,
     }] : []),
     ...(pendingServiceRequestCount > 0 ? [{
-      label: "Service requests waiting",
-      description: `${pendingServiceRequestCount} paid service request${pendingServiceRequestCount === 1 ? "" : "s"} are waiting for subscriber processing.`,
+      label: "Service requests",
+      description: `${pendingServiceRequestCount} waiting.`,
       href: "/agent/service-requests?status=PENDING_REVIEW",
       action: "View services",
       tone: "info" as const,
@@ -305,10 +305,10 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
       <div className="space-y-1">
         <p className="text-sm font-medium text-primary">{`${greeting}, ${displayName}.`}</p>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-          {orgName ? `${orgName} agent dashboard` : "Agent dashboard"}
+          {orgName ? `${orgName} agent` : "Agent dashboard"}
         </h1>
         <p className="text-sm text-muted-foreground">
-          See your performance at a glance, buy data quickly, and manage your resellers.
+          Buy data, track sales, and manage resellers.
         </p>
         <div className="flex flex-wrap gap-2 pt-2">
           {([
@@ -341,7 +341,7 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
           <CardHeader className="border-b bg-muted/30 pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <AlertTriangle className="h-4 w-4 text-primary" />
-              Operational alerts
+              Needs attention
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
@@ -364,31 +364,31 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
         <div className="status-success flex gap-3 rounded-md border px-4 py-3 text-sm">
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
-            <p className="font-semibold">Agent operations look clean</p>
-            <p>No wallet, pricing, approval, or withdrawal alerts are active.</p>
+            <p className="font-semibold">Everything looks good</p>
+            <p>No urgent alerts.</p>
           </div>
         </div>
       )}
 
       <div className="grid min-w-0 gap-4 md:grid-cols-2 lg:grid-cols-6">
         <MetricCard
-          label="Wallet Balance"
+          label="Wallet"
           value={formatGhanaCedis(walletBalance)}
-          description="Successful wallet transactions available for VTU orders."
+          description="Available for data buys"
           icon={Wallet}
           tone="success"
         />
         <MetricCard
-          label="Today's Buys"
+          label="My Buys"
           value={todayBuys.length}
-          description={`${todaysOrdersCount} total orders in your channel today.`}
+          description={`${todaysOrdersCount} total today`}
           icon={LineChart}
           tone="info"
         />
         <MetricCard
-          label="Storefront Sales"
+          label="Shop Sales"
           value={todayStorefrontSales.length}
-          description={`Customer revenue ${formatGhanaCedis(todayStorefrontSales.reduce((sum, order) => sum + order.total, 0))}`}
+          description={formatGhanaCedis(todayStorefrontSales.reduce((sum, order) => sum + order.total, 0))}
           icon={Store}
           tone="primary"
         />
@@ -402,27 +402,27 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
         <MetricCard
           label="Active Resellers"
           value={activeResellersCount}
-          description="Resellers currently managed under your account."
+          description="Under your account"
           icon={Users}
           tone={pendingResellerApprovals > 0 ? "warning" : "primary"}
         />
         <MetricCard
           label="Commission Rate"
           value={`${commissionPercent.toFixed(1)}%`}
-          description={`${formatGhanaCedis(estimatedCommission)} est. from ${selectedProfitRangeLabel.toLowerCase()} profit`}
+          description={`${formatGhanaCedis(estimatedCommission)} estimate`}
           icon={Percent}
           tone={commissionPercent > 0 ? "primary" : "info"}
         />
         <MetricCard
-          label="Service Requests"
+          label="Services"
           value={pendingServiceRequestCount}
-          description={`${todayServiceRequests.length} today, ${formatGhanaCedis(serviceRevenueToday)} value`}
+          description={`${todayServiceRequests.length} today`}
           icon={FileText}
           tone={pendingServiceRequestCount > 0 ? "warning" : "primary"}
         />
         <Card className="md:col-span-2 lg:col-span-3">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Revenue snapshot</CardTitle>
+            <CardTitle className="text-xs font-medium text-muted-foreground">Revenue</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="flex items-center justify-between text-sm">
@@ -438,14 +438,14 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
               <span className="font-semibold">{formatGhanaCedis(monthCompletedTotal)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Selected range ({selectedProfitRangeLabel})</span>
+              <span className="text-muted-foreground">{selectedProfitRangeLabel}</span>
               <span className="font-semibold">{formatGhanaCedis(filteredSales)}</span>
             </div>
           </CardContent>
         </Card>
         <Card className="md:col-span-2 lg:col-span-3">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Profit snapshot</CardTitle>
+            <CardTitle className="text-xs font-medium text-muted-foreground">Profit</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="flex items-center justify-between text-sm">
@@ -461,7 +461,7 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
               <span className="font-semibold">{formatGhanaCedis(monthProfit)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Selected range ({selectedProfitRangeLabel})</span>
+              <span className="text-muted-foreground">{selectedProfitRangeLabel}</span>
               <span className="font-semibold">{formatGhanaCedis(selectedProfit)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
@@ -476,10 +476,7 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
         <CardHeader className="border-b bg-muted/30 pb-3">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <CardTitle className="text-sm font-semibold">Channel performance today</CardTitle>
-              <CardDescription className="text-xs">
-                Dashboard buys are wallet operations. Storefront and reseller customer sales produce withdrawable profit.
-              </CardDescription>
+              <CardTitle className="text-sm font-semibold">Today's Sales</CardTitle>
             </div>
             <Badge variant="outline" className="w-fit">{manualWorkCount} manual</Badge>
           </div>
@@ -512,9 +509,6 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
       <Card className="premium-surface border-0">
         <CardHeader>
           <CardTitle className="text-sm font-semibold">Quick actions</CardTitle>
-          <CardDescription className="text-xs">
-            Shortcuts to the tasks you use most often.
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-6">
@@ -524,8 +518,8 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
                   <ShoppingBag className="h-4 w-4" />
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold">Buy single data</p>
-                  <p className="truncate text-[11px] text-muted-foreground">Send one bundle instantly.</p>
+                  <p className="truncate text-xs font-semibold">Buy single</p>
+                  <p className="truncate text-[11px] text-muted-foreground">One number.</p>
                 </div>
               </div>
             </Link>
@@ -535,8 +529,8 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
                   <ShoppingBag className="h-4 w-4" />
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold">Buy bulk data</p>
-                  <p className="truncate text-[11px] text-muted-foreground">Upload many numbers at once.</p>
+                  <p className="truncate text-xs font-semibold">Buy bulk</p>
+                  <p className="truncate text-[11px] text-muted-foreground">Many numbers.</p>
                 </div>
               </div>
             </Link>
@@ -546,8 +540,8 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
                   <Wallet className="h-4 w-4" />
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold">View wallet</p>
-                  <p className="truncate text-[11px] text-muted-foreground">Check balance and payouts.</p>
+                  <p className="truncate text-xs font-semibold">Wallet</p>
+                  <p className="truncate text-[11px] text-muted-foreground">Balance and payouts.</p>
                 </div>
               </div>
             </Link>
@@ -557,8 +551,8 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
                   <FileText className="h-4 w-4" />
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold">View orders</p>
-                  <p className="truncate text-[11px] text-muted-foreground">Review your latest VTU activity.</p>
+                  <p className="truncate text-xs font-semibold">Orders</p>
+                  <p className="truncate text-[11px] text-muted-foreground">Track status.</p>
                 </div>
               </div>
             </Link>
@@ -569,7 +563,7 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-xs font-semibold">Service requests</p>
-                  <p className="truncate text-[11px] text-muted-foreground">Track registration sales.</p>
+                  <p className="truncate text-[11px] text-muted-foreground">Track services.</p>
                 </div>
               </div>
             </Link>
@@ -579,8 +573,8 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
                   <Megaphone className="h-4 w-4" />
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold">Customer prices</p>
-                  <p className="truncate text-[11px] text-muted-foreground">Set agent storefront margins.</p>
+                  <p className="truncate text-xs font-semibold">Prices</p>
+                  <p className="truncate text-[11px] text-muted-foreground">Set shop margins.</p>
                 </div>
               </div>
             </Link>
@@ -591,9 +585,9 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
       {agentStorePath && (
         <Card className="premium-surface border-0">
           <CardHeader>
-            <CardTitle className="text-sm font-semibold">Your storefront link</CardTitle>
+            <CardTitle className="text-sm font-semibold">Your shop link</CardTitle>
             <CardDescription className="text-xs">
-              Share this link with your customers so they can buy bundles from your store.
+              Share this with customers.
             </CardDescription>
           </CardHeader>
           <CardContent>

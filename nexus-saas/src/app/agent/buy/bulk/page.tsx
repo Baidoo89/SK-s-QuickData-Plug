@@ -353,7 +353,7 @@ export default function AgentBuyBulkPage() {
     if (sellingBlocked) {
       toast({
         title: "Selling is blocked",
-        description: sellingAccess?.reason || "Ask the subscriber admin to complete selling setup.",
+        description: sellingAccess?.reason || "Ask the business owner to complete selling setup.",
         variant: "destructive",
       })
       return

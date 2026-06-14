@@ -304,10 +304,10 @@ export default async function SuperAdminPage({
     <div className="portal-page space-y-6">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-3xl">
-          <p className="text-xs font-semibold uppercase tracking-wide text-primary">SaaS owner console</p>
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Super Admin Control Center</h1>
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary">Owner console</p>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Super Admin</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Control tenants, monitor platform money flow, review system activity, and keep every portal under supervision.
+            Manage businesses, plans, approvals, and platform health.
           </p>
         </div>
         <div className="grid w-full gap-2 sm:grid-cols-3 lg:w-auto">
@@ -318,27 +318,27 @@ export default async function SuperAdminPage({
             <Link href="/admin/approvals">Approvals</Link>
           </Button>
           <Button asChild size="sm">
-            <Link href="/admin/system">System Health</Link>
+            <Link href="/admin/system">Health</Link>
           </Button>
         </div>
       </div>
 
       <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Organizations" value={totalOrganizations} description={`${activeOrganizations} active, ${inactiveOrganizations} inactive`} icon={Building2} tone="primary" />
-        <MetricCard label="Platform Revenue" value={formatGhanaCedis(platformRevenue._sum.amount ?? 0)} description={`${formatGhanaCedis(monthPlatformRevenue._sum.amount ?? 0)} collected this month`} icon={CreditCard} tone="success" />
-        <MetricCard label="Tenant Storefront GMV" value={formatGhanaCedis(storefrontVolume._sum.amount ?? 0)} description="Subscriber-owned Paystack collections." icon={ShoppingCart} tone="info" />
+        <MetricCard label="Businesses" value={totalOrganizations} description={`${activeOrganizations} active, ${inactiveOrganizations} inactive`} icon={Building2} tone="primary" />
+        <MetricCard label="Revenue" value={formatGhanaCedis(platformRevenue._sum.amount ?? 0)} description={`${formatGhanaCedis(monthPlatformRevenue._sum.amount ?? 0)} this month`} icon={CreditCard} tone="success" />
+        <MetricCard label="Seller Sales" value={formatGhanaCedis(storefrontVolume._sum.amount ?? 0)} description="Seller Paystack volume" icon={ShoppingCart} tone="info" />
         <MetricCard label="Users" value={totalUsers} description={`${totalSubscribers} subscribers, ${totalAgents} agents, ${totalResellers} resellers`} icon={Users} tone="info" />
-        <MetricCard label="Order Risk" value={failedOrders > 0 ? failedOrders : pendingOrders} description={`${pendingOrders} pending, ${failedOrders} failed tenant orders`} icon={AlertTriangle} tone={failedOrders > 0 ? "warning" : "muted"} />
-        <MetricCard label="Active Products" value={activeProducts} description="Sellable products across all tenants" icon={PackageCheck} tone="primary" />
-        <MetricCard label="Pending Signups" value={pendingSignups} description="Agent and reseller approvals waiting" icon={UserCheck} tone={pendingSignups > 0 ? "warning" : "muted"} />
-        <MetricCard label="Platform Health" value={failedOrders > 0 ? "Needs review" : "Stable"} description="Based on failed order count" icon={ShieldCheck} tone={failedOrders > 0 ? "warning" : "success"} />
+        <MetricCard label="Orders" value={failedOrders > 0 ? failedOrders : pendingOrders} description={`${pendingOrders} pending, ${failedOrders} failed`} icon={AlertTriangle} tone={failedOrders > 0 ? "warning" : "muted"} />
+        <MetricCard label="Products" value={activeProducts} description="Active products" icon={PackageCheck} tone="primary" />
+        <MetricCard label="Approvals" value={pendingSignups} description="Waiting review" icon={UserCheck} tone={pendingSignups > 0 ? "warning" : "muted"} />
+        <MetricCard label="Health" value={failedOrders > 0 ? "Review" : "Stable"} description="Failed order signal" icon={ShieldCheck} tone={failedOrders > 0 ? "warning" : "success"} />
       </div>
 
       <Card className="premium-surface overflow-hidden rounded-lg">
         <CardHeader className="border-b border-border/70 bg-muted/20">
-          <CardTitle>Create Subscriber Tenant</CardTitle>
+          <CardTitle>Add Business</CardTitle>
           <p className="mt-1 text-sm text-muted-foreground">
-            Operator-led onboarding for a new SaaS customer. Creates the organization, subscriber owner login, and optional subscription.
+            Create a business account and owner login.
           </p>
         </CardHeader>
         <CardContent>
@@ -407,13 +407,13 @@ export default async function SuperAdminPage({
         <CardHeader className="border-b border-border/70 bg-muted/20">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <CardTitle>Tenant Control</CardTitle>
+          <CardTitle>Businesses</CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
-                Search, inspect, suspend, or reactivate subscriber organizations.
+                Search, suspend, or reactivate businesses.
               </p>
             </div>
             <form className="grid w-full gap-2 sm:grid-cols-[minmax(0,1fr)_auto] lg:w-auto" method="GET">
-              <Input name="q" defaultValue={q} placeholder="Search organization, slug, owner email" className="lg:w-80" />
+              <Input name="q" defaultValue={q} placeholder="Search business or owner" className="lg:w-80" />
               <Button type="submit" variant="outline">Search</Button>
             </form>
           </div>
@@ -547,9 +547,9 @@ export default async function SuperAdminPage({
       <div className="grid min-w-0 gap-4 xl:grid-cols-2">
         <Card className="premium-surface overflow-hidden rounded-lg">
           <CardHeader className="border-b border-border/70 bg-muted/20">
-            <CardTitle>Order Activity Snapshot</CardTitle>
+            <CardTitle>Recent Orders</CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">
-              Read-only signal for platform health. Tenant teams own order fulfillment.
+              Read-only platform view.
             </p>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -578,7 +578,7 @@ export default async function SuperAdminPage({
 
         <Card className="premium-surface overflow-hidden rounded-lg">
           <CardHeader className="border-b border-border/70 bg-muted/20">
-            <CardTitle>Recent System Activity</CardTitle>
+            <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {recentAudits.length === 0 ? (

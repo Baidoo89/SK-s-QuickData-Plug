@@ -82,7 +82,7 @@ async function getResellerServiceRequests(userId: string, organizationId: string
       ghanaCardNumber: typeof details.ghanaCardNumber === "string" ? details.ghanaCardNumber : "",
       formDetails: buildFormDetails(details),
       sellerRole: request.sellerRole || "RESELLER",
-      sellerName: "Your storefront",
+      sellerName: "Your shop",
       paymentStatus: request.paymentStatus,
       status: request.status,
       total: request.total,
@@ -149,7 +149,7 @@ export default async function ResellerServiceRequestsPage({
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Service Requests</h1>
           <p className="max-w-xl text-sm text-muted-foreground">
-            View registration and service requests submitted through your reseller storefront.
+            View service forms submitted through your shop.
           </p>
         </div>
         <form className="grid w-full min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] lg:w-auto" method="GET">
@@ -173,7 +173,7 @@ export default async function ResellerServiceRequestsPage({
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-semibold text-foreground">Service tables</p>
-              <p className="text-xs text-muted-foreground">View each registration service submitted through your storefront separately.</p>
+              <p className="text-xs text-muted-foreground">View each service submitted through your shop separately.</p>
             </div>
             {serviceId && serviceId !== "ALL" ? <Badge variant="outline">Filtered service</Badge> : null}
           </div>
@@ -199,7 +199,7 @@ export default async function ResellerServiceRequestsPage({
 
       <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="Visible Requests" value={rows.length} description={hasFilters ? "Matching active filters" : "All service requests"} icon={ListFilter} tone="primary" />
-        <MetricCard label="Pending Review" value={pending} description="Paid requests awaiting subscriber action" icon={Clock} tone={pending > 0 ? "warning" : "success"} />
+        <MetricCard label="Pending Review" value={pending} description="Paid requests awaiting review" icon={Clock} tone={pending > 0 ? "warning" : "success"} />
         <MetricCard label="Completed" value={completed} description="Fulfilled service requests" icon={CheckCircle2} tone="success" />
         <MetricCard label="Revenue" value={formatGhanaCedis(revenue)} description="Customer checkout value" icon={FileText} tone="info" />
       </div>
@@ -210,8 +210,8 @@ export default async function ResellerServiceRequestsPage({
             <EmptyState
               icon={FileText}
               title={hasFilters ? "No service requests match this filter" : "No service requests yet"}
-              description={hasFilters ? "Change the filter to see more service requests." : "Requests will appear here after customers submit and pay from your storefront."}
-              action={hasFilters ? { label: "Show All", href: "/reseller/service-requests" } : { label: "Share Storefront", href: "/reseller/storefronts" }}
+              description={hasFilters ? "Change the filter to see more service requests." : "Requests appear here after customers submit and pay from your shop."}
+              action={hasFilters ? { label: "Show All", href: "/reseller/service-requests" } : { label: "Share Shop", href: "/reseller/storefronts" }}
             />
           ) : (
             <ServiceRequestsWorkspace rows={rows} readOnly />

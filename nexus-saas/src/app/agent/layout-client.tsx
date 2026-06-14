@@ -67,12 +67,12 @@ export default function AgentLayout({
         icon: Wallet,
         key: "wallet",
         children: [
-          { href: "/agent/wallet", label: "Add Wallet Funds" },
+          { href: "/agent/wallet", label: "Add funds" },
           { href: "/agent/withdrawals", label: "Withdrawals" },
         ],
       },
       {
-        label: "Sales",
+        label: "Buy Data",
         icon: ShoppingBag,
         key: "buy",
         children: [
@@ -82,7 +82,7 @@ export default function AgentLayout({
       },
       { href: "/agent/orders", label: "Orders", icon: FileText },
       {
-        label: "My Resellers",
+        label: "Resellers",
         icon: Users,
         key: "resellers",
         children: [
@@ -92,16 +92,16 @@ export default function AgentLayout({
       },
       { href: "/agent/customers", label: "Customers", icon: Users },
       {
-        label: "Shop Link",
+        label: "Shop",
         icon: Store,
         key: "storefront",
         children: [
-          { href: "/agent/storefronts", label: "Share Shop Link" },
-          { href: "/agent/storefront-pricing", label: "Customer Prices" },
-          { href: "/agent/service-requests", label: "Forms & Requests" },
+          { href: "/agent/storefronts", label: "Share link" },
+          { href: "/agent/storefront-pricing", label: "Prices" },
+          { href: "/agent/service-requests", label: "Service forms" },
         ],
       },
-      { href: "/agent/api-docs", label: "Website API", icon: FileText },
+      { href: "/agent/api-docs", label: "Website orders", icon: FileText },
       { href: "/agent/account", label: "Profile", icon: CreditCard },
     ],
     [],

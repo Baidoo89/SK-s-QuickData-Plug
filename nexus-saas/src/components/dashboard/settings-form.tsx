@@ -40,8 +40,8 @@ export function SettingsForm({ initialName }: SettingsFormProps) {
       toast({
         title: "Settings updated",
         description: payload?.data?.storePath
-          ? `Your organization name and storefront link were updated to ${payload.data.storePath}.`
-          : "Your organization name has been updated.",
+          ? `Business name and shop link updated: ${payload.data.storePath}.`
+          : "Business name updated.",
       });
       
       router.refresh();
@@ -60,9 +60,9 @@ export function SettingsForm({ initialName }: SettingsFormProps) {
     <form onSubmit={onSubmit} className="min-w-0">
       <Card className="premium-surface min-w-0 overflow-hidden rounded-lg">
         <CardHeader className="border-b border-border/70 bg-muted/20 pb-3">
-          <CardTitle className="text-sm font-semibold">Organization Name</CardTitle>
+          <CardTitle className="text-sm font-semibold">Business name</CardTitle>
           <CardDescription className="break-words">
-            This is your organization&apos;s visible name on dashboards and storefront pages.
+            This name appears on your dashboard and shop.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4">

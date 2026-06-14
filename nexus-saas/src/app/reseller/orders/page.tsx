@@ -60,7 +60,7 @@ export default async function ResellerOrdersPage({
   });
 
   if (!user || user.role !== "RESELLER" || !user.organizationId) {
-    return <PortalAccessMessage title="Reseller profile unavailable" description="This account is not linked to an approved reseller profile. Ask your agent or subscriber admin to review the account." />;
+    return <PortalAccessMessage title="Reseller profile unavailable" description="This account is not linked to an approved reseller profile. Ask your agent to review the account." />;
   }
 
   function formatBundleSize(name: string) {
@@ -125,7 +125,7 @@ export default async function ResellerOrdersPage({
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Orders</h1>
             <p className="text-sm text-muted-foreground max-w-xl">
-              View VTU orders you have placed as a reseller. Your parent agent and the admin can also see these orders.
+              View your buys and shop sales.
             </p>
           </div>
           <a href={downloadUrl}>
@@ -188,7 +188,7 @@ export default async function ResellerOrdersPage({
                 description={
                   hasFilters
                     ? "Adjust the status, date range, or search term to see more reseller orders."
-                    : "Place a VTU order from your reseller workspace. Wallet and storefront orders will appear here after checkout."
+                    : "Orders will appear here after sales or buys."
                 }
                 action={hasFilters ? { label: "Reset Filters", href: "/reseller/orders" } : { label: "Buy Data", href: "/reseller/buy/single" }}
                 secondaryAction={hasFilters ? undefined : { label: "Open Wallet", href: "/reseller/wallet" }}

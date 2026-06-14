@@ -23,23 +23,23 @@ const navItems = [
     icon: Wallet,
     key: "wallet",
     children: [
-      { href: "/reseller/wallet", label: "Add Wallet Funds" },
+      { href: "/reseller/wallet", label: "Add funds" },
       { href: "/reseller/withdrawals", label: "Withdrawals" },
     ],
   },
   {
-    label: "Shop Link",
+    label: "Shop",
     icon: Store,
     key: "storefront",
     children: [
-      { href: "/reseller/storefronts", label: "Share Shop Link" },
-      { href: "/reseller/storefront-pricing", label: "Customer Prices" },
-      { href: "/reseller/service-requests", label: "Forms & Requests" },
+      { href: "/reseller/storefronts", label: "Share link" },
+      { href: "/reseller/storefront-pricing", label: "Prices" },
+      { href: "/reseller/service-requests", label: "Service forms" },
     ],
   },
   { href: "/reseller/buy/single", label: "Buy Data", icon: ShoppingBag },
   { href: "/reseller/orders", label: "Orders", icon: ListChecks },
-  { href: "/reseller/api-docs", label: "Website API", icon: FileText },
+  { href: "/reseller/api-docs", label: "Website orders", icon: FileText },
   { href: "/reseller/account", label: "Profile", icon: User },
 ];
 

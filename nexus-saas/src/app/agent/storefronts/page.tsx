@@ -25,7 +25,7 @@ export default async function AgentStorefrontsPage() {
   })
 
   if (!user || user.role !== "AGENT" || !user.organizationId || !user.organization?.slug) {
-    return <PortalAccessMessage title="Shop link unavailable" description="This agent account is not fully linked to an organization shop. Ask the subscriber admin to complete setup." />
+    return <PortalAccessMessage title="Shop link unavailable" description="This agent account is not fully linked to a business shop. Ask the business owner to complete setup." />
   }
 
   let agentId = user.agentId
@@ -77,12 +77,12 @@ export default async function AgentStorefrontsPage() {
           {
             label: "Your customer shop link",
             path: agentStorePath,
-            description: "Share this link with customers. Your own customer prices and profit tracking are applied here.",
+            description: "Share this with customers. Your prices and profit tracking apply here.",
           },
           {
             label: "Reseller signup invite",
             path: `/register/reseller?agentId=${agentId}`,
-            description: "Invite new resellers directly under your account. The signup page shows your name and organization, with TechDalt as the secure platform.",
+            description: "Invite resellers under your account. The signup page shows your name and business.",
           },
         ]
       : []),
@@ -93,14 +93,14 @@ export default async function AgentStorefrontsPage() {
       <div className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Shop Links</h1>
         <p className="text-sm text-muted-foreground">
-          Share clean customer links like techdalt.com/shop/your-name, invite resellers, and monitor sales from one place.
+          Share your customer link, invite resellers, and track sales.
         </p>
       </div>
 
       <div className="grid min-w-0 gap-4 md:grid-cols-3">
         <Card className="premium-surface border-0">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Organization</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Business</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-lg font-semibold">{user.organization.name}</p>
@@ -126,7 +126,7 @@ export default async function AgentStorefrontsPage() {
 
       <ShareLinksCard
         title="Shareable shop links"
-        description="Customers only see clean brand links like techdalt.com/shop/your-name. Technical API URLs stay in Website API."
+        description="Customers see your shop name and link. Website API links stay separate."
         links={storefrontLinks}
       />
 

@@ -115,7 +115,7 @@ export default function ResellerInviteRegisterClient({ initialAgentId }: { initi
         throw new Error(data?.error?.message || data?.message || "Something went wrong")
       }
 
-      const pendingMessage = "Reseller request submitted. Verify your email, then wait for agent approval."
+      const pendingMessage = "Request submitted. Verify your email, then wait for approval."
       setSuccessMessage(pendingMessage)
       setFormData({ name: "", email: "", phoneNumber: "", password: "" })
 
@@ -145,7 +145,7 @@ export default function ResellerInviteRegisterClient({ initialAgentId }: { initi
           </CardTitle>
           <CardDescription>
             {inviteContext
-              ? `This reseller account will belong to ${inviteContext.organizationName}.`
+              ? `This account will belong to ${inviteContext.organizationName}.`
               : "Open this page from the reseller invite link sent by your agent."}
           </CardDescription>
         </CardHeader>
@@ -165,7 +165,7 @@ export default function ResellerInviteRegisterClient({ initialAgentId }: { initi
                   {inviteContext.agentName}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  You are joining {inviteContext.agentName}&apos;s reseller network under {inviteContext.organizationName}. Verify your email first, then the agent approves your access.
+                  Verify your email first. {inviteContext.agentName} approves your access.
                 </p>
                 <p className="mt-2 text-[11px] font-medium uppercase tracking-wide text-primary">
                   Secure invite powered by TechDalt
@@ -187,7 +187,7 @@ export default function ResellerInviteRegisterClient({ initialAgentId }: { initi
 
             <div className="flex gap-3 rounded-lg border border-info/30 bg-info/10 px-3 py-2 text-xs text-info-foreground shadow-sm">
               <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <p>This invite does not create your own TechDalt business workspace. Use public signup only if you want to operate your own organization and Paystack.</p>
+              <p>This invite joins an existing business. Use public signup only to create your own business.</p>
             </div>
 
             <div className="space-y-2">
@@ -271,7 +271,7 @@ export default function ResellerInviteRegisterClient({ initialAgentId }: { initi
             <div className="text-center text-sm text-muted-foreground">
               Not joining this agent?{" "}
               <Link href="/register" className="underline underline-offset-4 hover:text-primary">
-                Create your own workspace
+                Create your own business
               </Link>
             </div>
             <div className="text-center text-sm text-muted-foreground">

@@ -156,9 +156,9 @@ export async function DashboardManualQueueSection({
     <div className="space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h3 className="text-xl font-semibold tracking-tight">Fulfillment Actions</h3>
+          <h3 className="text-xl font-semibold tracking-tight">Order actions</h3>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            Pick, copy, claim, deliver, or fail paid orders that need manual processing. These controls are part of the main Orders workspace.
+            Copy, claim, deliver, or fail paid orders.
           </p>
         </div>
         <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-2">
@@ -172,20 +172,20 @@ export async function DashboardManualQueueSection({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <MetricCard label="Actionable Orders" value={rows.length} description="Paid manual orders in this workspace" icon={CopyCheck} tone={rows.length > 0 ? "warning" : "success"} />
+        <MetricCard label="Ready Orders" value={rows.length} description="Paid orders" icon={CopyCheck} tone={rows.length > 0 ? "warning" : "success"} />
         <MetricCard label="Pending" value={pendingCount} description={`${processingCount} claimed or processing`} icon={Clock} tone={pendingCount > 0 ? "warning" : "success"} />
         <MetricCard label="Network Split" value={`${mtnCount} / ${otherNetworkCount}`} description="MTN / other networks" icon={Network} tone="info" />
-        <MetricCard label="External Sales" value={apiSourceCount + storefrontSourceCount} description={`${apiSourceCount} API, ${storefrontSourceCount} storefront`} icon={CheckCircle2} tone="primary" />
-        <MetricCard label="Seller Split" value={`${agentSellerCount} / ${resellerSellerCount}`} description="Agent / reseller" icon={CheckCircle2} tone="info" />
+        <MetricCard label="Online Sales" value={apiSourceCount + storefrontSourceCount} description={`${apiSourceCount} website, ${storefrontSourceCount} shop`} icon={CheckCircle2} tone="primary" />
+        <MetricCard label="Team Sales" value={`${agentSellerCount} / ${resellerSellerCount}`} description="Agent / reseller" icon={CheckCircle2} tone="info" />
       </div>
 
       <Card className="premium-surface overflow-hidden rounded-lg">
         <CardHeader className="border-b border-border/70 bg-muted/20">
           <div className="flex flex-col gap-4">
             <div className="max-w-3xl">
-              <CardTitle className="text-lg">Pickable Orders ({rows.length})</CardTitle>
+              <CardTitle className="text-lg">Orders to process ({rows.length})</CardTitle>
               <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                Select orders here while staying on All Orders. MTN copies as phone and bundle; other networks include the network label.
+                Select orders, copy details, and update status.
               </p>
             </div>
             <form method="GET" action="/dashboard/orders" className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-[repeat(6,minmax(0,1fr))_auto]">

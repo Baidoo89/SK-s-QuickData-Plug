@@ -56,7 +56,7 @@ export function ApiKeys({ apiKeys }: ApiKeysProps) {
     navigator.clipboard.writeText(key)
     toast({
       title: "Copied",
-      description: "API key copied to clipboard",
+      description: "Copied",
     })
   }
 
@@ -69,7 +69,7 @@ export function ApiKeys({ apiKeys }: ApiKeysProps) {
       router.refresh()
       toast({
         title: "Success",
-        description: "API key deleted",
+        description: "Deleted",
       })
     } catch (error) {
       toast({
@@ -98,7 +98,7 @@ export function ApiKeys({ apiKeys }: ApiKeysProps) {
       router.refresh()
       toast({
         title: "Success",
-        description: "API key created",
+        description: "Created",
       })
     } catch (error) {
       toast({
@@ -116,9 +116,9 @@ export function ApiKeys({ apiKeys }: ApiKeysProps) {
       <CardHeader className="border-b border-border/70 bg-muted/20 pb-3">
         <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <CardTitle className="text-sm font-semibold">API Keys</CardTitle>
+            <CardTitle className="text-sm font-semibold">Website keys</CardTitle>
             <CardDescription className="break-words text-xs">
-              Manage credentials for external sites that submit paid orders into your fulfillment flow.
+              Let another website send paid orders here.
             </CardDescription>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
@@ -131,7 +131,7 @@ export function ApiKeys({ apiKeys }: ApiKeysProps) {
             <DialogContent>
               <form onSubmit={onSubmit}>
                 <DialogHeader>
-                  <DialogTitle>Create API Key</DialogTitle>
+                  <DialogTitle>Create website key</DialogTitle>
                   <DialogDescription>
                     Give your key a name to identify it later.
                   </DialogDescription>
@@ -155,7 +155,7 @@ export function ApiKeys({ apiKeys }: ApiKeysProps) {
       <CardContent className="p-4">
         <div className="grid gap-3 md:hidden">
           {apiKeys.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">No API keys found.</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">No website keys yet.</p>
           ) : (
             apiKeys.map((apiKey) => (
               <div key={apiKey.id} className="min-w-0 rounded-lg border border-border/70 bg-background/80 p-3 text-sm shadow-sm">
@@ -234,7 +234,7 @@ export function ApiKeys({ apiKeys }: ApiKeysProps) {
               {apiKeys.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center text-muted-foreground">
-                    No API keys found.
+                    No website keys yet.
                   </TableCell>
                 </TableRow>
               )}

@@ -81,13 +81,13 @@ export default async function AgentApiDocsPage() {
             <li>Dashboard buys debit your wallet and are tagged to your agent profile.</li>
             <li>External API sales are already paid on your website, so they do not debit your wallet.</li>
             <li>Approved API keys are scoped to you and cannot create orders for another organization.</li>
-            <li>Fulfillment still follows the subscriber organization dispatch policy and manual queue.</li>
+            <li>Orders still follow the business delivery settings and order queue.</li>
           </ul>
           <div className="flex flex-wrap gap-2 text-xs">
             <Badge variant="outline">Session auth</Badge>
             <Badge variant="outline">Bearer API key</Badge>
             <Badge variant="outline">Seller scoped</Badge>
-            <Badge variant="outline">Org fulfillment</Badge>
+            <Badge variant="outline">Business delivery</Badge>
           </div>
         </CardContent>
       </Card>
@@ -95,7 +95,7 @@ export default async function AgentApiDocsPage() {
       <Card className="premium-surface border-0">
         <CardHeader>
           <CardTitle>Core Endpoints</CardTitle>
-          <CardDescription>These are the stable operational endpoints your agent portal uses today.</CardDescription>
+          <CardDescription>These are the website endpoints your agent portal uses today.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
           <ul className="list-disc space-y-1 pl-4 text-xs">
@@ -158,7 +158,7 @@ export default async function AgentApiDocsPage() {
   }'`}
           </pre>
           <p>
-            The order is tagged as AGENT, profit is calculated from your agent buy price, and fulfillment goes to the subscriber organization.
+            The order is tagged as AGENT, profit is calculated from your buy price, and delivery goes to the business queue.
           </p>
         </CardContent>
       </Card>

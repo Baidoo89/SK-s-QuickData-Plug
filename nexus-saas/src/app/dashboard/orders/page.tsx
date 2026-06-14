@@ -183,7 +183,7 @@ export default async function OrdersPage({
         <div className="min-w-0">
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-1">Orders</h2>
           <p className="text-muted-foreground max-w-xl">
-            Track and manage all customer orders. View order status, buyer, and revenue at a glance.
+            View, copy, claim, and update orders.
           </p>
         </div>
         <div className="grid w-full min-w-0 gap-2 sm:grid-cols-2 lg:w-auto">
@@ -205,28 +205,28 @@ export default async function OrdersPage({
         <MetricCard
           label="Visible Orders"
           value={orders.length}
-          description={hasFilters ? "Matching the active filters" : "All tenant orders"}
+          description={hasFilters ? "Filtered view" : "All orders"}
           icon={ListFilter}
           tone="primary"
         />
         <MetricCard
           label="Visible Revenue"
           value={formatGhanaCedis(filteredRevenue)}
-          description="Gross value in the current view"
+          description="Current view"
           icon={ShoppingCart}
           tone="success"
         />
         <MetricCard
           label="Visible Profit"
           value={formatGhanaCedis(filteredProfit)}
-          description="Withdrawable/customer-sale profit only"
+          description="Current view"
           icon={Activity}
           tone={filteredProfit > 0 ? "primary" : "info"}
         />
         <MetricCard
           label="Pending Work"
           value={pendingWork}
-          description="Pending and processing orders"
+          description="Pending + processing"
           icon={Clock}
           tone={pendingWork > 0 ? "warning" : "success"}
         />
@@ -242,18 +242,18 @@ export default async function OrdersPage({
       <Card className="premium-surface min-w-0 max-w-full overflow-hidden rounded-lg">
         <CardContent className="grid min-w-0 gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div>
-            <p className="text-sm font-semibold text-foreground">Channel mix</p>
+            <p className="text-sm font-semibold text-foreground">Sales channels</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              API {sourceCounts.API} / Storefront {sourceCounts.STOREFRONT} / Agent {sourceCounts.AGENT} / Reseller {sourceCounts.RESELLER} / Dashboard {sourceCounts.DASHBOARD}
+              Website {sourceCounts.API} / Shop {sourceCounts.STOREFRONT} / Agent {sourceCounts.AGENT} / Reseller {sourceCounts.RESELLER} / Direct {sourceCounts.DASHBOARD}
             </p>
           </div>
           <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap lg:justify-end">
             <Badge variant="outline" className="min-w-0 justify-center px-3 py-1">
               <Activity className="mr-1.5 h-3.5 w-3.5" />
-              API: {apiOrders.length} ({formatGhanaCedis(apiRevenue)})
+              Website: {apiOrders.length} ({formatGhanaCedis(apiRevenue)})
             </Badge>
             <Badge variant={apiPending > 0 ? "secondary" : "outline"} className="justify-center px-3 py-1">
-              API pending: {apiPending}
+              Website pending: {apiPending}
             </Badge>
           </div>
         </CardContent>
@@ -263,9 +263,9 @@ export default async function OrdersPage({
           <div className="flex min-w-0 flex-col gap-4">
             <div className="flex min-w-0 flex-col gap-2 md:flex-row md:items-end md:justify-between">
               <div className="min-w-0">
-                <CardTitle>Orders Workspace</CardTitle>
+                <CardTitle>Orders</CardTitle>
                 <p className="text-muted-foreground text-sm">
-                  Filter, inspect, pick, copy, claim, deliver, or fail eligible orders from one place.
+                  Filter, copy, claim, deliver, or fail orders.
                 </p>
               </div>
               <form className="grid w-full min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[auto_auto_auto_minmax(14rem,1fr)_auto_auto] 2xl:items-end" method="GET">
@@ -322,7 +322,7 @@ export default async function OrdersPage({
               description={
                 hasFilters
                   ? "Adjust the status, date range, or search term to widen the order list."
-                  : "Orders will appear here after customers buy from your storefront, agents sell, or internal VTU orders are placed."
+                  : "Orders will appear here after sales."
               }
               action={hasFilters ? { label: "Reset Filters", href: "/dashboard/orders" } : { label: "Open Storefront Setup", href: "/dashboard/setup" }}
               secondaryAction={hasFilters ? undefined : { label: "Manage Products", href: "/dashboard/products" }}

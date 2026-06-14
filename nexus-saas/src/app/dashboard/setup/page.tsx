@@ -143,8 +143,8 @@ export default async function DashboardSetupPage() {
     {
       label: "Business account active",
       description: organizationActive
-        ? "Your organization is active and allowed to operate on the platform."
-        : "Superadmin must reactivate this organization before selling can resume.",
+        ? "Active."
+        : "Needs reactivation.",
       href: "/dashboard/settings",
       complete: organizationActive,
       required: true,
@@ -152,21 +152,21 @@ export default async function DashboardSetupPage() {
       action: "Review business settings",
     },
     {
-      label: "SaaS subscription active",
+      label: "Plan active",
       description: subscriptionActive
-        ? "Your plan is active, so storefront, agent, reseller, and API selling can be enabled."
-        : "Activate a plan before accepting paid orders or using selling channels.",
+        ? "Active."
+        : "Activate a plan before selling.",
       href: "/dashboard/subscription",
       complete: subscriptionActive,
       required: true,
       icon: CreditCard,
-      action: "Manage subscription",
+      action: "Manage plan",
     },
     {
       label: "Paystack connected",
       description: paystackConnected
-        ? "Customer payments will settle through your own Paystack account."
-        : "Add your Paystack public and secret keys so storefront customers pay you directly.",
+        ? "Connected."
+        : "Connect Paystack to accept payments.",
       href: "/dashboard/settings",
       complete: paystackConnected,
       required: true,
@@ -176,8 +176,8 @@ export default async function DashboardSetupPage() {
     {
       label: "Products created",
       description: productsReady
-        ? `${productCount} active product${productCount === 1 ? "" : "s"} available for selling.`
-        : "Create at least one active data bundle or product for customers to buy.",
+        ? `${productCount} active.`
+        : "Add at least one product.",
       href: "/dashboard/products",
       complete: productsReady,
       required: true,
@@ -185,10 +185,10 @@ export default async function DashboardSetupPage() {
       action: "Manage products",
     },
     {
-      label: "Base prices configured",
+      label: "Prices set",
       description: pricingReady
-        ? `${basePriceCount} price record${basePriceCount === 1 ? "" : "s"} configured for your products.`
-        : "Set customer-facing base prices before you share the storefront.",
+        ? `${basePriceCount} set.`
+        : "Set customer prices.",
       href: "/dashboard/products",
       complete: pricingReady,
       required: true,
@@ -199,10 +199,10 @@ export default async function DashboardSetupPage() {
 
   const recommendedItems: SetupItem[] = [
     {
-      label: "Operational wallet funded",
+      label: "Wallet funded",
       description: walletFunded
-        ? `Your current wallet activity balance is ${formatGhanaCedis(walletBalance)}.`
-        : "Fund operational wallets when you need wallet-backed VTU or internal agent/reseller credits.",
+        ? `${formatGhanaCedis(walletBalance)} available.`
+        : "Fund wallet when needed.",
       href: "/dashboard/wallet",
       complete: walletFunded,
       required: false,
@@ -212,8 +212,8 @@ export default async function DashboardSetupPage() {
     {
       label: "Agents onboarded",
       description: agentsReady
-        ? `${agentCount} active agent${agentCount === 1 ? "" : "s"} can sell under your organization.`
-        : "Add agents when you are ready to expand beyond your own storefront.",
+        ? `${agentCount} active.`
+        : "Add agents when ready.",
       href: "/dashboard/agents",
       complete: agentsReady,
       required: false,
@@ -221,26 +221,26 @@ export default async function DashboardSetupPage() {
       action: "Manage agents",
     },
     {
-      label: "API keys created",
+      label: "Website keys",
       description: apiReady
-        ? `${user.organization.apiKeys.length} API key${user.organization.apiKeys.length === 1 ? "" : "s"} available.`
-        : "Create API keys only when you are ready for external systems to place orders.",
+        ? `${user.organization.apiKeys.length} available.`
+        : "Optional.",
       href: "/dashboard/settings",
       complete: apiReady,
       required: false,
       icon: Activity,
-      action: "Manage API access",
+      action: "Website keys",
     },
     {
-      label: "Storefront reviewed",
+      label: "Shop reviewed",
       description: storePath
-        ? "Open your public storefront and confirm the products, prices, and checkout experience."
-        : "Your organization needs a storefront slug before the public store can be opened.",
+        ? "Open your shop and confirm it looks right."
+        : "Set your business name first.",
       href: storePath ?? "/dashboard/settings",
       complete: Boolean(storePath && organizationActive && subscriptionActive && paystackConnected && productsReady && pricingReady),
       required: false,
       icon: ExternalLink,
-      action: "Open storefront",
+      action: "Open shop",
       external: Boolean(storePath),
     },
   ]
@@ -254,11 +254,10 @@ export default async function DashboardSetupPage() {
     <div className="portal-page space-y-6">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-3xl space-y-2">
-          <p className="text-xs font-semibold uppercase text-muted-foreground">Subscriber Launch</p>
+          <p className="text-xs font-semibold uppercase text-muted-foreground">Setup</p>
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Launch Setup</h1>
           <p className="text-sm leading-6 text-muted-foreground">
-            Finish the required steps before sharing your storefront. Recommended steps help you expand into agents,
-            wallet-backed operations, and API ordering after the core selling flow is ready.
+            Finish the basics before sharing your shop.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -266,7 +265,7 @@ export default async function DashboardSetupPage() {
             <Button asChild variant="outline">
               <Link href={storePath} target="_blank">
                 <ExternalLink className="mr-2 h-4 w-4" />
-                Open Storefront
+                Open shop
               </Link>
             </Button>
           ) : null}
@@ -284,10 +283,10 @@ export default async function DashboardSetupPage() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Rocket className={launchReady ? "h-5 w-5 text-primary" : "h-5 w-5 text-muted-foreground"} />
-                Storefront Launch Status
+                Shop status
               </CardTitle>
               <CardDescription>
-                Required progress is based on account status, subscription, Paystack, products, and prices.
+                Complete the required steps to start selling.
               </CardDescription>
             </div>
             <Badge variant={launchReady ? "secondary" : "outline"} className={launchReady ? "bg-primary/10 text-primary" : "border-amber-500/40 text-amber-800"}>
@@ -301,8 +300,8 @@ export default async function DashboardSetupPage() {
           </div>
           <div className={launchReady ? "status-success rounded-md border p-3 text-sm" : "status-warning rounded-md border p-3 text-sm"}>
             {launchReady
-              ? "Your public checkout can accept paid orders. Orders will enter the manual fulfillment workflow after payment."
-              : "Checkout remains blocked until all required steps are complete."}
+              ? "Your shop can accept paid orders."
+              : "Finish all required steps before sharing your shop."}
           </div>
         </CardContent>
       </Card>
@@ -316,7 +315,7 @@ export default async function DashboardSetupPage() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase text-muted-foreground">Required Before Selling</h2>
+          <h2 className="text-sm font-semibold uppercase text-muted-foreground">Required</h2>
           <span className="text-xs text-muted-foreground">{requiredComplete}/{requiredItems.length} complete</span>
         </div>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -328,7 +327,7 @@ export default async function DashboardSetupPage() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase text-muted-foreground">Recommended For Growth</h2>
+          <h2 className="text-sm font-semibold uppercase text-muted-foreground">Recommended</h2>
           <span className="text-xs text-muted-foreground">{recommendedComplete}/{recommendedItems.length} complete</span>
         </div>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">

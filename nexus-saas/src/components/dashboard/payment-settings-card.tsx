@@ -70,7 +70,7 @@ export function PaymentSettingsCard() {
       const data = json?.data ?? json
       setSettings(data)
       setSecretKey("")
-      toast({ title: "Payment settings saved", description: "Storefront payments and wallet top-ups will now settle through this Paystack account." })
+      toast({ title: "Paystack saved", description: "Payments will use this account." })
     } catch (error) {
       toast({
         variant: "destructive",
@@ -89,10 +89,10 @@ export function PaymentSettingsCard() {
           <div className="min-w-0">
             <CardTitle className="flex min-w-0 items-center gap-2 text-sm font-semibold">
               <CreditCard className="h-5 w-5 shrink-0 text-primary" />
-              <span className="min-w-0 break-words">Subscriber Paystack</span>
+              <span className="min-w-0 break-words">Paystack</span>
             </CardTitle>
             <CardDescription className="break-words text-xs">
-              Connect your own Paystack account so storefront payments, wallet top-ups, and customer funds settle to your business.
+              Connect the Paystack account for this business.
             </CardDescription>
           </div>
           <Badge variant={settings?.paystackConnected ? "secondary" : "destructive"} className={settings?.paystackConnected ? "status-success w-fit border" : "w-fit"}>
@@ -104,11 +104,11 @@ export function PaymentSettingsCard() {
         <div className={settings?.paystackConnected ? "status-success mb-4 flex min-w-0 gap-3 rounded-md border p-3 text-sm" : "status-warning mb-4 flex min-w-0 gap-3 rounded-md border p-3 text-sm"}>
           {settings?.paystackConnected ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />}
           <div className="min-w-0">
-            <p className="font-semibold">{settings?.paystackConnected ? "Paystack is connected" : "Paystack is required for storefront checkout"}</p>
+            <p className="font-semibold">{settings?.paystackConnected ? "Paystack is connected" : "Connect Paystack"}</p>
             <p className="break-words">
               {settings?.paystackConnected
-                ? `Storefront payments will settle to your Paystack account${settings.updatedAt ? `; last updated ${new Date(settings.updatedAt).toLocaleString()}` : ""}.`
-                : "Customers cannot complete storefront payment until both keys are saved."}
+                ? `Last updated ${settings.updatedAt ? new Date(settings.updatedAt).toLocaleString() : "recently"}.`
+                : "Save both keys to accept payments."}
             </p>
           </div>
         </div>
@@ -126,7 +126,7 @@ export function PaymentSettingsCard() {
             {publicKey && !publicKeyLooksValid ? (
               <p className="break-words text-xs text-destructive">Public key should start with pk_test_ or pk_live_.</p>
             ) : (
-              <p className="break-words text-xs text-muted-foreground">Use test keys while testing checkout, then switch to live keys for production.</p>
+              <p className="break-words text-xs text-muted-foreground">Use test keys for testing, live keys for launch.</p>
             )}
           </div>
           <div className="grid gap-2">
@@ -142,12 +142,10 @@ export function PaymentSettingsCard() {
             {secretKey && !secretKeyLooksValid ? (
               <p className="break-words text-xs text-destructive">Secret key should start with sk_test_ or sk_live_.</p>
             ) : null}
-            <p className="break-words text-xs text-muted-foreground">
-              The secret key is encrypted before storage. It is used only server-side to initialize and verify storefront and wallet payments.
-            </p>
+            <p className="break-words text-xs text-muted-foreground">Secret keys are stored securely.</p>
           </div>
           <Button type="submit" disabled={loading || saving} className="w-full sm:w-auto">
-            {saving ? "Saving..." : "Save Paystack Connection"}
+            {saving ? "Saving..." : "Save Paystack"}
           </Button>
         </form>
       </CardContent>

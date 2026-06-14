@@ -24,7 +24,7 @@ export function CopyLinkButton({ path }: { path: string }) {
         onClick={async () => {
           try {
             await navigator.clipboard.writeText(storeUrl)
-            toast({ title: "Copied", description: "Storefront link copied." })
+            toast({ title: "Copied", description: "Shop link copied." })
           } catch {
             toast({ title: "Copy failed", description: "Could not copy link.", variant: "destructive" })
           }

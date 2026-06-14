@@ -252,36 +252,36 @@ export default async function DashboardPage() {
             icon: CreditCard,
           },
           {
-            label: "Payment account connected",
-            description: paystackConnected ? "Customer payments settle to your Paystack." : "Connect your Paystack public and secret keys.",
+            label: "Payment ready",
+            description: paystackConnected ? "Paystack is connected." : "Connect Paystack.",
             href: "/dashboard/settings",
             complete: paystackConnected,
             icon: WalletCards,
           },
           {
-            label: "Products added",
-            description: productsReady ? `${productCount} active product${productCount === 1 ? "" : "s"} available.` : "Create bundles or services for your shop link.",
+            label: "Products",
+            description: productsReady ? `${productCount} active.` : "Add bundles or services.",
             href: "/dashboard/products",
             complete: productsReady,
             icon: Package,
           },
           {
             label: "Prices set",
-            description: pricingReady ? `${basePriceCount} price record${basePriceCount === 1 ? "" : "s"} configured.` : "Set the prices customers will pay.",
+            description: pricingReady ? `${basePriceCount} set.` : "Set customer prices.",
             href: "/dashboard/products",
             complete: pricingReady,
             icon: Settings,
           },
           {
-            label: "Shop link ready",
-            description: storefrontReady ? "Customers can pay and place orders." : "Requires subscription, Paystack, products, and prices.",
+            label: "Shop ready",
+            description: storefrontReady ? "Ready to share." : "Finish setup first.",
             href: storeUrl !== "#" ? storeUrl : "/dashboard/settings",
             complete: storefrontReady,
             icon: ExternalLink,
           },
           {
             label: "Team sellers",
-            description: agentsReady ? `${agentCount} active agent${agentCount === 1 ? "" : "s"} available.` : "Optional: add agents or resellers for wider selling.",
+            description: agentsReady ? `${agentCount} active.` : "Add agents when ready.",
             href: "/dashboard/agents",
             complete: agentsReady,
             required: false,
@@ -289,7 +289,7 @@ export default async function DashboardPage() {
           },
           {
             label: "Website API",
-            description: apiReady ? `${apiKeys.length} API key${apiKeys.length === 1 ? "" : "s"} created.` : "Optional: connect an external website.",
+            description: apiReady ? `${apiKeys.length} key${apiKeys.length === 1 ? "" : "s"}.` : "Optional.",
             href: "/dashboard/settings",
             complete: apiReady,
             required: false,
@@ -352,7 +352,7 @@ export default async function DashboardPage() {
 
         alertItems = [
           ...(!subscriptionActive ? [{
-            label: "Subscription inactive",
+            label: "Plan inactive",
             description: "Selling is blocked until your plan is active.",
             href: "/dashboard/subscription",
             action: "Manage subscription",
@@ -360,35 +360,35 @@ export default async function DashboardPage() {
           }] : []),
           ...(!paystackConnected ? [{
             label: "Paystack not connected",
-            description: "Customer payments need your own Paystack keys.",
+            description: "Connect Paystack to accept payments.",
             href: "/dashboard/settings",
             action: "Connect Paystack",
             tone: "warning" as const,
           }] : []),
           ...(!providerConnected ? [{
             label: "Automatic delivery not connected",
-            description: "Orders will stay manual until a delivery API is connected.",
+            description: "Orders can still be processed manually.",
             href: "/dashboard/settings",
             action: "Review delivery",
             tone: "info" as const,
           }] : []),
           ...(pendingManualOrders > 0 ? [{
             label: "Orders need processing",
-            description: `${pendingManualOrders} paid order${pendingManualOrders === 1 ? "" : "s"} waiting to be claimed.`,
+            description: `${pendingManualOrders} order${pendingManualOrders === 1 ? "" : "s"} waiting.`,
             href: "/dashboard/orders",
             action: "Open orders",
             tone: "warning" as const,
           }] : []),
           ...(pendingServiceRequests > 0 ? [{
             label: "Service requests need review",
-            description: `${pendingServiceRequests} paid service request${pendingServiceRequests === 1 ? "" : "s"} waiting for processing.`,
+            description: `${pendingServiceRequests} request${pendingServiceRequests === 1 ? "" : "s"} waiting.`,
             href: "/dashboard/service-requests?status=PENDING_REVIEW",
             action: "Review services",
             tone: "warning" as const,
           }] : []),
           ...(!productsReady ? [{
             label: "No active products",
-            description: "Create active bundles before sharing your shop link.",
+            description: "Add products before sharing your shop.",
             href: "/dashboard/products",
             action: "Add products",
             tone: "warning" as const,
@@ -549,10 +549,10 @@ export default async function DashboardPage() {
     <div className="portal-page space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-primary">Subscriber workspace</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary">Business dashboard</p>
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Home</h2>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Track sales, payments, orders, team sellers, and setup progress from one place.
+            Sales, orders, wallet, and setup in one place.
           </p>
         </div>
         <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-2">
@@ -586,7 +586,7 @@ export default async function DashboardPage() {
           <CardHeader className="border-b bg-muted/30 pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <AlertTriangle className="h-4 w-4 text-primary" />
-               Things to fix
+              Needs attention
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
@@ -610,7 +610,7 @@ export default async function DashboardPage() {
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
             <p className="font-semibold">Operations look clean</p>
-            <p>No urgent setup, payment, or order processing alerts are active.</p>
+            <p>No urgent alerts.</p>
           </div>
         </div>
       )}
@@ -621,10 +621,10 @@ export default async function DashboardPage() {
             <div>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <CheckCircle2 className={onboardingIsReady ? "h-5 w-5 text-primary" : "h-5 w-5 text-muted-foreground"} />
-                Launch checklist
+                Setup checklist
               </CardTitle>
               <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                Complete the required checks before sharing your shop link. Team sellers and website API can come after launch.
+                Finish the basics, then share your shop.
               </p>
             </div>
             <Badge variant={onboardingIsReady ? "secondary" : "outline"} className={onboardingIsReady ? "bg-primary/10 text-primary" : ""}>
@@ -639,7 +639,7 @@ export default async function DashboardPage() {
           {optionalOnboardingItems.length > 0 ? (
             <div className="mt-4 border-t pt-4">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Growth channels</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Optional</p>
                 <Badge variant="outline" className="text-xs">
                   Optional
                 </Badge>
@@ -651,17 +651,17 @@ export default async function DashboardPage() {
           ) : null}
           {!onboardingIsReady ? (
             <div className="status-warning mt-4 rounded-md border px-4 py-3 text-sm">
-              Selling is blocked until the required plan, Paystack, product, and pricing steps are complete.
+              Finish the required steps to start selling.
             </div>
           ) : (
             <div className="status-success mt-4 rounded-md border px-4 py-3 text-sm">
-              Your shop link is ready to accept paid customer orders.
+              Your shop is ready.
             </div>
           )}
           <div className="mt-4">
             <Button asChild variant={onboardingIsReady ? "outline" : "default"} size="sm">
               <Link href="/dashboard/setup">
-                {onboardingIsReady ? "Review Setup Guide" : "Continue Setup Guide"}
+                {onboardingIsReady ? "Review setup" : "Continue setup"}
               </Link>
             </Button>
           </div>
@@ -670,37 +670,37 @@ export default async function DashboardPage() {
 
       <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <MetricCard
-          label="Revenue Today"
+          label="Today's Revenue"
           value={formatGhanaCedis(revenueToday)}
-          description={`${ordersToday} order${ordersToday === 1 ? "" : "s"} submitted today`}
+          description={`${ordersToday} order${ordersToday === 1 ? "" : "s"} today`}
           icon={CreditCard}
           tone="success"
         />
         <MetricCard
-          label="Profit Today"
+          label="Today's Profit"
           value={formatGhanaCedis(profitToday)}
-          description="Completed customer-sale profit"
+          description="Completed sales"
           icon={TrendingUp}
           tone="primary"
         />
         <MetricCard
-          label="Orders To Process"
+          label="To Process"
           value={pendingManualOrders + processingManualOrders}
           description={`${pendingManualOrders} pending, ${processingManualOrders} processing`}
           icon={Wrench}
           tone={pendingManualOrders > 0 ? "warning" : "success"}
         />
         <MetricCard
-          label="Online Sales"
+          label="Shop + API"
           value={apiOrdersToday + storefrontSalesToday}
-          description={`${apiOrdersToday} website, ${storefrontSalesToday} shop link`}
+          description={`${apiOrdersToday} website, ${storefrontSalesToday} shop`}
           icon={Zap}
           tone="primary"
         />
         <MetricCard
           label="Service Requests"
           value={pendingServiceRequests}
-          description={`${serviceRequestsToday} today, ${formatGhanaCedis(serviceRevenueToday)} paid value`}
+          description={`${serviceRequestsToday} today`}
           icon={FileText}
           tone={pendingServiceRequests > 0 ? "warning" : activeServiceProducts > 0 ? "primary" : "info"}
         />
@@ -710,11 +710,10 @@ export default async function DashboardPage() {
         <CardHeader className="border-b bg-muted/30 pb-3">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <CardTitle className="text-sm font-semibold text-foreground">Sales by source today</CardTitle>
-              <p className="text-xs text-muted-foreground">See where today&apos;s orders came from and what still needs attention.</p>
+              <CardTitle className="text-sm font-semibold text-foreground">Today's Sales</CardTitle>
             </div>
             <Badge variant="outline" className="w-fit text-xs">
-              {dashboardBuysToday} direct buy{dashboardBuysToday === 1 ? "" : "s"}
+              {dashboardBuysToday} direct
             </Badge>
           </div>
         </CardHeader>
@@ -747,8 +746,7 @@ export default async function DashboardPage() {
         <CardHeader className="border-b bg-muted/30 pb-3">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <CardTitle className="text-sm font-semibold text-foreground">Revenue Periods</CardTitle>
-              <p className="text-xs text-muted-foreground">Revenue and profit from completed orders, summarized for quick review.</p>
+              <CardTitle className="text-sm font-semibold text-foreground">Sales Summary</CardTitle>
             </div>
             <Badge variant="outline" className="w-fit text-xs">
               Today {changeTodayVsYesterday >= 0 ? "+" : ""}{changeTodayVsYesterday.toFixed(1)}%
@@ -808,7 +806,6 @@ export default async function DashboardPage() {
           <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <CardTitle className="text-sm font-semibold text-foreground">Business Health</CardTitle>
-              <p className="text-xs text-muted-foreground">Stable operating signals without crowding the daily command cards.</p>
             </div>
             <Badge variant={successRate >= 90 || totalOrders === 0 ? "secondary" : "outline"} className="w-fit text-xs">
               {successRate.toFixed(1)}% success
@@ -821,7 +818,7 @@ export default async function DashboardPage() {
             <p className="mt-1 text-lg font-semibold">{formatGhanaCedis(totalRevenue)}</p>
           </div>
           <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
-            <p className="text-xs text-muted-foreground">Orders and customers</p>
+            <p className="text-xs text-muted-foreground">Orders / customers</p>
             <p className="mt-1 text-lg font-semibold">{totalOrders} / {totalCustomers}</p>
           </div>
           <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
@@ -841,11 +838,11 @@ export default async function DashboardPage() {
                   <p className="mt-1 text-sm font-semibold">{pendingAgentApprovals} agents, {pendingResellerApprovals} resellers</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">API today</p>
+                  <p className="text-xs text-muted-foreground">Website today</p>
                   <p className="mt-1 text-sm font-semibold">{apiOrdersToday} orders, {formatGhanaCedis(apiRevenueToday)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">API keys</p>
+                  <p className="text-xs text-muted-foreground">Website keys</p>
                   <p className="mt-1 text-sm font-semibold">{activeApiKeys24h} active, {staleApiKeys} stale</p>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2 xl:flex xl:items-end">
@@ -853,7 +850,7 @@ export default async function DashboardPage() {
                     <Link href="/dashboard/approvals">Approvals</Link>
                   </Button>
                   <Button asChild variant="outline" size="sm" className="w-full">
-                    <Link href="/dashboard/settings">API keys</Link>
+                    <Link href="/dashboard/settings">Website keys</Link>
                   </Button>
                 </div>
               </div>
@@ -875,7 +872,6 @@ export default async function DashboardPage() {
         <Card className="premium-surface col-span-1 rounded-lg lg:col-span-3">
           <CardHeader>
             <CardTitle>Recent Sales</CardTitle>
-            <div className="text-sm text-muted-foreground">You made {recentSales.length} sales recently.</div>
           </CardHeader>
           <CardContent>
             <RecentSales sales={recentSales} />

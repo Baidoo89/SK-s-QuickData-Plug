@@ -88,7 +88,7 @@ export default async function AgentOrdersPage({
   })
 
   if (!user || user.role !== "AGENT" || !user.organizationId) {
-    return <PortalAccessMessage title="Agent profile unavailable" description="This account is not linked to an approved agent profile. Ask the subscriber admin to review the account." />
+    return <PortalAccessMessage title="Agent profile unavailable" description="This account is not linked to an approved agent profile. Ask the business owner to review the account." />
   }
 
   let agentId = user.agentId
@@ -186,7 +186,7 @@ export default async function AgentOrdersPage({
       <div className="mx-auto max-w-2xl space-y-1 text-center">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Orders</h1>
         <p className="text-sm text-muted-foreground">
-          Track every order connected to your agent account, including dashboard buys, storefront sales, and reseller activity.
+          View your buys, shop sales, and reseller orders.
         </p>
       </div>
       <Card className="premium-surface border-0">
@@ -195,7 +195,7 @@ export default async function AgentOrdersPage({
             <div>
               <CardTitle className="text-sm font-semibold">Order history</CardTitle>
               <CardDescription className="text-xs">
-                This list is backed by the real orders database. Admin and subscribers can also see these orders in their own views.
+                Search, filter, and check status.
               </CardDescription>
             </div>
             <form className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-[auto_auto_auto_minmax(12rem,1fr)_auto_auto] lg:items-end" method="GET">
@@ -248,9 +248,9 @@ export default async function AgentOrdersPage({
               description={
                 hasFilters
                   ? "Adjust the status, date range, or search term to see more orders."
-                  : "Share your storefront link with customers or place a direct VTU order. Successful orders will be listed here."
+                  : "Orders will appear here after sales or buys."
               }
-              action={hasFilters ? { label: "Reset Filters", href: "/agent/orders" } : { label: "Open Storefronts", href: "/agent/storefronts" }}
+              action={hasFilters ? { label: "Reset Filters", href: "/agent/orders" } : { label: "Open Shop", href: "/agent/storefronts" }}
               secondaryAction={hasFilters ? undefined : { label: "Buy Data", href: "/agent/buy/single" }}
             />
           )}

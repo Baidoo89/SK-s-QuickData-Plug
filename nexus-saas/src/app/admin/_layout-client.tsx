@@ -54,41 +54,41 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const renderNavigation = (mobile = false) => (
     <>
       <div>
-        <p className="portal-sidebar-section px-3 pb-1 text-[11px] font-bold uppercase text-muted-foreground">Control Center</p>
+        <p className="portal-sidebar-section px-3 pb-1 text-[11px] font-bold uppercase text-muted-foreground">Control</p>
         <NavLink href="/admin" label="Businesses" icon={LayoutDashboard} closeOnClick={mobile} />
       </div>
 
       <div>
         <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Users</p>
-        <NavLink href="/admin/users" label="All Users" icon={Users} closeOnClick={mobile} />
+        <NavLink href="/admin/users" label="Users" icon={Users} closeOnClick={mobile} />
         <NavLink href="/admin/approvals" label="Approvals" icon={UserCheck} closeOnClick={mobile} />
       </div>
 
       <div>
-        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Subscriptions</p>
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Plans</p>
         <NavLink href="/admin/subscriptions" label="Plans" icon={CreditCard} closeOnClick={mobile} />
       </div>
 
       <div>
         <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Money</p>
-        <NavLink href="/admin/payments" label="Customer Payments" icon={CreditCard} closeOnClick={mobile} />
+        <NavLink href="/admin/payments" label="Payments" icon={CreditCard} closeOnClick={mobile} />
         <NavLink href="/admin/wallet" label="Wallets" icon={Wallet} closeOnClick={mobile} />
         <NavLink href="/admin/withdrawals" label="Withdrawals" icon={Wallet} closeOnClick={mobile} />
       </div>
 
       <div>
         <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Orders</p>
-        <NavLink href="/admin/orders" label="Order Review" icon={ShoppingCart} closeOnClick={mobile} />
+        <NavLink href="/admin/orders" label="Orders" icon={ShoppingCart} closeOnClick={mobile} />
       </div>
 
       <div>
         <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Tools</p>
-        <NavLink href="/admin/tools" label="System Tools" icon={Wrench} closeOnClick={mobile} />
+        <NavLink href="/admin/tools" label="Tools" icon={Wrench} closeOnClick={mobile} />
       </div>
 
       <div>
         <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">System</p>
-        <NavLink href="/admin/system" label="Health Check" icon={ServerCog} closeOnClick={mobile} />
+        <NavLink href="/admin/system" label="Health" icon={ServerCog} closeOnClick={mobile} />
       </div>
 
       <div>
@@ -108,7 +108,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             <div className="min-w-0">
               <span className="block text-[11px] font-bold uppercase text-muted-foreground">Superadmin</span>
-              <span className="block truncate text-sm font-extrabold tracking-normal">Owner Control</span>
+              <span className="block truncate text-sm font-extrabold tracking-normal">Owner</span>
             </div>
           </div>
           <Button
@@ -146,7 +146,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </div>
                     <div className="min-w-0">
                       <span className="block text-[11px] font-bold uppercase text-muted-foreground">Superadmin</span>
-                      <span className="block truncate text-sm font-extrabold tracking-normal">Owner Control</span>
+                      <span className="block truncate text-sm font-extrabold tracking-normal">Owner</span>
                     </div>
                   </div>
                 </div>
@@ -156,8 +156,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </SheetContent>
             </Sheet>
             <div className="min-w-0">
-            <h1 className="text-lg font-extrabold tracking-normal">Owner Control</h1>
-              <p className="hidden truncate text-xs text-muted-foreground sm:block">Businesses, users, subscriptions, money, and system health.</p>
+            <h1 className="text-lg font-extrabold tracking-normal">Owner</h1>
+              <p className="hidden truncate text-xs text-muted-foreground sm:block">Businesses, plans, money, and health.</p>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">

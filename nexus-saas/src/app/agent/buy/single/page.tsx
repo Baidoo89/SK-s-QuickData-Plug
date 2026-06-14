@@ -129,7 +129,7 @@ export default function AgentBuySinglePage() {
     if (sellingBlocked) {
       toast({
         title: "Selling is blocked",
-        description: sellingAccess?.reason || "Ask the subscriber admin to complete selling setup.",
+        description: sellingAccess?.reason || "Ask the business owner to complete selling setup.",
         variant: "destructive",
       })
       return
@@ -368,7 +368,7 @@ export default function AgentBuySinglePage() {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Provider:</span>
-                    <span className="font-semibold text-foreground">{orderSuccess.dispatchProvider || "Manual fulfillment"}</span>
+                    <span className="font-semibold text-foreground">{orderSuccess.dispatchProvider || "Manual processing"}</span>
                   </div>
                 </div>
 

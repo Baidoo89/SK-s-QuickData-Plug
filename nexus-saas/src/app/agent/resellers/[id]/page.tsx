@@ -508,7 +508,7 @@ export default function ResellerDetailPage({ params }: { params: { id: string } 
         <CardHeader>
           <CardTitle className="text-sm font-semibold">Recent reseller orders</CardTitle>
           <CardDescription className="text-xs">
-            Latest transactions to monitor performance and fulfillment status.
+            Latest transactions to monitor performance and delivery status.
           </CardDescription>
           <div className="flex flex-wrap gap-2 pt-2">
             {([

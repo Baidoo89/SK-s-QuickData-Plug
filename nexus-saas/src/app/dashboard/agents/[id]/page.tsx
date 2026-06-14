@@ -355,7 +355,7 @@ export default function AgentDetailPage({ params }: { params: { id: string } }) 
                   const origin = typeof window !== "undefined" ? window.location.origin : ""
                   const url = `${origin}${agentStorePath}`
                   await navigator.clipboard.writeText(url)
-                  toast({ title: "Copied", description: "Agent storefront link copied." })
+                  toast({ title: "Copied", description: "Agent shop link copied." })
                 } catch {
                   toast({ variant: "destructive", title: "Copy failed", description: "Could not copy link." })
                 }

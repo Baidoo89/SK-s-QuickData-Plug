@@ -84,7 +84,7 @@ export default async function ResellerDashboardPage({ searchParams }: { searchPa
   });
 
   if (!user || user.role !== "RESELLER" || !user.organizationId || !user.parentAgentId) {
-    return <PortalAccessMessage title="Reseller profile unavailable" description="This account is not linked to an approved reseller profile. Ask your agent or subscriber admin to review the account." />;
+    return <PortalAccessMessage title="Reseller profile unavailable" description="This account is not linked to an approved reseller profile. Ask your agent to review the account." />;
   }
 
   const now = new Date();
@@ -220,51 +220,51 @@ export default async function ResellerDashboardPage({ searchParams }: { searchPa
   }
 
   const channelMetrics: ChannelMetric[] = [
-    { key: "buys", label: "Dashboard buys", ...summarize(todayBuys), href: "/reseller/orders" },
-    { key: "storefront", label: "Storefront sales", ...summarize(todayStorefrontSales), href: "/reseller/orders" },
-    { key: "services", label: "Service requests", count: todayServiceRequests.length, revenue: serviceRevenueToday, profit: serviceProfitToday, pending: pendingServiceRequestCount, href: "/reseller/service-requests" },
-    { key: "manual", label: "Pending fulfillment", count: manualWorkCount, revenue: todaysOrders.filter((order) => ["PENDING", "PROCESSING"].includes(order.status)).reduce((sum, order) => sum + order.total, 0), profit: 0, pending: manualWorkCount, href: "/reseller/orders" },
+    { key: "buys", label: "My buys", ...summarize(todayBuys), href: "/reseller/orders" },
+    { key: "storefront", label: "Shop sales", ...summarize(todayStorefrontSales), href: "/reseller/orders" },
+    { key: "services", label: "Services", count: todayServiceRequests.length, revenue: serviceRevenueToday, profit: serviceProfitToday, pending: pendingServiceRequestCount, href: "/reseller/service-requests" },
+    { key: "manual", label: "In progress", count: manualWorkCount, revenue: todaysOrders.filter((order) => ["PENDING", "PROCESSING"].includes(order.status)).reduce((sum, order) => sum + order.total, 0), profit: 0, pending: manualWorkCount, href: "/reseller/orders" },
   ];
 
   const alertItems: AlertItem[] = [
     ...(walletBalance <= 0 ? [{
       label: "Wallet needs funding",
-      description: "Dashboard buys need wallet balance before orders can be placed.",
+      description: "Top up before buying data.",
       href: "/reseller/wallet",
       action: "Open wallet",
       tone: "warning" as const,
     }] : []),
     ...(storefrontPriceTotal === 0 ? [{
-      label: "No storefront customer prices",
-      description: "Set customer-facing prices before sharing your reseller storefront.",
+      label: "No customer prices",
+      description: "Set prices before sharing your shop.",
       href: "/reseller/storefront-pricing",
       action: "Set prices",
       tone: "warning" as const,
     }] : []),
     ...(pendingWithdrawals > 0 ? [{
       label: "Withdrawal in review",
-      description: `${pendingWithdrawals} payout request${pendingWithdrawals === 1 ? "" : "s"} pending or approved.`,
+      description: `${pendingWithdrawals} payout${pendingWithdrawals === 1 ? "" : "s"} waiting.`,
       href: "/reseller/withdrawals",
       action: "View withdrawals",
       tone: "info" as const,
     }] : []),
     ...(manualWorkCount > 0 ? [{
-      label: "Orders awaiting fulfillment",
-      description: `${manualWorkCount} paid manual order${manualWorkCount === 1 ? "" : "s"} are still pending or processing.`,
+      label: "Orders in progress",
+      description: `${manualWorkCount} order${manualWorkCount === 1 ? "" : "s"} waiting.`,
       href: "/reseller/orders",
       action: "View orders",
       tone: "info" as const,
     }] : []),
     ...(pendingServiceRequestCount > 0 ? [{
-      label: "Service requests waiting",
-      description: `${pendingServiceRequestCount} paid service request${pendingServiceRequestCount === 1 ? "" : "s"} are waiting for subscriber processing.`,
+      label: "Service requests",
+      description: `${pendingServiceRequestCount} waiting.`,
       href: "/reseller/service-requests?status=PENDING_REVIEW",
       action: "View services",
       tone: "info" as const,
     }] : []),
     ...(!resellerStorePath ? [{
-      label: "Storefront link unavailable",
-      description: "Your reseller storefront needs organization and parent-agent linkage.",
+      label: "Shop link unavailable",
+      description: "Ask your agent to review your account.",
       href: "/reseller/account",
       action: "Review account",
       tone: "warning" as const,
@@ -277,7 +277,7 @@ export default async function ResellerDashboardPage({ searchParams }: { searchPa
         <p className="text-sm font-medium text-primary">{`${greeting}, ${displayName}.`}</p>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-sm text-muted-foreground max-w-xl">
-          Track wallet-backed buys, storefront customer sales, and withdrawable profit without mixing balances.
+          Buy data, track sales, and withdraw profit.
         </p>
         <div className="flex flex-wrap gap-2 pt-2">
           {([
@@ -315,7 +315,7 @@ export default async function ResellerDashboardPage({ searchParams }: { searchPa
           <CardHeader className="border-b bg-muted/30 pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <AlertTriangle className="h-4 w-4 text-primary" />
-              Operational alerts
+              Needs attention
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
@@ -338,31 +338,31 @@ export default async function ResellerDashboardPage({ searchParams }: { searchPa
         <div className="status-success flex gap-3 rounded-md border px-4 py-3 text-sm">
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
-            <p className="font-semibold">Reseller operations look clean</p>
-            <p>No wallet, pricing, withdrawal, or fulfillment alerts are active.</p>
+            <p className="font-semibold">Everything looks good</p>
+            <p>No urgent alerts.</p>
           </div>
         </div>
       )}
 
       <div className="grid min-w-0 gap-4 md:grid-cols-2 lg:grid-cols-6">
         <MetricCard
-          label="Today's Buys"
+          label="My Buys"
           value={todayBuys.length}
-          description={`${todaysOrders.length} total orders today.`}
+          description={`${todaysOrders.length} total today`}
           icon={ShoppingCart}
           tone="info"
         />
         <MetricCard
-          label="Wallet Balance"
+          label="Wallet"
           value={formatGhanaCedis(walletBalance)}
-          description="Successful wallet transactions for this reseller."
+          description="Available for data buys"
           icon={Wallet}
           tone="success"
         />
         <MetricCard
-          label="Storefront Sales"
+          label="Shop Sales"
           value={todayStorefrontSales.length}
-          description={`Customer revenue ${formatGhanaCedis(todayStorefrontSales.reduce((sum, order) => sum + order.total, 0))}`}
+          description={formatGhanaCedis(todayStorefrontSales.reduce((sum, order) => sum + order.total, 0))}
           icon={Store}
           tone="primary"
         />
@@ -374,9 +374,9 @@ export default async function ResellerDashboardPage({ searchParams }: { searchPa
           tone="success"
         />
         <MetricCard
-          label="Service Requests"
+          label="Services"
           value={pendingServiceRequestCount}
-          description={`${todayServiceRequests.length} today, ${formatGhanaCedis(serviceRevenueToday)} value`}
+          description={`${todayServiceRequests.length} today`}
           icon={FileText}
           tone={pendingServiceRequestCount > 0 ? "warning" : "primary"}
         />
@@ -428,10 +428,7 @@ export default async function ResellerDashboardPage({ searchParams }: { searchPa
         <CardHeader className="border-b bg-muted/30 pb-3">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <CardTitle className="text-sm font-semibold">Channel performance today</CardTitle>
-              <p className="text-xs text-muted-foreground">
-                Dashboard buys are wallet operations. Storefront customer sales produce withdrawable profit.
-              </p>
+              <CardTitle className="text-sm font-semibold">Today's Sales</CardTitle>
             </div>
             <Badge variant="outline" className="w-fit">{manualWorkCount} manual</Badge>
           </div>
@@ -470,7 +467,7 @@ export default async function ResellerDashboardPage({ searchParams }: { searchPa
             {[
               { href: "/reseller/buy/single", label: "Buy single", description: "Send one bundle.", icon: ShoppingBag },
               { href: "/reseller/buy/bulk", label: "Buy bulk", description: "Upload many numbers.", icon: ShoppingBag },
-              { href: "/reseller/storefront-pricing", label: "Customer prices", description: "Set storefront margins.", icon: Megaphone },
+              { href: "/reseller/storefront-pricing", label: "Prices", description: "Set shop margins.", icon: Megaphone },
               { href: "/reseller/orders", label: "Orders", description: "Review order status.", icon: FileText },
               { href: "/reseller/service-requests", label: "Service requests", description: "Track registration sales.", icon: FileText },
               { href: "/reseller/wallet", label: "Wallet", description: "Top up and inspect logs.", icon: Wallet },
@@ -497,7 +494,7 @@ export default async function ResellerDashboardPage({ searchParams }: { searchPa
       {resellerStorePath ? (
         <Card className="premium-surface border-0">
           <CardHeader>
-            <CardTitle className="text-sm font-semibold">Your storefront link</CardTitle>
+            <CardTitle className="text-sm font-semibold">Your shop link</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="min-w-0 truncate rounded-lg border border-border/70 bg-background/80 px-3 py-2 font-mono text-xs shadow-sm">{resellerStorePath}</p>

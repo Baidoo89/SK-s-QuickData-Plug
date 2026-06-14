@@ -25,7 +25,7 @@ export default async function ResellerStorefrontsPage() {
   })
 
   if (!user || user.role !== "RESELLER" || !user.organizationId || !user.organization?.slug) {
-    return <PortalAccessMessage title="Shop link unavailable" description="This reseller account is not fully linked to an organization shop. Ask your agent or subscriber admin to complete setup." />
+    return <PortalAccessMessage title="Shop link unavailable" description="This reseller account is not fully linked to a shop. Ask your agent to complete setup." />
   }
 
   const resellerOrderCount = await db.order.count({
@@ -48,8 +48,8 @@ export default async function ResellerStorefrontsPage() {
       label: "Your customer shop link",
       path: resellerStorePath,
       description: user.parentAgentId
-        ? "Share this link with customers. Your own customer prices and profit tracking are applied here."
-        : "Your customer shop link needs parent-agent linkage before it can be shared confidently.",
+        ? "Share this with customers. Your prices and profit tracking apply here."
+        : "Your shop link needs agent linkage before sharing.",
     },
   ]
 
@@ -58,14 +58,14 @@ export default async function ResellerStorefrontsPage() {
       <div className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Shop Links</h1>
         <p className="text-sm text-muted-foreground">
-          Share your clean customer link like techdalt.com/shop/your-name and track your reseller sales.
+          Share your customer link and track reseller sales.
         </p>
       </div>
 
       <div className="grid min-w-0 gap-4 md:grid-cols-3">
         <Card className="premium-surface border-0">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Organization</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Business</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-lg font-semibold">{user.organization.name}</p>
@@ -91,7 +91,7 @@ export default async function ResellerStorefrontsPage() {
 
       <ShareLinksCard
         title="Shareable shop links"
-        description="Customers only see your clean shop handle. Technical API URLs stay in Website API."
+        description="Customers see your shop name and link. Website API links stay separate."
         links={storefrontLinks}
       />
 

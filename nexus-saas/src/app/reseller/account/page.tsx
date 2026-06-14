@@ -35,7 +35,7 @@ export default async function ResellerAccountPage() {
   });
 
   if (!user || user.role !== "RESELLER") {
-    return <PortalAccessMessage title="Reseller profile unavailable" description="This account is not linked to an approved reseller profile. Ask your agent or subscriber admin to review the account." />;
+    return <PortalAccessMessage title="Reseller profile unavailable" description="This account is not linked to an approved reseller profile. Ask your agent to review the account." />;
   }
 
   const agent = user.parentAgentId
@@ -85,7 +85,7 @@ export default async function ResellerAccountPage() {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Account</h1>
           <p className="text-sm text-muted-foreground max-w-xl">
-            Your reseller profile, linked agent, storefront access, and wallet context.
+            Your profile, linked agent, shop link, and wallet.
           </p>
         </div>
         <Button asChild variant="outline" size="sm">
@@ -132,8 +132,8 @@ export default async function ResellerAccountPage() {
 
         <Card className="premium-surface border-0">
           <CardHeader>
-            <CardTitle className="text-sm font-semibold">Linked Agent & Organization</CardTitle>
-            <CardDescription className="text-xs">Where your reseller sales are routed.</CardDescription>
+            <CardTitle className="text-sm font-semibold">Linked Agent & Business</CardTitle>
+            <CardDescription className="text-xs">Where your sales are routed.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <div className="flex items-center justify-between gap-3">
@@ -141,15 +141,15 @@ export default async function ResellerAccountPage() {
               <span className="font-medium">{agent ? agent.name : "Not linked"}</span>
             </div>
             <div className="flex items-center justify-between gap-3">
-              <span className="text-muted-foreground">Organization</span>
+              <span className="text-muted-foreground">Business</span>
               <span className="font-medium">{orgName}</span>
             </div>
             <div className="space-y-1">
-              <span className="text-muted-foreground">Recommended storefront</span>
+              <span className="text-muted-foreground">Shop link</span>
               <p className="break-all font-mono text-xs">{resellerStorePath ?? "Not available yet"}</p>
             </div>
             <Button asChild size="sm" variant="outline">
-              <Link href="/reseller/storefronts">View storefront tools</Link>
+              <Link href="/reseller/storefronts">View shop links</Link>
             </Button>
           </CardContent>
         </Card>

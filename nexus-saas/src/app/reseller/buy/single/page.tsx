@@ -128,7 +128,7 @@ export default function ResellerBuySinglePage() {
     if (sellingBlocked) {
       toast({
         title: "Selling is blocked",
-        description: sellingAccess?.reason || "Ask your agent or subscriber admin to complete selling setup.",
+        description: sellingAccess?.reason || "Ask your agent to complete selling setup.",
         variant: "destructive",
       })
       return
@@ -367,7 +367,7 @@ export default function ResellerBuySinglePage() {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Provider:</span>
-                    <span className="font-semibold text-foreground">{orderSuccess.dispatchProvider || "Manual fulfillment"}</span>
+                    <span className="font-semibold text-foreground">{orderSuccess.dispatchProvider || "Manual processing"}</span>
                   </div>
                 </div>
 

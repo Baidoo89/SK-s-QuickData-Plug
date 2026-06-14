@@ -63,7 +63,7 @@ export default function ResellerStorefrontPricingPage() {
       const body = await res.json().catch(() => null)
       if (!res.ok) throw new Error(body?.error?.message || body?.message || "Could not save price")
       setProducts((rows) => rows.map((row) => row.id === product.id ? { ...row, storefrontPrice: value, profit: Math.max(value - row.buyPrice, 0) } : row))
-      toast({ title: "Storefront price saved" })
+      toast({ title: "Shop price saved" })
     } catch (error) {
       toast({ variant: "destructive", title: "Save failed", description: error instanceof Error ? error.message : "Could not save price" })
     } finally {
@@ -114,7 +114,7 @@ export default function ResellerStorefrontPricingPage() {
             <div key={product.id} className="grid min-w-0 gap-3 rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm md:grid-cols-[minmax(0,1fr)_130px_160px_120px] md:items-center">
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold">{product.name}</p>
-                <p className="text-xs text-muted-foreground">{product.provider} · {formatCategory(product.category)}</p>
+                <p className="text-xs text-muted-foreground">{product.provider} - {formatCategory(product.category)}</p>
               </div>
               <div className="text-sm">
                 <p className="font-medium">{formatGhanaCedis(product.buyPrice)}</p>

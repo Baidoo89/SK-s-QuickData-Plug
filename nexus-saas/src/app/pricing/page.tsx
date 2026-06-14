@@ -47,12 +47,12 @@ export default async function PricingPage() {
 
       <main className="container py-16 md:py-20">
         <div className="mx-auto mb-12 max-w-3xl text-center">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-primary">SaaS access pricing</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-primary">Pricing</p>
           <h1 className="mb-4 text-4xl font-bold tracking-tight md:text-5xl">
-            Plans for storefront, agent, and reseller operations
+            Choose a plan for your data business
           </h1>
           <p className="mx-auto max-w-2xl text-lg text-muted-foreground md:text-xl">
-            Subscription billing pays for platform access. Wallet funds stay separate for VTU orders and operational credits.
+            Your plan keeps the software active. Wallet funds are used for data orders.
           </p>
         </div>
 
@@ -83,7 +83,7 @@ export default async function PricingPage() {
                 </div>
                 <Button asChild size="sm" variant={plan.recommended ? "default" : "outline"} className="w-full">
                   <Link href={session?.user ? "/dashboard/subscription" : "/register"}>
-                    {session?.user ? "Manage subscription" : "Get started"}
+                    {session?.user ? "Manage plan" : "Get started"}
                   </Link>
                 </Button>
               </CardContent>
@@ -92,22 +92,21 @@ export default async function PricingPage() {
 
           <Card className="premium-surface rounded-lg md:col-span-3">
             <CardHeader>
-              <CardTitle>For resellers & agents</CardTitle>
+              <CardTitle>Wallets are separate</CardTitle>
               <CardDescription>
-                Wallets are separate from your monthly SaaS subscription.
+                Subscriptions and order funds are not mixed.
               </CardDescription>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-2">
-              <p>Fund wallets via Paystack or receive manual credits from admins.</p>
-              <p>Every VTU purchase debits the correct wallet automatically.</p>
+              <p>Use wallets for data purchases.</p>
+              <p>Use your plan for software access.</p>
             </CardContent>
           </Card>
         </div>
 
         <div className="mt-16 max-w-2xl mx-auto text-center text-sm text-muted-foreground">
           <p>
-            Need a different setup or large-volume arrangement? Reach out to us and we&apos;ll configure
-            custom pricing using the same wallet-based flow.
+            Need help choosing a plan? Contact TechDalt support.
           </p>
         </div>
       </main>

@@ -49,7 +49,7 @@ export default async function ResellerCustomersPage({
   })
 
   if (!user || user.role !== "RESELLER" || !user.organizationId) {
-    return <PortalAccessMessage title="Reseller profile unavailable" description="This account is not linked to an approved reseller profile. Ask your agent or subscriber admin to review the account." />
+    return <PortalAccessMessage title="Reseller profile unavailable" description="This account is not linked to an approved reseller profile. Ask your agent to review the account." />
   }
 
   const where: any = {
@@ -97,7 +97,7 @@ export default async function ResellerCustomersPage({
       <div className="space-y-1 max-w-2xl">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Customers</h1>
         <p className="text-sm text-muted-foreground">
-          Track customers who have purchased through your storefront link.
+          Track customers who bought through your shop link.
         </p>
       </div>
 
@@ -141,7 +141,7 @@ export default async function ResellerCustomersPage({
             <div>
               <CardTitle className="text-sm font-semibold">Customer directory</CardTitle>
               <CardDescription className="text-xs">
-                Browse all customers who have made purchases using your storefront link.
+                Browse customers who bought from your shop link.
               </CardDescription>
             </div>
             <form className="flex flex-wrap gap-2 md:gap-3 items-end" method="GET">
@@ -172,9 +172,9 @@ export default async function ResellerCustomersPage({
               description={
                 q
                   ? "Clear the search or try a different name, email, or phone number."
-                  : "Customers appear here after buyers place orders through your reseller storefront."
+                  : "Customers appear here after buyers place orders through your shop."
               }
-              action={q ? { label: "Clear Search", href: "/reseller/customers" } : { label: "Share Storefront", href: "/reseller/storefronts" }}
+              action={q ? { label: "Clear Search", href: "/reseller/customers" } : { label: "Share Shop", href: "/reseller/storefronts" }}
               secondaryAction={q ? undefined : { label: "View Orders", href: "/reseller/orders" }}
               className="py-6"
             />

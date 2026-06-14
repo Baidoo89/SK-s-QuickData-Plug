@@ -36,11 +36,11 @@ async function getStoreStatus(organization: { id: string; active: boolean; subsc
   const hasActiveSubscription = isSubscriptionActive(organization.subscription as never)
   const storeActive = Boolean(organization.active && hasActiveSubscription && hasPaymentSettings)
   const storeInactiveReason = !organization.active
-    ? "This storefront is currently inactive. Purchases are disabled."
+    ? "This shop is currently inactive. Purchases are disabled."
     : !hasActiveSubscription
-      ? "This storefront is temporarily unavailable because the business subscription is inactive."
+      ? "This shop is temporarily unavailable because the business plan is inactive."
       : !hasPaymentSettings
-        ? "This storefront is not ready for payments yet. The seller needs to connect Paystack."
+        ? "This shop is not ready for payments yet. The seller needs to connect Paystack."
         : undefined
 
   return { storeActive, storeInactiveReason }
@@ -269,7 +269,7 @@ export default async function ShopPage({ params, searchParams }: ShopPageProps) 
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <div className="min-w-0">
               <p className="font-semibold">Checkout unavailable</p>
-              <p className="break-words">{data.storeInactiveReason || "This store is currently inactive. Purchases are disabled."}</p>
+              <p className="break-words">{data.storeInactiveReason || "This shop is currently inactive. Purchases are disabled."}</p>
             </div>
           </div>
         </div>
@@ -280,7 +280,7 @@ export default async function ShopPage({ params, searchParams }: ShopPageProps) 
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
             <div className="min-w-0">
               <p className="font-semibold">Payment successful</p>
-              <p className="break-words">{Number.isFinite(orderCount) && orderCount > 1 ? `${orderCount} orders are` : "Your order is"} now pending fulfillment.</p>
+              <p className="break-words">{Number.isFinite(orderCount) && orderCount > 1 ? `${orderCount} orders are` : "Your order is"} now pending processing.</p>
             </div>
           </div>
         </div>
@@ -291,7 +291,7 @@ export default async function ShopPage({ params, searchParams }: ShopPageProps) 
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <div className="min-w-0">
               <p className="font-semibold">Payment not completed</p>
-              <p className="break-words">No order has entered fulfillment. Please try again or contact the seller if money left your account.</p>
+              <p className="break-words">No order was created. Please try again or contact the seller if money left your account.</p>
             </div>
           </div>
         </div>
@@ -315,18 +315,18 @@ export default async function ShopPage({ params, searchParams }: ShopPageProps) 
       <div className="border-b border-border bg-muted/25 py-6 md:py-14">
         <div className="container min-w-0 space-y-6 sm:space-y-8">
           <div className="min-w-0 max-w-3xl">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-primary">Official storefront</p>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-primary">Official shop</p>
             <h1 className="break-words text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl lg:text-5xl">
               Buy data and services from {data.sellerName}
             </h1>
             <p className="mt-4 max-w-2xl break-words text-sm text-muted-foreground sm:text-base md:text-lg">
-              Choose a bundle or registration service, pay securely, and your request goes straight to {data.sellerName} for fulfillment.
+              Choose a bundle or service, pay securely, and the seller receives your order.
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
-            <MetricCard label="Bundles" value={bundles.length} description="Available public data bundles" icon={Package} tone="primary" />
-            <MetricCard label="Services" value={services.length} description="Registration and service requests" icon={FileText} tone="info" />
-            <MetricCard label="Payment" value={data.storeActive ? "Ready" : "Paused"} description="Secure checkout confirmation required" icon={data.storeActive ? CreditCard : ShieldCheck} tone={data.storeActive ? "success" : "warning"} />
+            <MetricCard label="Bundles" value={bundles.length} description="Available data bundles" icon={Package} tone="primary" />
+            <MetricCard label="Services" value={services.length} description="Forms and requests" icon={FileText} tone="info" />
+            <MetricCard label="Payment" value={data.storeActive ? "Ready" : "Paused"} description="Secure Paystack checkout" icon={data.storeActive ? CreditCard : ShieldCheck} tone={data.storeActive ? "success" : "warning"} />
           </div>
         </div>
       </div>
@@ -345,7 +345,7 @@ export default async function ShopPage({ params, searchParams }: ShopPageProps) 
       </main>
       <footer className="border-t border-border py-6">
         <div className="container break-words text-center text-xs text-muted-foreground">
-          This storefront is operated by {data.sellerName}. Customer payments are processed securely before fulfillment. {networkCount > 0 ? `${networkCount} network group${networkCount === 1 ? "" : "s"} available.` : catalogCount > 0 ? "Service checkout available." : ""}
+          This shop is operated by {data.sellerName}. Payments are processed securely. {networkCount > 0 ? `${networkCount} network group${networkCount === 1 ? "" : "s"} available.` : catalogCount > 0 ? "Service checkout available." : ""}
         </div>
       </footer>
     </div>

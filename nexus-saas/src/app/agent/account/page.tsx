@@ -38,7 +38,7 @@ export default async function AgentAccountPage() {
   })
 
   if (!user || user.role !== "AGENT" || !user.organizationId) {
-    return <PortalAccessMessage title="Agent profile unavailable" description="This account is not linked to an approved agent profile. Ask the subscriber admin to review the account." />
+    return <PortalAccessMessage title="Agent profile unavailable" description="This account is not linked to an approved agent profile. Ask the business owner to review the account." />
   }
 
   const agentId = user.agentId ?? user.agent?.id ?? null
@@ -70,7 +70,7 @@ export default async function AgentAccountPage() {
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Account</h1>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            Your agent profile, linked organization, wallet context, and access state.
+            Your profile, business, wallet, and access.
           </p>
         </div>
         <Button asChild variant="outline" size="sm">
@@ -118,12 +118,12 @@ export default async function AgentAccountPage() {
 
         <Card className="premium-surface border-0">
           <CardHeader>
-            <CardTitle className="text-sm font-semibold">Organization Access</CardTitle>
-            <CardDescription className="text-xs">Where this agent account operates.</CardDescription>
+            <CardTitle className="text-sm font-semibold">Business Access</CardTitle>
+            <CardDescription className="text-xs">Where this account works.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <div className="flex items-center justify-between gap-3">
-              <span className="text-muted-foreground">Organization</span>
+              <span className="text-muted-foreground">Business</span>
               <span className="font-medium">{user.organization?.name ?? "Not linked"}</span>
             </div>
             <div className="flex items-center justify-between gap-3">
@@ -131,11 +131,11 @@ export default async function AgentAccountPage() {
               <span className="font-medium">{user.agent?.commissionPercent ?? 0}%</span>
             </div>
             <div className="space-y-1">
-              <span className="text-muted-foreground">Agent storefront</span>
+              <span className="text-muted-foreground">Shop link</span>
               <p className="break-all font-mono text-xs">{storefrontPath ?? "Not available yet"}</p>
             </div>
             <Button asChild size="sm" variant="outline">
-              <Link href="/agent/storefronts">View storefront tools</Link>
+              <Link href="/agent/storefronts">View shop links</Link>
             </Button>
           </CardContent>
         </Card>

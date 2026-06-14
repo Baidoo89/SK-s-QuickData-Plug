@@ -20,27 +20,27 @@ export default function AuthLayout({
             </Link>
 
             <div className="max-w-md space-y-4">
-              <p className="text-xs font-bold uppercase text-info">Operator-led SaaS</p>
+              <p className="text-xs font-bold uppercase text-info">Data business software</p>
               <h1 className="text-4xl font-extrabold leading-tight text-foreground">
-                Run storefront, agent, reseller, and fulfillment operations from one clean system.
+                Sell bundles, manage sellers, and process orders clearly.
               </h1>
               <p className="text-sm leading-6 text-muted-foreground">
-                Built for data and VTU businesses that need tenant control, wallet separation, approvals, and manual or API order handling.
+                Built for data businesses that need shop links, wallets, payments, and simple order tools.
               </p>
             </div>
 
             <div className="grid gap-3 text-sm">
               <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-background/50 px-4 py-3 shadow-sm">
                 <WalletCards className="h-4 w-4 text-success" />
-                <span className="text-muted-foreground">Separate SaaS billing from operational wallets</span>
+                <span className="text-muted-foreground">Keep subscriptions and wallets separate</span>
               </div>
               <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-background/50 px-4 py-3 shadow-sm">
                 <Workflow className="h-4 w-4 text-info" />
-                <span className="text-muted-foreground">Manage manual fulfillment, API routing, and order status flow</span>
+                <span className="text-muted-foreground">Copy, claim, and deliver orders</span>
               </div>
               <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-background/50 px-4 py-3 shadow-sm">
                 <ShieldCheck className="h-4 w-4 text-warning" />
-                <span className="text-muted-foreground">Keep subscriber, agent, reseller, and superadmin access separated</span>
+                <span className="text-muted-foreground">Give each user the right access</span>
               </div>
             </div>
           </div>

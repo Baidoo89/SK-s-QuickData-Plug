@@ -338,11 +338,11 @@ function BundlePricingContent() {
       return
     }
     if (next.price < next.basePrice) {
-      alert("Subscriber buy price should not be below source cost")
+      alert("Dashboard price should not be below cost")
       return
     }
     if (next.storefrontPrice < next.basePrice) {
-      alert("Storefront price should not be below source cost")
+      alert("Shop price should not be below cost")
       return
     }
 
@@ -375,7 +375,7 @@ function BundlePricingContent() {
 
   const handleAddBundle = async () => {
     if (!newBundleName.trim() || !newBundlePrice.trim() || !newBundleBasePrice.trim() || !newBundleStorefrontPrice.trim()) {
-      alert("Bundle name, source cost, subscriber buy price, and storefront price are required")
+      alert("Bundle name, cost, dashboard price, and shop price are required")
       return
     }
 
@@ -384,23 +384,23 @@ function BundlePricingContent() {
     const storefrontPrice = parseFloat(newBundleStorefrontPrice)
     
     if (isNaN(price) || price < 0) {
-      alert("Please enter a valid subscriber buy price")
+      alert("Please enter a valid dashboard price")
       return
     }
     if (isNaN(basePrice) || basePrice < 0) {
-      alert("Please enter a valid source cost")
+      alert("Please enter a valid cost")
       return
     }
     if (isNaN(storefrontPrice) || storefrontPrice < 0) {
-      alert("Please enter a valid storefront price")
+      alert("Please enter a valid shop price")
       return
     }
     if (price < basePrice) {
-      alert("Subscriber buy price should not be below source cost")
+      alert("Dashboard price should not be below cost")
       return
     }
     if (storefrontPrice < basePrice) {
-      alert("Storefront price should not be below source cost")
+      alert("Shop price should not be below cost")
       return
     }
 
@@ -433,7 +433,7 @@ function BundlePricingContent() {
 
   const handleAddRegistrationService = async () => {
     if (!newServiceName.trim() || !newServicePrice.trim() || !newServiceBasePrice.trim() || !newServiceStorefrontPrice.trim()) {
-      alert("Service name, provider, source cost, subscriber buy price, and storefront price are required")
+      alert("Service name, provider, cost, dashboard price, and shop price are required")
       return
     }
 
@@ -447,12 +447,12 @@ function BundlePricingContent() {
     }
 
     if (price < basePrice) {
-      alert("Subscriber buy price should not be below source cost")
+      alert("Dashboard price should not be below cost")
       return
     }
 
     if (storefrontPrice < basePrice) {
-      alert("Storefront price should not be below source cost")
+      alert("Shop price should not be below cost")
       return
     }
 
@@ -509,17 +509,17 @@ function BundlePricingContent() {
       <div className="portal-page flex-1 space-y-6">
         <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Network Pricing Profiles</h1>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Price Groups</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Create named pricing tags for agents and resellers, then assign them from user detail pages.
             </p>
           </div>
           <div className="grid w-full min-w-0 gap-2 sm:grid-cols-2 lg:w-auto">
             <Button asChild variant="outline">
-              <Link href="/dashboard/products">Bundle Pricing</Link>
+              <Link href="/dashboard/products">Products</Link>
             </Button>
             <Button asChild>
-              <Link href="/dashboard/products?tab=pricing_profiles">Pricing Profiles</Link>
+              <Link href="/dashboard/products?tab=pricing_profiles">Price groups</Link>
             </Button>
           </div>
         </div>
@@ -638,8 +638,8 @@ function BundlePricingContent() {
               <EmptyState
                 icon={Plus}
                 title="No bundles in this profile"
-                description="Add bundles under Bundle Pricing first, then return here to set profile-specific prices."
-                secondaryAction={{ label: "Open Bundle Pricing", href: "/dashboard/products" }}
+                description="Add products first, then create price groups."
+                secondaryAction={{ label: "Open products", href: "/dashboard/products" }}
                 className="py-6"
               />
             ) : (
@@ -704,35 +704,35 @@ function BundlePricingContent() {
       {/* Header */}
         <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Bundle Pricing</h1>
-          <p className="text-sm text-muted-foreground mt-1">Create bundles and separate source cost, dashboard buy price, and storefront customer price.</p>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Products & Prices</h1>
+          <p className="text-sm text-muted-foreground mt-1">Add bundles, services, and prices.</p>
           </div>
           <div className="grid w-full min-w-0 gap-2 sm:grid-cols-2 lg:w-auto">
             <Button asChild>
-              <Link href="/dashboard/products">Bundle Pricing</Link>
+              <Link href="/dashboard/products">Products</Link>
             </Button>
             <Button asChild variant="outline">
-              <Link href="/dashboard/products?tab=pricing_profiles">Pricing Profiles</Link>
+              <Link href="/dashboard/products?tab=pricing_profiles">Price groups</Link>
             </Button>
           </div>
         </div>
 
       <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <MetricCard label="Active Bundles" value={totalActiveBundles} description="Available in storefront and buyer flows." icon={Package} tone="success" />
-        <MetricCard label="Registration Services" value={totalActiveServices} description="Storefront service requests." icon={FileText} tone="info" />
+        <MetricCard label="Bundles" value={totalActiveBundles} description="Active data bundles" icon={Package} tone="success" />
+        <MetricCard label="Services" value={totalActiveServices} description="Registration forms" icon={FileText} tone="info" />
         <MetricCard label="Network Coverage" value={`${networksWithBundles}/${NETWORKS.length}`} description={missingNetworks.length ? `Missing ${missingNetworks.join(", ")}` : "All networks have bundles."} icon={BarChart3} tone={missingNetworks.length ? "warning" : "success"} />
-        <MetricCard label="Average Storefront Margin" value={formatPercent(averageMarginPercent)} description="Storefront price against source cost." icon={Percent} tone={averageMarginPercent > 0 ? "primary" : "warning"} />
-        <MetricCard label="Pricing Profiles" value={profiles.length} description="Reusable agent/reseller price lists." icon={Tags} tone="primary" />
+        <MetricCard label="Average Margin" value={formatPercent(averageMarginPercent)} description="Shop price vs cost" icon={Percent} tone={averageMarginPercent > 0 ? "primary" : "warning"} />
+        <MetricCard label="Price Groups" value={profiles.length} description="Reusable team prices" icon={Tags} tone="primary" />
       </div>
 
       <Card className="premium-surface overflow-hidden rounded-lg">
         <CardContent className="grid min-w-0 gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground">Catalog readiness</p>
+            <p className="text-sm font-semibold text-foreground">Catalog check</p>
             <p className="mt-1 text-xs text-muted-foreground">
               {missingNetworks.length
-                ? `Add bundles for ${missingNetworks.join(", ")} before pushing all-network sales.`
-                : "Your catalog covers MTN, Telecel, and AirtelTigo. Keep matching bundle sizes where possible."}
+                ? `Add ${missingNetworks.join(", ")} bundles.`
+                : "All networks have bundles."}
             </p>
           </div>
           <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap">
@@ -740,7 +740,7 @@ function BundlePricingContent() {
               {currentNetwork?.name}: {networkBundles.length} bundles
             </Badge>
             <Badge variant="outline" className="justify-center rounded-md px-3 py-1">
-              Storefront {formatGhanaCedis(selectedNetworkRetailValue)} / Source {formatGhanaCedis(selectedNetworkBaseValue)}
+              Shop {formatGhanaCedis(selectedNetworkRetailValue)} / Cost {formatGhanaCedis(selectedNetworkBaseValue)}
             </Badge>
           </div>
         </CardContent>
@@ -751,15 +751,15 @@ function BundlePricingContent() {
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
             <div>
-              <CardTitle>Registration Services</CardTitle>
-              <CardDescription>Create registration and documentation services for storefront requests.</CardDescription>
+              <CardTitle>Service Forms</CardTitle>
+              <CardDescription>Create forms customers can pay for.</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="space-y-4 rounded-lg border border-border/75 bg-muted/20 p-4 shadow-sm">
             <h3 className="font-semibold flex items-center gap-2">
-              <Plus className="w-4 h-4" /> Add Registration Service
+              <Plus className="w-4 h-4" /> Add Service
             </h3>
             <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
               <Input
@@ -788,7 +788,7 @@ function BundlePricingContent() {
                 onChange={(e) => setNewServiceBasePrice(e.target.value)}
               />
               <Input
-                placeholder="Subscriber buy price (GHS)"
+                placeholder="Dashboard price (GHS)"
                 type="number"
                 min="0"
                 step="0.01"
@@ -796,7 +796,7 @@ function BundlePricingContent() {
                 onChange={(e) => setNewServicePrice(e.target.value)}
               />
               <Input
-                placeholder="Storefront price (GHS)"
+                placeholder="Shop price (GHS)"
                 type="number"
                 min="0"
                 step="0.01"
@@ -808,13 +808,13 @@ function BundlePricingContent() {
               </Button>
             </div>
               <p className="text-xs text-muted-foreground">
-              Registration services are separate from data orders. Customers provide full name, phone number, Ghana Card number, location, and date of birth, then the request appears under Service Requests after payment.
+              Customers fill the form, pay, then the request appears under Services.
             </p>
             <div className="space-y-3 rounded-lg border border-border/75 bg-background/55 p-3 shadow-sm">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Service form fields</p>
-                  <p className="text-xs text-muted-foreground">Customer name and phone are always collected. Add the extra fields this service needs.</p>
+                  <p className="text-sm font-semibold text-foreground">Form fields</p>
+                  <p className="text-xs text-muted-foreground">Name and phone are always collected.</p>
                 </div>
                 <Button type="button" variant="outline" size="sm" onClick={addServiceField}>
                   <Plus className="mr-2 h-4 w-4" /> Add Field
@@ -866,7 +866,7 @@ function BundlePricingContent() {
                 ))}
                 {serviceFields.length === 0 ? (
                   <p className="rounded-md border border-dashed p-3 text-xs text-muted-foreground">
-                    No extra fields. The storefront will collect only customer name and phone number for this service.
+                    No extra fields. The shop will collect name and phone only.
                   </p>
                 ) : null}
               </div>
@@ -876,8 +876,8 @@ function BundlePricingContent() {
           {registrationServices.length === 0 ? (
             <EmptyState
               icon={FileText}
-              title="No registration service yet"
-              description="Add a registration service above to make it available on storefronts."
+              title="No service yet"
+              description="Add a service above to show it in your shop."
             />
           ) : (
             <div className="grid gap-3 lg:grid-cols-2">
@@ -903,7 +903,7 @@ function BundlePricingContent() {
                     </div>
                     <div>
                       <p className="font-semibold text-primary">{formatGhanaCedis(service.storefrontPrice ?? service.price)}</p>
-                      <p>Storefront</p>
+                      <p>Shop</p>
                     </div>
                   </div>
                   <div className="mt-3 flex justify-end gap-1">
@@ -951,7 +951,7 @@ function BundlePricingContent() {
             {NetworkLogo && <NetworkLogo className="w-6 h-6" />}
             <div>
               <CardTitle>{currentNetwork?.name} Bundles</CardTitle>
-              <CardDescription>Manage source cost, subscriber buy price, and storefront prices for {currentNetwork?.name}</CardDescription>
+              <CardDescription>Set cost, dashboard price, and shop price.</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -959,7 +959,7 @@ function BundlePricingContent() {
           {/* Add New Bundle Form */}
           <div className="space-y-4 rounded-lg border border-border/75 bg-muted/20 p-4 shadow-sm">
             <h3 className="font-semibold flex items-center gap-2">
-              <Plus className="w-4 h-4" /> Add New Bundle
+              <Plus className="w-4 h-4" /> Add Bundle
             </h3>
             <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
               <Input
@@ -978,7 +978,7 @@ function BundlePricingContent() {
                 onKeyPress={(e) => e.key === "Enter" && handleAddBundle()}
               />
               <Input
-                placeholder="Subscriber buy price (GHS)"
+                placeholder="Dashboard price (GHS)"
                 type="number"
                 min="0"
                 step="0.01"
@@ -987,7 +987,7 @@ function BundlePricingContent() {
                 onKeyPress={(e) => e.key === "Enter" && handleAddBundle()}
               />
               <Input
-                placeholder="Storefront price (GHS)"
+                placeholder="Shop price (GHS)"
                 type="number"
                 min="0"
                 step="0.01"
@@ -999,9 +999,9 @@ function BundlePricingContent() {
                 Add Bundle
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">Source cost is your provider cost. Subscriber buy price is what you pay in your dashboard. Storefront price is what public customers pay.</p>
+            <p className="text-xs text-muted-foreground">Cost is your provider price. Dashboard price is your own buy price. Shop price is what customers pay.</p>
             <div className="rounded-lg border border-border/75 bg-background/55 px-3 py-2 text-xs text-muted-foreground">
-              Recommended: create MTN, Telecel, and AirtelTigo bundles with matching sizes, then use pricing profiles only when agents or resellers need special prices.
+              Tip: create matching bundle sizes for MTN, Telecel, and AirtelTigo.
             </div>
           </div>
 
@@ -1014,8 +1014,8 @@ function BundlePricingContent() {
             <EmptyState
               icon={Plus}
               title={`No ${currentNetwork?.name ?? "network"} bundles yet`}
-              description="Add the first data bundle above with source cost, subscriber buy price, and storefront price. Active bundles appear in storefronts and buyer flows."
-              secondaryAction={{ label: "Review Launch Setup", href: "/dashboard/setup" }}
+              description="Add the first data bundle above."
+              secondaryAction={{ label: "Review setup", href: "/dashboard/setup" }}
             />
           ) : (
             <div className="space-y-3">
@@ -1026,8 +1026,8 @@ function BundlePricingContent() {
                     <TableRow className="hover:bg-transparent">
                       <TableHead>Bundle Name</TableHead>
                       <TableHead className="text-right">Source Cost</TableHead>
-                      <TableHead className="text-right">Subscriber Buy</TableHead>
-                      <TableHead className="text-right">Storefront</TableHead>
+                      <TableHead className="text-right">Dashboard Price</TableHead>
+                      <TableHead className="text-right">Shop</TableHead>
                       <TableHead className="text-right">Profit</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Save</TableHead>

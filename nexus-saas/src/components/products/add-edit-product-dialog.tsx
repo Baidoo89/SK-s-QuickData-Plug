@@ -190,11 +190,11 @@ export function AddEditProductDialog({ open, setOpen, initialData, mode }: AddEd
               <Input id="description" name="description" className="sm:col-span-3" value={form.description} onChange={handleChange} />
             </div>
             <div className="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
-              <Label htmlFor="price" className="sm:text-right">Subscriber Buy</Label>
+              <Label htmlFor="price" className="sm:text-right">Dashboard price</Label>
               <Input id="price" name="price" type="number" step="0.01" className="sm:col-span-3" required value={form.price} onChange={handleChange} />
             </div>
             <div className="grid gap-2 sm:grid-cols-4 sm:items-center sm:gap-4">
-              <Label htmlFor="storefrontPrice" className="sm:text-right">Storefront</Label>
+              <Label htmlFor="storefrontPrice" className="sm:text-right">Shop price</Label>
               <Input id="storefrontPrice" name="storefrontPrice" type="number" min="0" step="0.01" className="sm:col-span-3" required value={form.storefrontPrice ?? form.price} onChange={handleChange} />
             </div>
             <input type="hidden" name="stock" value={form.stock} />

@@ -15,18 +15,18 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   applicationName: "TechDalt",
   title: {
-    default: "TechDalt | VTU SaaS for Data Vendors, Agents, and Resellers",
+    default: "TechDalt | Data Bundle Business Software",
     template: "%s | TechDalt",
   },
   description:
-    "TechDalt is a Ghana-focused VTU SaaS platform for data bundle sellers, agents, resellers, storefront checkout, wallets, subscriptions, and manual fulfillment operations.",
+    "TechDalt helps data bundle sellers run a shop link, payments, agents, resellers, wallets, and orders from one simple dashboard.",
   keywords: [
     "TechDalt",
     "VTU SaaS Ghana",
     "data bundle platform Ghana",
-    "reseller storefront",
+    "reseller shop",
     "agent wallet system",
-    "Paystack storefront Ghana",
+    "Paystack data bundle checkout Ghana",
     "MTN data reseller",
     "Telecel data reseller",
     "AirtelTigo data reseller",
@@ -49,15 +49,15 @@ export const metadata: Metadata = {
     locale: "en_GH",
     url: "/",
     siteName: "TechDalt",
-    title: "TechDalt | VTU SaaS for Data Vendors, Agents, and Resellers",
+    title: "TechDalt | Data Bundle Business Software",
     description:
-      "Launch a branded VTU storefront, manage agents and resellers, collect customer payments, and fulfill data bundle orders with clean operational controls.",
+      "Launch a shop link, manage agents and resellers, collect Paystack payments, and process data bundle orders clearly.",
   },
   twitter: {
     card: "summary",
-    title: "TechDalt | VTU SaaS for Data Vendors, Agents, and Resellers",
+    title: "TechDalt | Data Bundle Business Software",
     description:
-      "Ghana-focused VTU SaaS for storefront checkout, subscriptions, wallets, agents, resellers, and order fulfillment.",
+      "Ghana-focused software for data bundle shops, Paystack checkout, agents, resellers, wallets, and orders.",
   },
   robots: {
     index: true,

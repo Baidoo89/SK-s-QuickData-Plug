@@ -83,7 +83,7 @@ export default function RegisterPage() {
         title: "Account created",
         description:
           data?.data?.emailDelivery === "FAILED"
-            ? "Your workspace was created, but the verification email could not be delivered yet."
+            ? "Your account was created, but the verification email could not be delivered yet."
             : "Check your email to verify your account before signing in.",
       })
       router.push("/register/success?type=SUBSCRIBER")
@@ -101,9 +101,9 @@ export default function RegisterPage() {
   return (
     <Card className="premium-surface min-w-0 w-full overflow-hidden rounded-lg backdrop-blur-xl">
         <CardHeader className="space-y-1 border-b border-border/70 bg-muted/20">
-          <CardTitle className="text-2xl font-bold">Create your TechDalt workspace</CardTitle>
+          <CardTitle className="text-2xl font-bold">Create your business account</CardTitle>
           <CardDescription>
-            Start as the organization owner. You will verify your email, choose a plan, then invite agents and resellers from your dashboard.
+            Start your own TechDalt business. You can add agents and resellers later.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -111,12 +111,12 @@ export default function RegisterPage() {
             <div className="rounded-lg border border-primary/30 bg-primary/10 p-3 text-sm text-foreground shadow-sm">
               <p className="flex items-center gap-2 font-semibold">
                 <Building2 className="h-4 w-4 text-primary" />
-                New business workspace
+                New business account
               </p>
               <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
                 <p className="flex gap-2">
                   <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-                  Own organization and billing setup
+                  Own business setup
                 </p>
                 <p className="flex gap-2">
                   <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
@@ -131,7 +131,7 @@ export default function RegisterPage() {
 
             <div className="flex gap-3 rounded-lg border border-info/30 bg-info/10 px-3 py-2 text-xs text-info-foreground shadow-sm">
               <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <p>Joining an existing subscriber or agent? Use the invite link they sent you. Public signup creates a separate business workspace.</p>
+              <p>Joining another seller? Use their invite link. This form creates your own business.</p>
             </div>
 
             <div className="space-y-2">
@@ -147,7 +147,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="orgName">Business / Organization Name</Label>
+              <Label htmlFor="orgName">Business Name</Label>
               <Input
                 id="orgName"
                 placeholder="Acme Data Services"
@@ -220,7 +220,7 @@ export default function RegisterPage() {
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button className="w-full" type="submit" disabled={isLoading}>
-              {isLoading ? "Creating workspace..." : "Create workspace"}
+              {isLoading ? "Creating account..." : "Create account"}
             </Button>
             <div className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}

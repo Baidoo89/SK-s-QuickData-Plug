@@ -99,7 +99,7 @@ export default async function ResellerApiDocsPage() {
             <li><span className="font-medium text-foreground">GET /api/agent/wallet</span> - Read your own wallet balance and recent credits.</li>
             <li><span className="font-medium text-foreground">GET /api/reseller/orders/export</span> - Export your reseller orders.</li>
             <li><span className="font-medium text-foreground">GET /api/reseller/analytics/export</span> - Export reseller performance analytics.</li>
-            <li><span className="font-medium text-foreground">GET /api/shop/{user.organization?.slug ?? "tenant"}/agent/{user.parentAgentId ?? "agentId"}/products</span> - Fetch products in your parent-agent storefront context.</li>
+            <li><span className="font-medium text-foreground">GET /api/shop/{user.organization?.slug ?? "tenant"}/agent/{user.parentAgentId ?? "agentId"}/products</span> - Fetch products from your parent agent shop.</li>
             <li><span className="font-medium text-foreground">POST /api/v1/orders</span> - Create an external paid order with your approved API key.</li>
             <li><span className="font-medium text-foreground">GET /api/v1/orders?externalReference=...</span> - Check an order created by the same API key.</li>
           </ul>
@@ -152,7 +152,7 @@ export default async function ResellerApiDocsPage() {
   }'`}
           </pre>
           <p>
-            The order is tagged as RESELLER, profit is calculated from your reseller buy price, and fulfillment stays under your parent agent and subscriber organization.
+            The order is tagged as RESELLER, profit is calculated from your buy price, and delivery stays under your parent agent and business.
           </p>
         </CardContent>
       </Card>

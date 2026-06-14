@@ -14,12 +14,12 @@ function getContent(type: AccountType) {
   if (type === "AGENT") {
     return {
       title: "Agent request submitted",
-      description: "Verify your email, then wait for the subscriber to approve your agent account.",
+      description: "Verify your email, then wait for the business owner to approve you.",
       icon: UserRound,
       steps: [
         "Open the verification link sent to your email.",
-        "The subscriber reviews your request from their approvals page.",
-        "After approval, sign in and use the agent dashboard.",
+        "The business owner reviews your request.",
+        "After approval, sign in.",
       ],
     }
   }
@@ -44,7 +44,7 @@ function getContent(type: AccountType) {
     steps: [
       "Open the verification link sent to your email.",
       "Sign in to your dashboard.",
-      "Choose a subscription plan, then complete products, Paystack, and storefront setup.",
+      "Choose a plan, then add products, prices, and Paystack.",
     ],
   }
 }
@@ -70,7 +70,7 @@ function SignupSuccessCard() {
       <CardContent className="space-y-3">
         <div className="status-info flex gap-3 rounded-md border px-3 py-2 text-sm">
           <Mail className="mt-0.5 h-4 w-4 shrink-0" />
-          <p>Email verification is required before login. In local development, the link is printed in the dev server console.</p>
+          <p>Verify your email before signing in.</p>
         </div>
         <div className="space-y-2">
           {content.steps.map((step, index) => (
@@ -84,7 +84,7 @@ function SignupSuccessCard() {
         </div>
         <div className="flex items-start gap-2 rounded-lg border border-border/70 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
           <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <p>Subscription is separate from account creation. It unlocks selling; it does not replace wallet funds.</p>
+          <p>Your plan keeps the software active. Wallet funds are for orders.</p>
         </div>
       </CardContent>
       <CardFooter className="flex flex-col gap-3 sm:flex-row">

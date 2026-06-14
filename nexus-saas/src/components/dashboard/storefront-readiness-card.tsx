@@ -38,35 +38,35 @@ export function StorefrontReadinessCard({
     {
       label: "Store active",
       complete: organizationActive,
-      description: organizationActive ? "Your organization is active." : "Superadmin must reactivate this organization.",
+      description: organizationActive ? "Active." : "Needs reactivation.",
       href: "/dashboard/settings",
       icon: Store,
     },
     {
       label: "Subscription",
       complete: subscriptionActive,
-      description: subscriptionActive ? "Selling access is active." : "Activate a SaaS plan before accepting orders.",
+      description: subscriptionActive ? "Active." : "Activate a plan.",
       href: "/dashboard/subscription",
       icon: CreditCard,
     },
     {
       label: "Paystack",
       complete: paystackConnected,
-      description: paystackConnected ? "Customer funds settle through your Paystack." : "Connect public and secret Paystack keys.",
+      description: paystackConnected ? "Connected." : "Connect Paystack.",
       href: "/dashboard/settings",
       icon: CreditCard,
     },
     {
       label: "Products",
       complete: productsReady,
-      description: productsReady ? `${productCount} active product${productCount === 1 ? "" : "s"}.` : "Create at least one active bundle.",
+      description: productsReady ? `${productCount} active.` : "Add a product.",
       href: "/dashboard/products",
       icon: Package,
     },
     {
       label: "Pricing",
       complete: pricingReady,
-      description: pricingReady ? `${basePriceCount} price record${basePriceCount === 1 ? "" : "s"} configured.` : "Set base pricing for your products.",
+      description: pricingReady ? `${basePriceCount} set.` : "Set prices.",
       href: "/dashboard/products",
       icon: Settings,
     },
@@ -79,10 +79,10 @@ export function StorefrontReadinessCard({
           <div className="min-w-0">
             <CardTitle className="flex min-w-0 items-center gap-2">
               {ready ? <CheckCircle2 className="h-5 w-5 shrink-0 text-success" /> : <AlertCircle className="h-5 w-5 shrink-0 text-warning" />}
-              <span className="min-w-0 break-words">Storefront Readiness</span>
+              <span className="min-w-0 break-words">Shop setup</span>
             </CardTitle>
             <CardDescription className="break-words">
-              Checkout opens only when billing, Paystack, products, and pricing are ready.
+              Finish these before sharing your shop.
             </CardDescription>
           </div>
           <Badge variant={ready ? "secondary" : "outline"} className={ready ? "status-success w-fit rounded-md border" : "status-warning w-fit rounded-md border"}>
@@ -115,8 +115,8 @@ export function StorefrontReadinessCard({
 
         <div className={ready ? "status-success break-words rounded-lg border p-3 text-sm shadow-sm" : "status-warning break-words rounded-lg border p-3 text-sm shadow-sm"}>
           {ready
-            ? "Your shop link can accept paid orders. Customers pay first, then orders enter processing."
-            : "Customers cannot complete checkout yet. Finish the missing setup items above before sharing the store link."}
+            ? "Your shop can accept paid orders."
+            : "Finish the missing items before sharing your shop."}
         </div>
 
         <div className="grid gap-2 sm:flex sm:flex-wrap">
@@ -124,12 +124,12 @@ export function StorefrontReadinessCard({
             <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
               <Link href={storePath} target="_blank">
                 <ExternalLink className="mr-2 h-4 w-4" />
-                Open Shop Link
+                Open shop
               </Link>
             </Button>
           ) : null}
           <Button asChild size="sm" variant={ready ? "secondary" : "default"} className="w-full sm:w-auto">
-            <Link href="/dashboard/products">Manage Products</Link>
+            <Link href="/dashboard/products">Products</Link>
           </Button>
         </div>
       </CardContent>

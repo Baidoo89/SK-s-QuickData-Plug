@@ -85,7 +85,7 @@ function DashboardLayoutInner({
                 className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-muted-foreground transition-all hover:text-primary"
               >
                 <Rocket className="h-4 w-4" />
-                <span className="portal-sidebar-label">Setup Guide</span>
+                <span className="portal-sidebar-label">Setup</span>
               </Link>
               <Link
                 href="/dashboard/analytics"
@@ -116,19 +116,19 @@ function DashboardLayoutInner({
                     href="/dashboard/orders"
                     className="rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:text-primary"
                   >
-                    All Orders
+                    All orders
                   </Link>
                   <Link
                     href="/dashboard/service-requests"
                     className="rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:text-primary"
                   >
-                    Forms & Requests
+                    Service forms
                   </Link>
                   <Link
                     href="/dashboard/payments"
                     className="rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:text-primary"
                   >
-                    Customer Payments
+                    Payments
                   </Link>
                 </div>
               )}
@@ -152,7 +152,7 @@ function DashboardLayoutInner({
                     href="/dashboard/users"
                     className="rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:text-primary"
                   >
-                    All Users
+                    Users
                   </Link>
                   <Link
                     href="/dashboard/agents"
@@ -194,13 +194,13 @@ function DashboardLayoutInner({
                     href="/dashboard/products"
                     className="rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:text-primary"
                   >
-                    Products & Prices
+                    Products
                   </Link>
                   <Link
                     href="/dashboard/products?tab=pricing_profiles"
                     className="rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:text-primary"
                   >
-                    Price Groups
+                    Price groups
                   </Link>
                 </div>
               )}
@@ -230,7 +230,7 @@ function DashboardLayoutInner({
                     href="/dashboard/wallet?tab=manual_credit"
                     className="rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:text-primary"
                   >
-                    Add Wallet Funds
+                    Add funds
                   </Link>
                   <Link
                     href="/dashboard/subscription"
@@ -262,7 +262,7 @@ function DashboardLayoutInner({
                     href="/dashboard/system/logs"
                     className="rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:text-primary"
                   >
-                    Activity Logs
+                    Activity
                   </Link>
                 </div>
               )}
@@ -288,13 +288,13 @@ function DashboardLayoutInner({
                     href="/dashboard/settings?tab=api"
                     className="rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:text-primary"
                   >
-                    API Connections
+                    Delivery API
                   </Link>
                   <Link
                     href="/dashboard/settings?tab=system"
                     className="rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:text-primary"
                   >
-                    Business Settings
+                    Business
                   </Link>
                 </div>
               )}
@@ -344,7 +344,7 @@ function DashboardLayoutInner({
                     className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
                   >
                     <Rocket className="h-5 w-5" />
-                    Setup Guide
+                    Setup
                   </Link>
                 </SheetClose>
                 <SheetClose asChild>
@@ -386,7 +386,7 @@ function DashboardLayoutInner({
                       href="/dashboard/service-requests"
                       className="rounded-xl px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
                     >
-                      Forms & Requests
+                      Service forms
                     </Link>
                   </SheetClose>
                   <SheetClose asChild>
@@ -394,7 +394,7 @@ function DashboardLayoutInner({
                       href="/dashboard/payments"
                       className="rounded-xl px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
                     >
-                      Customer Payments
+                      Payments
                     </Link>
                   </SheetClose>
                 </div>
@@ -419,7 +419,7 @@ function DashboardLayoutInner({
                         href="/dashboard/users"
                         className="rounded-xl px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
                       >
-                        All Users
+                        Users
                       </Link>
                     </SheetClose>
                     <SheetClose asChild>
@@ -468,7 +468,7 @@ function DashboardLayoutInner({
                         href="/dashboard/products"
                         className="rounded-xl px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
                       >
-                        Products & Prices
+                        Products
                       </Link>
                     </SheetClose>
                     <SheetClose asChild>
@@ -476,7 +476,7 @@ function DashboardLayoutInner({
                         href="/dashboard/products?tab=pricing_profiles"
                         className="rounded-xl px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
                       >
-                        Price Groups
+                        Price groups
                       </Link>
                     </SheetClose>
                   </div>
@@ -509,7 +509,7 @@ function DashboardLayoutInner({
                         href="/dashboard/wallet?tab=manual_credit"
                         className="rounded-xl px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
                       >
-                        Add Wallet Funds
+                        Add funds
                       </Link>
                     </SheetClose>
                     <SheetClose asChild>
@@ -544,7 +544,7 @@ function DashboardLayoutInner({
                         href="/dashboard/system/logs"
                         className="rounded-xl px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
                       >
-                        Activity Logs
+                        Activity
                       </Link>
                     </SheetClose>
                   </div>
@@ -571,7 +571,7 @@ function DashboardLayoutInner({
                         href="/dashboard/settings?tab=api"
                         className="rounded-xl px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
                       >
-                        API Connections
+                        Delivery API
                       </Link>
                     </SheetClose>
                     <SheetClose asChild>
@@ -579,7 +579,7 @@ function DashboardLayoutInner({
                         href="/dashboard/settings?tab=system"
                         className="rounded-xl px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
                       >
-                        Business Settings
+                        Business
                       </Link>
                     </SheetClose>
                   </div>

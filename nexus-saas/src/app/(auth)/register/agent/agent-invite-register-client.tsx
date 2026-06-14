@@ -49,7 +49,7 @@ export default function AgentInviteRegisterClient({ initialTenant }: { initialTe
 
     async function verifyInvite() {
       if (!initialTenant) {
-        setInviteError("Missing subscriber invite code. Ask the subscriber to send their agent signup link.")
+        setInviteError("Missing invite code. Ask the business owner to resend the agent link.")
         setIsVerifyingInvite(false)
         return
       }
@@ -60,7 +60,7 @@ export default function AgentInviteRegisterClient({ initialTenant }: { initialTe
         const payload = await response.json()
 
         if (!response.ok || !payload?.success) {
-          throw new Error(payload?.error?.message || "Invalid subscriber invite link")
+          throw new Error(payload?.error?.message || "Invalid invite link")
         }
 
         if (!cancelled) {
@@ -70,7 +70,7 @@ export default function AgentInviteRegisterClient({ initialTenant }: { initialTe
       } catch (error) {
         if (!cancelled) {
           setInviteContext(null)
-          setInviteError(error instanceof Error ? error.message : "Invalid subscriber invite link")
+          setInviteError(error instanceof Error ? error.message : "Invalid invite link")
         }
       } finally {
         if (!cancelled) {
@@ -95,7 +95,7 @@ export default function AgentInviteRegisterClient({ initialTenant }: { initialTe
     e.preventDefault()
 
     if (!inviteContext) {
-      setInviteError("This invite link is not valid. Ask the subscriber to resend it.")
+      setInviteError("This invite link is not valid. Ask the business owner to resend it.")
       return
     }
 
@@ -125,8 +125,8 @@ export default function AgentInviteRegisterClient({ initialTenant }: { initialTe
         title: "Agent request submitted",
         description:
           data?.data?.emailDelivery === "FAILED"
-            ? "Your request was created, but verification email delivery failed. Ask the subscriber to resend verification later."
-            : "Verify your email, then wait for the subscriber to approve your account.",
+            ? "Your request was created, but verification email delivery failed."
+            : "Verify your email, then wait for approval.",
       })
       router.push("/register/success?type=AGENT")
     } catch (error) {
@@ -151,7 +151,7 @@ export default function AgentInviteRegisterClient({ initialTenant }: { initialTe
         <CardDescription>
           {inviteContext
             ? "This account will be attached only to the business that invited you."
-            : "Open this page from the agent invite link sent by a subscriber."}
+            : "Open this page from your agent invite link."}
         </CardDescription>
       </CardHeader>
 
@@ -159,7 +159,7 @@ export default function AgentInviteRegisterClient({ initialTenant }: { initialTe
         <CardContent className="space-y-4">
           {isVerifyingInvite && (
             <div className="rounded-lg border border-border/70 bg-muted/50 px-3 py-2 text-sm text-muted-foreground shadow-sm">
-              Verifying subscriber invite...
+              Checking invite...
             </div>
           )}
 
@@ -170,7 +170,7 @@ export default function AgentInviteRegisterClient({ initialTenant }: { initialTe
                 {inviteContext.organizationName}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                You are joining this subscriber&apos;s sales network on TechDalt. Verify your email first, then the subscriber approves your access.
+                Verify your email first. The business owner approves your access.
               </p>
               <p className="mt-2 text-[11px] font-medium uppercase tracking-wide text-primary">
                 Secure invite powered by TechDalt
@@ -186,7 +186,7 @@ export default function AgentInviteRegisterClient({ initialTenant }: { initialTe
 
             <div className="flex gap-3 rounded-lg border border-info/30 bg-info/10 px-3 py-2 text-xs text-info-foreground shadow-sm">
             <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            <p>This invite does not create a separate TechDalt business workspace. Use public signup only if you want to operate your own organization.</p>
+            <p>This invite joins an existing business. Use public signup only to create your own business.</p>
           </div>
 
           <div className="space-y-2">
@@ -270,7 +270,7 @@ export default function AgentInviteRegisterClient({ initialTenant }: { initialTe
           <div className="text-center text-sm text-muted-foreground">
             Not joining this business?{" "}
             <Link href="/register" className="underline underline-offset-4 hover:text-primary">
-              Create your own workspace
+              Create your own business
             </Link>
           </div>
           <div className="text-center text-sm text-muted-foreground">
