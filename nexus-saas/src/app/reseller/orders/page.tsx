@@ -11,6 +11,7 @@ import { OrderTimelineDialog } from "@/components/orders/order-timeline-dialog";
 import { getStorefrontPaymentMap } from "@/lib/storefront-payment-map";
 import { PortalAccessMessage } from "@/components/access/portal-access-message";
 import { formatGhanaCedis } from "@/lib/currency";
+import { resolveOrderRecipientPhone } from "@/lib/order-recipient";
 import { ShoppingCart } from "lucide-react";
 
 type OrderFilters = {
@@ -95,6 +96,7 @@ export default async function ResellerOrdersPage({
       { id: { contains: search } },
       { customer: { name: { contains: search, mode: "insensitive" } } },
       { customer: { email: { contains: search, mode: "insensitive" } } },
+      { customer: { phone: { contains: search } } },
       { phoneNumber: { contains: search } },
     ];
   }
@@ -216,7 +218,7 @@ export default async function ResellerOrdersPage({
                       {ordersWithPayment.map((order) => {
                         const date = new Date(order.createdAt);
                         const customerName = order.customer?.name || "Guest";
-                        const phone = order.phoneNumber || order.customer?.phone || "-";
+                        const phone = resolveOrderRecipientPhone(order) || "-";
                         const itemsLabel = order.items
                           .map((item) => formatBundleSize(item.product.name))
                           .join(", ");

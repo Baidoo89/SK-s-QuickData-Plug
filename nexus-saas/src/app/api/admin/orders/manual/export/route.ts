@@ -3,6 +3,7 @@ import { requireAdmin, isAuthError } from "@/lib/auth-guard"
 import { db } from "@/lib/db"
 import { getDispatchMetaByOrderIds } from "@/lib/admin-order-dispatch"
 import { getStorefrontPaymentMap } from "@/lib/storefront-payment-map"
+import { resolveOrderRecipientPhone } from "@/lib/order-recipient"
 
 export const dynamic = "force-dynamic"
 
@@ -141,7 +142,7 @@ export async function GET(req: Request) {
       payment?.owner || order.paymentOwner,
       payment?.status || order.paymentStatus,
       payment?.reference || order.externalReference || (order.paymentOwner === "EXTERNAL" ? "External/API" : "Wallet/Internal"),
-      order.phoneNumber || "",
+      resolveOrderRecipientPhone(order),
       order.organization?.name || "",
       order.customer?.name || "",
       order.user?.email || "",

@@ -2,6 +2,7 @@ import { requireAuthAndOrg, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
 import { getOrderSourceLogMap, ORDER_SOURCE_LABELS, resolveOrderSource } from "@/lib/order-source"
+import { resolveOrderRecipientPhone } from "@/lib/order-recipient"
 import { expireAbandonedStorefrontPayments } from "@/lib/storefront-payment-cleanup"
 
 export const dynamic = "force-dynamic"
@@ -45,6 +46,7 @@ export async function GET(req: Request) {
       where.OR = [
         { customer: { name: { contains: q, mode: "insensitive" } } },
         { customer: { email: { contains: q, mode: "insensitive" } } },
+        { customer: { phone: { contains: q } } },
         { phoneNumber: { contains: q } },
         { agent: { name: { contains: q, mode: "insensitive" } } },
       ]
@@ -119,7 +121,7 @@ export async function GET(req: Request) {
           ORDER_SOURCE_LABELS[order.source],
           buyerName,
           buyerEmail,
-          order.phoneNumber || "",
+          resolveOrderRecipientPhone(order),
           order.status,
           order.total.toString(),
           profit.toString(),

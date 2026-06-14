@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import { getBaseUrl } from "@/lib/mail"
 import { getOrganizationPaymentSettings } from "@/lib/organization-payment-settings"
 import { resolveOrderDispatch } from "@/lib/order-dispatch"
+import { resolveOrderRecipientPhone } from "@/lib/order-recipient"
 
 export const dynamic = "force-dynamic"
 
@@ -372,6 +373,7 @@ export async function GET(req: Request) {
         status: "PENDING",
       },
       include: {
+        customer: true,
         items: {
           include: { product: true },
           take: 1,
@@ -381,7 +383,8 @@ export async function GET(req: Request) {
 
     for (const order of paidOrders) {
       const item = order.items[0]
-      if (!item?.product || !order.phoneNumber) continue
+      const recipientPhone = resolveOrderRecipientPhone(order)
+      if (!item?.product || !recipientPhone) continue
 
       try {
         await resolveOrderDispatch({
@@ -389,7 +392,7 @@ export async function GET(req: Request) {
           organizationId,
           productId: item.product.id,
           network: item.product.provider,
-          phone: order.phoneNumber,
+          phone: recipientPhone,
           quantity: item.quantity,
           amount: order.total,
         })

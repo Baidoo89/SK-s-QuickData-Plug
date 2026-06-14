@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { resolveOrderRecipientPhone } from "@/lib/order-recipient";
 import { getStorefrontPaymentMap } from "@/lib/storefront-payment-map";
 
 export async function GET(req: Request) {
@@ -54,6 +55,7 @@ export async function GET(req: Request) {
     where.OR = [
       { customer: { name: { contains: q, mode: "insensitive" } } },
       { customer: { email: { contains: q, mode: "insensitive" } } },
+      { customer: { phone: { contains: q } } },
       { phoneNumber: { contains: q } },
     ];
   }
@@ -88,7 +90,7 @@ export async function GET(req: Request) {
       order.createdAt.toISOString(),
       buyerName,
       buyerEmail,
-      order.phoneNumber || "",
+      resolveOrderRecipientPhone(order),
       order.status,
       paymentMap.get(order.id)?.owner || "WALLET",
       paymentMap.get(order.id)?.status || "PAID",

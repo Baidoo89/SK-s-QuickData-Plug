@@ -16,7 +16,8 @@ import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
 import { OrderTimelineDialog } from "@/components/orders/order-timeline-dialog"
 import { formatGhanaCedis } from "@/lib/currency"
-import { getDispatchMetaByOrderIds, type DispatchMeta } from "@/lib/admin-order-dispatch"
+import { getDispatchMetaByOrderIds } from "@/lib/admin-order-dispatch"
+import { resolveOrderRecipientPhone } from "@/lib/order-recipient"
 
 type OrderFilters = {
   status?: string
@@ -68,6 +69,7 @@ async function getAdminOrders(filters: OrderFilters = {}) {
         { id: { contains: q } },
         { customer: { name: { contains: q, mode: "insensitive" } } },
         { customer: { email: { contains: q, mode: "insensitive" } } },
+        { customer: { phone: { contains: q } } },
         { phoneNumber: { contains: q } },
         { agent: { name: { contains: q, mode: "insensitive" } } },
         { organization: { name: { contains: q, mode: "insensitive" } } },
@@ -250,6 +252,7 @@ export default async function AdminOrdersPage({
               <div className="grid gap-3 xl:hidden lg:grid-cols-2">
                 {orders.map((order) => {
                   const buyerName = order.customer?.name || "Guest Customer"
+                  const recipientPhone = resolveOrderRecipientPhone(order)
                   const orgName = order.organization?.name || "-"
                   const itemLabel = order.items
                     .map((item: AdminOrderItemRow) => item.product.name.match(/\b\d+(?:\.\d+)?\s?(?:GB|MB|KB|TB)\b/i)?.[0].replace(/\s+/g, "").toUpperCase() ?? item.product.name)
@@ -275,7 +278,7 @@ export default async function AdminOrdersPage({
                           <p>Buyer</p>
                         </div>
                         <div>
-                          <p className="font-medium text-foreground">{order.phoneNumber || "N/A"}</p>
+                          <p className="font-medium text-foreground">{recipientPhone || "N/A"}</p>
                           <p>Phone</p>
                         </div>
                         <div>
@@ -314,6 +317,7 @@ export default async function AdminOrdersPage({
             <TableBody>
               {orders.map((order) => {
                 const buyerName = order.customer?.name || "Guest Customer"
+                const recipientPhone = resolveOrderRecipientPhone(order)
                 const agentTag = order.agent ? ` (Agent: ${order.agent.name})` : ""
                 const orgName = order.organization?.name || "-"
                 return (
@@ -327,7 +331,7 @@ export default async function AdminOrdersPage({
                         <span className="text-xs text-muted-foreground">{agentTag}</span>
                       )}
                     </TableCell>
-                    <TableCell>{order.phoneNumber || "N/A"}</TableCell>
+                    <TableCell>{recipientPhone || "N/A"}</TableCell>
                     <TableCell>{order.dispatch?.network || "-"}</TableCell>
                     <TableCell>
                       <Badge

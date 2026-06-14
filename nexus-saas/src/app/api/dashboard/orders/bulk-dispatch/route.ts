@@ -4,6 +4,7 @@ import { requireOrgManager, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
 import { resolveOrderDispatch } from "@/lib/order-dispatch"
+import { resolveOrderRecipientPhone } from "@/lib/order-recipient"
 
 const schema = z.object({
   orderIds: z.array(z.string().min(1)).min(1).max(100),
@@ -32,6 +33,7 @@ export async function POST(req: Request) {
         ...(isSuperAdmin ? {} : { organizationId: organizationId! }),
       },
       include: {
+        customer: true,
         items: {
           include: { product: true },
         },
@@ -45,13 +47,14 @@ export async function POST(req: Request) {
 
     for (const order of orders) {
       const firstItem = order.items[0]
+      const recipientPhone = resolveOrderRecipientPhone(order)
 
       if (
         !ELIGIBLE_STATUSES.has(order.status) ||
         order.paymentStatus !== "PAID" ||
         order.fulfillmentMode !== "MANUAL" ||
         !order.organizationId ||
-        !order.phoneNumber ||
+        !recipientPhone ||
         order.items.length !== 1 ||
         !firstItem?.product
       ) {
@@ -65,7 +68,7 @@ export async function POST(req: Request) {
         organizationId: order.organizationId!,
         productId: firstItem.productId,
         network: firstItem.product.provider,
-        phone: order.phoneNumber,
+        phone: recipientPhone,
         quantity: firstItem.quantity,
         amount: order.total,
       })

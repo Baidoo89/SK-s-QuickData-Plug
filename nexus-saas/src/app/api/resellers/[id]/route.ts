@@ -138,6 +138,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         select: {
           id: true,
           phoneNumber: true,
+          customer: { select: { phone: true } },
           status: true,
           total: true,
           createdAt: true,
@@ -156,7 +157,13 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         filteredProfit: filteredProfitAgg._sum.profit ?? 0,
         salesRange: selectedSalesRange,
       },
-      recentOrders,
+      recentOrders: recentOrders.map((order) => ({
+        id: order.id,
+        phoneNumber: order.phoneNumber?.trim() || order.customer?.phone?.trim() || null,
+        status: order.status,
+        total: order.total,
+        createdAt: order.createdAt,
+      })),
     })
   } catch (error) {
     console.error("[RESELLER_GET]", error)

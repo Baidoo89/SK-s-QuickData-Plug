@@ -11,6 +11,7 @@ import { DashboardOrdersWorkspace, type DashboardOrderRow } from "@/components/d
 import { formatGhanaCedis } from "@/lib/currency"
 import { getDispatchMetaByOrderIds } from "@/lib/admin-order-dispatch"
 import { getOrderSourceLogMap, ORDER_SOURCE_LABELS, resolveOrderSource, type OrderSource } from "@/lib/order-source"
+import { resolveOrderRecipientPhone } from "@/lib/order-recipient"
 import { Activity, CheckCircle2, Clock, Download, ListFilter, ShoppingCart } from "lucide-react"
 
 type OrderFilters = {
@@ -59,6 +60,7 @@ async function getOrders(filters: OrderFilters = {}) {
         { id: { contains: q } },
         { customer: { name: { contains: q, mode: "insensitive" } } },
         { customer: { email: { contains: q, mode: "insensitive" } } },
+        { customer: { phone: { contains: q } } },
         { phoneNumber: { contains: q } },
         { agent: { name: { contains: q, mode: "insensitive" } } },
       ]
@@ -156,7 +158,7 @@ export default async function OrdersPage({
       publicOrderCode: order.publicOrderCode || order.id.slice(-8),
       createdAt: order.createdAt.toISOString(),
       buyerName: order.customer?.name || "Guest Customer",
-      phoneNumber: order.phoneNumber || "",
+      phoneNumber: resolveOrderRecipientPhone(order),
       bundle,
       network: order.dispatch.network || "",
       sourceLabel: ORDER_SOURCE_LABELS[order.source],

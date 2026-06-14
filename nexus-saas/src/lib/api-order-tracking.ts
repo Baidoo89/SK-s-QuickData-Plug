@@ -1,5 +1,6 @@
 import { db } from "@/lib/db"
 import { displayOrderCode } from "@/lib/order-code"
+import { resolveOrderRecipientPhone } from "@/lib/order-recipient"
 
 type ApiOrderMeta = {
   source?: string
@@ -139,6 +140,7 @@ export async function notifyApiOrderStatus(orderId: string, status: string) {
         publicOrderCode: true,
         organizationId: true,
         phoneNumber: true,
+        customer: { select: { phone: true } },
         total: true,
         status: true,
         updatedAt: true,
@@ -156,7 +158,7 @@ export async function notifyApiOrderStatus(orderId: string, status: string) {
         internalOrderId: order.id,
         externalReference: meta.externalReference || null,
         status,
-        phoneNumber: order.phoneNumber,
+        phoneNumber: resolveOrderRecipientPhone(order),
         total: order.total,
         updatedAt: order.updatedAt.toISOString(),
       }),

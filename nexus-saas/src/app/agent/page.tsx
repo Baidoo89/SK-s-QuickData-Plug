@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Activity, AlertTriangle, CheckCircle2, FileText, LineChart, Megaphone, ShoppingBag, Store, TrendingUp, Users, Wallet } from "lucide-react"
+import { Activity, AlertTriangle, CheckCircle2, FileText, LineChart, Megaphone, Percent, ShoppingBag, Store, TrendingUp, Users, Wallet } from "lucide-react"
 import { formatGhanaCedis } from "@/lib/currency"
 import { auth } from "@/auth"
 import { db } from "@/lib/db"
@@ -103,6 +103,7 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
 
   const [
     walletAgg,
+    agentProfile,
     todaysOrders,
     completedOrders,
     selectedRangeOrders,
@@ -118,6 +119,10 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
     db.walletTransaction.aggregate({
       _sum: { amount: true },
       where: { userId: user.id, status: "success" },
+    }),
+    db.agent.findFirst({
+      where: { id: agentId, organizationId: user.organizationId },
+      select: { name: true, commissionPercent: true },
     }),
     db.order.findMany({
       where: {
@@ -216,6 +221,8 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
   const filteredSales = selectedRangeOrders.reduce((sum, order) => sum + order.total, 0)
   const serviceRevenueToday = todayServiceRequests.reduce((sum, request) => sum + request.total, 0)
   const serviceProfitToday = todayServiceRequests.reduce((sum, request) => sum + request.profit, 0)
+  const commissionPercent = agentProfile?.commissionPercent ?? 0
+  const estimatedCommission = selectedProfit * (commissionPercent / 100)
   const todaysOrdersCount = todaysOrders.length
   const storefrontPriceTotal = Number(storefrontPriceCount[0]?.count ?? 0)
   const orgSlug = user.organization?.slug ?? null
@@ -400,6 +407,13 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
           tone={pendingResellerApprovals > 0 ? "warning" : "primary"}
         />
         <MetricCard
+          label="Commission Rate"
+          value={`${commissionPercent.toFixed(1)}%`}
+          description={`${formatGhanaCedis(estimatedCommission)} est. from ${selectedProfitRangeLabel.toLowerCase()} profit`}
+          icon={Percent}
+          tone={commissionPercent > 0 ? "primary" : "info"}
+        />
+        <MetricCard
           label="Service Requests"
           value={pendingServiceRequestCount}
           description={`${todayServiceRequests.length} today, ${formatGhanaCedis(serviceRevenueToday)} value`}
@@ -449,6 +463,10 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Selected range ({selectedProfitRangeLabel})</span>
               <span className="font-semibold">{formatGhanaCedis(selectedProfit)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Commission estimate</span>
+              <span className="font-semibold">{formatGhanaCedis(estimatedCommission)}</span>
             </div>
           </CardContent>
         </Card>

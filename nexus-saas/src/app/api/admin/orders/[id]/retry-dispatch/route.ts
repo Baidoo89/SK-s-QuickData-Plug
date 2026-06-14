@@ -3,6 +3,7 @@ import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
 import { dispatchOrderToProvider } from "@/lib/provider-dispatch"
 import { createOrderWalletDebit, reverseOrderProfitIfNeeded, reverseOrderWalletDebitIfNeeded } from "@/lib/order-wallet"
+import { resolveOrderRecipientPhone } from "@/lib/order-recipient"
 
 export async function POST(
   _req: Request,
@@ -23,6 +24,7 @@ export async function POST(
         ...(isSuperAdmin ? {} : { organizationId: organizationId! }),
       },
       include: {
+        customer: true,
         items: { include: { product: true } },
       },
     })
@@ -122,7 +124,7 @@ export async function POST(
       organizationId: order.organizationId,
       productId: firstItem.productId,
       network: firstItem.product.provider,
-      phone: order.phoneNumber || "",
+      phone: resolveOrderRecipientPhone(order),
       quantity: firstItem.quantity,
       amount: order.total,
       providerName,

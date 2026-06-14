@@ -11,6 +11,7 @@ import { OrderTimelineDialog } from "@/components/orders/order-timeline-dialog"
 import { getStorefrontPaymentMap, type OrderPaymentSummary } from "@/lib/storefront-payment-map"
 import { PortalAccessMessage } from "@/components/access/portal-access-message"
 import { formatGhanaCedis } from "@/lib/currency"
+import { resolveOrderRecipientPhone } from "@/lib/order-recipient"
 import { Store } from "lucide-react"
 
 type AgentOrderItemRow = {
@@ -119,6 +120,7 @@ export default async function AgentOrdersPage({
 
   const ownershipFilter = [
     { agentId },
+    { sellerAgentId: agentId },
     { userId: user.id },
   ]
 
@@ -151,6 +153,7 @@ export default async function AgentOrdersPage({
         OR: [
           { customer: { name: { contains: search, mode: "insensitive" } } },
           { customer: { email: { contains: search, mode: "insensitive" } } },
+          { customer: { phone: { contains: search } } },
           { phoneNumber: { contains: search } },
           { publicOrderCode: { contains: search, mode: "insensitive" } },
           { id: { contains: search } },
@@ -183,7 +186,7 @@ export default async function AgentOrdersPage({
       <div className="mx-auto max-w-2xl space-y-1 text-center">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Orders</h1>
         <p className="text-sm text-muted-foreground">
-          All completed storefront orders that used your agent link will appear here.
+          Track every order connected to your agent account, including dashboard buys, storefront sales, and reseller activity.
         </p>
       </div>
       <Card className="premium-surface border-0">
@@ -276,7 +279,7 @@ export default async function AgentOrdersPage({
                     {orders.map((order: AgentOrderRow) => {
                       const date = new Date(order.createdAt)
                       const customerName = order.customer?.name || "Walk-in customer"
-                      const phone = order.phoneNumber || order.customer?.phone || "-"
+                      const phone = resolveOrderRecipientPhone(order) || "-"
                       const itemsLabel = order.items
                         .map((item: AgentOrderItemRow) => formatItemName(item.product.name))
                         .join(" | ")

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { requireAuth, isAuthError } from "@/lib/auth-guard"
 import { ApiErrors } from "@/lib/api-response"
 import { db } from "@/lib/db"
+import { resolveOrderRecipientPhone } from "@/lib/order-recipient"
 
 export const dynamic = "force-dynamic"
 
@@ -53,6 +54,7 @@ export async function GET(req: Request) {
         id: true,
         createdAt: true,
         phoneNumber: true,
+        customer: { select: { phone: true } },
         status: true,
         total: true,
       },
@@ -62,7 +64,7 @@ export async function GET(req: Request) {
     const rows = orders.map((order) => [
       order.id,
       order.createdAt.toISOString(),
-      order.phoneNumber ?? "",
+      resolveOrderRecipientPhone(order),
       order.status,
       order.total.toFixed(2),
     ])

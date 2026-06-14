@@ -1,5 +1,6 @@
 import { db } from "@/lib/db"
 import { getStorefrontPaymentMap } from "@/lib/storefront-payment-map"
+import { resolveOrderRecipientPhone } from "@/lib/order-recipient"
 
 export type OrderTimelineEvent = {
   id: string
@@ -62,6 +63,7 @@ export async function getOrderTimeline(params: {
   })
 
   if (!order) return null
+  const recipientPhone = resolveOrderRecipientPhone(order)
 
   const logs = await db.auditLog.findMany({
     where: {
@@ -85,7 +87,7 @@ export async function getOrderTimeline(params: {
       meta: {
         status: order.status,
         total: order.total,
-        phoneNumber: order.phoneNumber,
+        phoneNumber: recipientPhone,
       },
     },
     ...logs.map((log) => ({
@@ -105,7 +107,7 @@ export async function getOrderTimeline(params: {
       total: order.total,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
-      phoneNumber: order.phoneNumber,
+      phoneNumber: recipientPhone,
       organization: order.organization ? { id: order.organization.id, name: order.organization.name } : null,
       customer: order.customer ? { name: order.customer.name, email: order.customer.email, phone: order.customer.phone } : null,
       agent: order.agent ? { id: order.agent.id, name: order.agent.name } : null,

@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import { getDispatchMetaByOrderIds } from "@/lib/admin-order-dispatch"
 import { getStorefrontPaymentMap } from "@/lib/storefront-payment-map"
 import { getOrderSourceLogMap, ORDER_SOURCE_LABELS, resolveOrderSource } from "@/lib/order-source"
+import { resolveOrderRecipientPhone } from "@/lib/order-recipient"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { MetricCard } from "@/components/ui/metric-card"
@@ -117,7 +118,7 @@ export async function DashboardManualQueueSection({
     publicOrderCode: order.publicOrderCode || order.id.slice(-8),
     createdAt: order.createdAt.toISOString(),
     customerName: order.customer?.name || "Guest",
-    phoneNumber: order.phoneNumber || "",
+    phoneNumber: resolveOrderRecipientPhone(order),
     network: order.dispatch.network || "",
     source: order.source === "DASHBOARD" ? "DASHBOARD_BUY" : order.source,
     sourceLabel: ORDER_SOURCE_LABELS[order.source],

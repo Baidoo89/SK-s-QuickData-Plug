@@ -2,6 +2,7 @@ import { AlertTriangle, Building2, PackageX } from "lucide-react"
 
 import { db } from "@/lib/db"
 import { formatGhanaCedis } from "@/lib/currency"
+import { resolveOrderRecipientPhone } from "@/lib/order-recipient"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MetricCard } from "@/components/ui/metric-card"
@@ -31,6 +32,7 @@ type PendingOrderRow = {
   total: number
   createdAt: Date
   phoneNumber: string | null
+  customer: { phone: string | null } | null
   organization: { name: string } | null
 }
 
@@ -70,6 +72,7 @@ export default async function AdminToolsPage() {
         total: true,
         createdAt: true,
         phoneNumber: true,
+        customer: { select: { phone: true } },
         organization: { select: { name: true } },
       },
       orderBy: { createdAt: "asc" },
@@ -264,7 +267,7 @@ export default async function AdminToolsPage() {
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                     <div>
-                      <p className="font-medium text-foreground">{order.phoneNumber ?? "-"}</p>
+                      <p className="font-medium text-foreground">{resolveOrderRecipientPhone(order) || "-"}</p>
                       <p>Phone</p>
                     </div>
                     <div>
@@ -303,7 +306,7 @@ export default async function AdminToolsPage() {
                   pendingOrders.map((order) => (
                     <TableRow key={order.id}>
                       <TableCell className="font-mono text-xs">{order.id.slice(0, 10)}...</TableCell>
-                      <TableCell className="text-sm">{order.phoneNumber ?? "-"}</TableCell>
+                      <TableCell className="text-sm">{resolveOrderRecipientPhone(order) || "-"}</TableCell>
                       <TableCell className="text-sm">{formatGhanaCedis(order.total)}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{order.organization?.name ?? "-"}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">
