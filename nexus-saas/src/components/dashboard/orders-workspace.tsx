@@ -37,6 +37,12 @@ type Props = {
   rows: DashboardOrderRow[]
 }
 
+type ClaimedSet = {
+  id: string
+  label: string
+  orderIds: string[]
+}
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-GH", {
     month: "short",
@@ -93,6 +99,7 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
   const [savingStatus, setSavingStatus] = useState<"PROCESSING" | "COMPLETED" | "FAILED" | null>(null)
   const [dispatchingApi, setDispatchingApi] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [claimedSets, setClaimedSets] = useState<ClaimedSet[]>([])
 
   const actionableRows = useMemo(() => rows.filter((row) => row.actionable), [rows])
   const pendingRows = useMemo(() => actionableRows.filter((row) => row.status === "PENDING"), [actionableRows])
@@ -105,10 +112,32 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
     () => selectedRows.filter((row) => row.status === "PENDING"),
     [selectedRows],
   )
+  const selectedProcessingRows = useMemo(
+    () => selectedRows.filter((row) => row.status === "PROCESSING"),
+    [selectedRows],
+  )
 
   const allPendingSelected = pendingRows.length > 0 && pendingRows.every((row) => selected.has(row.id))
   const previewRows = selectedRows.length > 0 ? selectedRows : pendingRows
   const copyPreview = buildCopyText(previewRows.slice(0, 8))
+  const claimedSetSummaries = useMemo(
+    () =>
+      claimedSets.map((set) => {
+        const setRows = rows.filter((row) => set.orderIds.includes(row.id))
+        const processingCount = setRows.filter((row) => row.status === "PROCESSING").length
+        const pendingCount = setRows.filter((row) => row.status === "PENDING").length
+        const completedCount = setRows.filter((row) => row.status === "COMPLETED").length
+
+        return {
+          ...set,
+          count: set.orderIds.length,
+          processingCount,
+          pendingCount,
+          completedCount,
+        }
+      }),
+    [claimedSets, rows],
+  )
 
   function toggleOrder(order: DashboardOrderRow) {
     if (!order.actionable) return
@@ -126,13 +155,17 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
 
   function toggleAllPending() {
     setSelected((current) => {
-      const next = new Set(current)
-      if (pendingRows.length > 0 && pendingRows.every((row) => next.has(row.id))) {
-        pendingRows.forEach((row) => next.delete(row.id))
-        return next
+      if (pendingRows.length === 0) return current
+
+      const pendingIds = pendingRows.map((row) => row.id)
+      const onlyPendingSelected =
+        current.size === pendingIds.length && pendingIds.every((id) => current.has(id))
+
+      if (onlyPendingSelected) {
+        return new Set()
       }
-      pendingRows.forEach((row) => next.add(row.id))
-      return next
+
+      return new Set(pendingIds)
     })
   }
 
@@ -155,6 +188,63 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
     })
   }
 
+  async function submitBulkStatus({
+    orderIds,
+    status,
+    keepSelectedIds,
+    successDescription,
+    removeClaimedSetId,
+  }: {
+    orderIds: string[]
+    status: "PROCESSING" | "COMPLETED" | "FAILED"
+    keepSelectedIds?: string[]
+    successDescription?: string
+    removeClaimedSetId?: string
+  }) {
+    setSavingStatus(status)
+    try {
+      const res = await fetch("/api/dashboard/orders/bulk-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderIds,
+          status,
+        }),
+      })
+
+      const payload = await res.json().catch(() => null)
+      if (!res.ok) {
+        throw new Error(payload?.error?.message || "Bulk update failed")
+      }
+
+      toast({
+        title: "Orders updated",
+        description: successDescription ?? `${payload?.data?.updated ?? 0} updated, ${payload?.data?.skipped ?? 0} skipped.`,
+      })
+
+      if (keepSelectedIds) {
+        setSelected(new Set(keepSelectedIds))
+      } else {
+        setSelected(new Set())
+      }
+      if (removeClaimedSetId) {
+        setClaimedSets((current) => current.filter((set) => set.id !== removeClaimedSetId))
+      }
+      router.refresh()
+      return true
+    } catch (error) {
+      toast({
+        title: "Bulk update failed",
+        description: error instanceof Error ? error.message : "Could not update selected orders.",
+        variant: "destructive",
+      })
+    } finally {
+      setSavingStatus(null)
+    }
+
+    return false
+  }
+
   async function bulkUpdate(status: "PROCESSING" | "COMPLETED" | "FAILED") {
     const updateRows = status === "PROCESSING" ? selectedPendingRows : selectedRows
 
@@ -172,37 +262,40 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
     const confirmed = window.confirm(`Mark ${updateRows.length} selected order${updateRows.length === 1 ? "" : "s"} as ${label}?`)
     if (!confirmed) return
 
-    setSavingStatus(status)
-    try {
-      const res = await fetch("/api/dashboard/orders/bulk-status", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orderIds: updateRows.map((row) => row.id),
-          status,
-        }),
-      })
+    const orderIds = updateRows.map((row) => row.id)
+    const claimedSetId = `claimed-${Date.now()}`
+    const ok = await submitBulkStatus({
+      orderIds,
+      status,
+      keepSelectedIds: status === "PROCESSING" ? orderIds : undefined,
+      successDescription: status === "PROCESSING"
+        ? `${orderIds.length} claimed. This set stays selected and is saved below.`
+        : undefined,
+    })
 
-      const payload = await res.json().catch(() => null)
-      if (!res.ok) {
-        throw new Error(payload?.error?.message || "Bulk update failed")
-      }
-
-      toast({
-        title: "Orders updated",
-        description: `${payload?.data?.updated ?? 0} updated, ${payload?.data?.skipped ?? 0} skipped.`,
-      })
-      setSelected(new Set())
-      router.refresh()
-    } catch (error) {
-      toast({
-        title: "Bulk update failed",
-        description: error instanceof Error ? error.message : "Could not update selected orders.",
-        variant: "destructive",
-      })
-    } finally {
-      setSavingStatus(null)
+    if (ok && status === "PROCESSING") {
+      setClaimedSets((current) => [
+        ...current,
+        {
+          id: claimedSetId,
+          label: `Set ${current.length + 1}`,
+          orderIds,
+        },
+      ])
     }
+  }
+
+  async function updateClaimedSet(set: ClaimedSet, status: "COMPLETED" | "FAILED") {
+    const label = status === "COMPLETED" ? "delivered" : "failed"
+    const confirmed = window.confirm(`Mark ${set.label} (${set.orderIds.length} order${set.orderIds.length === 1 ? "" : "s"}) as ${label}?`)
+    if (!confirmed) return
+
+    await submitBulkStatus({
+      orderIds: set.orderIds,
+      status,
+      successDescription: `${set.label} marked ${label}.`,
+      removeClaimedSetId: set.id,
+    })
   }
 
   async function sendSelectedToApi() {
@@ -262,7 +355,7 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
           onChange={toggleAllPending}
           className="h-4 w-4 rounded border-border"
         />
-          Select pending orders
+          Select pending as new set
           <Badge variant="outline" className="ml-1">{pendingRows.length}</Badge>
         </label>
         <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
@@ -271,19 +364,19 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
           <Badge variant="outline" className="rounded-md">Selected: {selectedRows.length}</Badge>
         </div>
         <div className="grid w-full min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:w-auto xl:flex xl:flex-wrap xl:justify-end">
-          <Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => setPreviewOpen((open) => !open)}>
+          <Button type="button" variant="outline" size="sm" className="border-slate-300 bg-background text-xs hover:bg-slate-100" onClick={() => setPreviewOpen((open) => !open)}>
             <Eye className="mr-2 h-4 w-4" />
             Preview Copy
           </Button>
-          <Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => copyOrders("pending")}>
+          <Button type="button" variant="outline" size="sm" className="border-sky-300 bg-sky-50 text-xs text-sky-800 hover:bg-sky-100" onClick={() => copyOrders("pending")}>
             <ClipboardCopy className="mr-2 h-4 w-4" />
             Copy Pending
           </Button>
-          <Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => copyOrders("selected")} disabled={selectedRows.length === 0}>
+          <Button type="button" variant="outline" size="sm" className="border-blue-300 bg-blue-50 text-xs text-blue-800 hover:bg-blue-100" onClick={() => copyOrders("selected")} disabled={selectedRows.length === 0}>
             <ClipboardCopy className="mr-2 h-4 w-4" />
             Copy Selected
           </Button>
-          <Button type="button" variant="outline" size="sm" className="text-xs" onClick={sendSelectedToApi} disabled={dispatchingApi || selectedRows.length === 0}>
+          <Button type="button" variant="outline" size="sm" className="border-violet-300 bg-violet-50 text-xs text-violet-800 hover:bg-violet-100" onClick={sendSelectedToApi} disabled={dispatchingApi || selectedRows.length === 0}>
             {dispatchingApi ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
             Send Auto
           </Button>
@@ -307,6 +400,44 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
         </div>
       ) : null}
 
+      {claimedSetSummaries.length > 0 ? (
+        <div className="premium-surface rounded-lg border border-blue-200 bg-blue-50/60 p-3">
+          <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-blue-950">Processing sets</p>
+              <p className="text-xs text-blue-800">Claimed batches stay here so you can deliver the exact set later.</p>
+            </div>
+            <Badge variant="outline" className="w-fit border-blue-300 bg-white text-blue-800">{claimedSetSummaries.length} active</Badge>
+          </div>
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {claimedSetSummaries.map((set) => (
+              <div key={set.id} className="rounded-lg border border-blue-200 bg-white p-3 shadow-sm">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-foreground">{set.label}</p>
+                  <Badge variant="outline" className="rounded-md">{set.count} orders</Badge>
+                </div>
+                <div className="mb-3 flex flex-wrap gap-1 text-[11px]">
+                  <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800">{set.pendingCount} pending</Badge>
+                  <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-800">{set.processingCount} processing</Badge>
+                  <Badge variant="outline" className="border-emerald-300 bg-emerald-50 text-emerald-800">{set.completedCount} delivered</Badge>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button type="button" variant="outline" size="sm" className="border-blue-300 bg-blue-50 text-xs font-semibold text-blue-800 hover:bg-blue-100" onClick={() => setSelected(new Set(set.orderIds))}>
+                    Select
+                  </Button>
+                  <Button type="button" size="sm" className="bg-emerald-600 text-xs font-semibold text-white hover:bg-emerald-700" onClick={() => updateClaimedSet(set, "COMPLETED")} disabled={savingStatus !== null}>
+                    Deliver
+                  </Button>
+                  <Button type="button" variant="destructive" size="sm" className="text-xs font-semibold" onClick={() => updateClaimedSet(set, "FAILED")} disabled={savingStatus !== null}>
+                    Fail
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       <div className="ops-table-surface min-w-0 max-w-full overflow-hidden rounded-lg">
         <div className="table-scroll">
         <Table className="min-w-[1440px] table-fixed text-xs">
@@ -318,7 +449,7 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
                   checked={allPendingSelected}
                   onChange={toggleAllPending}
                   className="h-4 w-4 rounded border-border"
-                  aria-label="Select pending orders"
+                  aria-label="Select pending orders as a new set"
                 />
               </TableHead>
               <TableHead className="w-[150px]">Order ID</TableHead>
@@ -407,33 +538,36 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
         <div className="premium-surface fixed inset-x-0 bottom-0 z-40 max-w-full border-t p-3 backdrop-blur md:left-auto md:right-6 md:bottom-6 md:w-[640px] md:rounded-lg md:border">
           <div className="mb-2 flex items-center justify-between gap-3 text-sm">
             <span className="font-semibold">
-              {selectedRows.length} selected
-              {selectedPendingRows.length !== selectedRows.length ? ` (${selectedPendingRows.length} pending)` : ""}
+              Active set: {selectedRows.length}
             </span>
+            <div className="hidden flex-wrap gap-1 sm:flex">
+              <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800">{selectedPendingRows.length} pending</Badge>
+              <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-800">{selectedProcessingRows.length} processing</Badge>
+            </div>
             <button type="button" className="text-xs text-muted-foreground" onClick={() => setSelected(new Set())}>
-              Clear
+              Clear set
             </button>
           </div>
           <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-5">
-            <Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => bulkUpdate("PROCESSING")} disabled={savingStatus !== null || selectedPendingRows.length === 0}>
+            <Button type="button" variant="outline" size="sm" className="border-amber-300 bg-amber-50 text-xs font-semibold text-amber-900 hover:bg-amber-100" onClick={() => bulkUpdate("PROCESSING")} disabled={savingStatus !== null || selectedPendingRows.length === 0}>
               {savingStatus === "PROCESSING" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-4 w-4" />}
-              Claim Pending
+              Claim Set
             </Button>
-            <Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => copyOrders("selected")}>
+            <Button type="button" variant="outline" size="sm" className="border-blue-300 bg-blue-50 text-xs font-semibold text-blue-800 hover:bg-blue-100" onClick={() => copyOrders("selected")}>
               <ClipboardCopy className="mr-2 h-4 w-4" />
               Copy
             </Button>
-            <Button type="button" variant="outline" size="sm" className="text-xs" onClick={sendSelectedToApi} disabled={dispatchingApi}>
+            <Button type="button" variant="outline" size="sm" className="border-violet-300 bg-violet-50 text-xs font-semibold text-violet-800 hover:bg-violet-100" onClick={sendSelectedToApi} disabled={dispatchingApi}>
               {dispatchingApi ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
               Auto
             </Button>
-            <Button type="button" size="sm" className="text-xs" onClick={() => bulkUpdate("COMPLETED")} disabled={savingStatus !== null}>
+            <Button type="button" size="sm" className="bg-emerald-600 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700" onClick={() => bulkUpdate("COMPLETED")} disabled={savingStatus !== null}>
               {savingStatus === "COMPLETED" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-              Delivered
+              Deliver Set
             </Button>
-            <Button type="button" variant="destructive" size="sm" className="text-xs" onClick={() => bulkUpdate("FAILED")} disabled={savingStatus !== null}>
+            <Button type="button" variant="destructive" size="sm" className="text-xs font-semibold shadow-sm" onClick={() => bulkUpdate("FAILED")} disabled={savingStatus !== null}>
               {savingStatus === "FAILED" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
-              Failed
+              Fail Set
             </Button>
           </div>
         </div>
