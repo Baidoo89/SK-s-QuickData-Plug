@@ -34,7 +34,7 @@ export async function PATCH(
         id: params.id,
         ...(isSuperAdmin ? {} : { organizationId: organizationId! }),
       },
-      select: { id: true, organizationId: true, status: true },
+      select: { id: true, organizationId: true, status: true, paymentStatus: true },
     })
 
     if (!existing) {
@@ -43,6 +43,10 @@ export async function PATCH(
 
     if (PAYMENT_LOCKED_STATUSES.has(existing.status)) {
       return ApiErrors.BAD_REQUEST("This order has not completed payment and cannot be manually fulfilled.")
+    }
+
+    if (existing.paymentStatus !== "PAID") {
+      return ApiErrors.BAD_REQUEST("Only paid orders can be manually fulfilled.")
     }
 
     const updated = await db.order.update({

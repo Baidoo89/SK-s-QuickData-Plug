@@ -83,13 +83,20 @@ function buildCopyText(rows: DashboardOrderRow[]) {
 const PAYMENT_LOCKED_STATUSES = new Set(["PENDING_PAYMENT", "PAYMENT_FAILED", "PAYMENT_INIT_FAILED"])
 
 function canEditStatus(order: DashboardOrderRow) {
-  return !PAYMENT_LOCKED_STATUSES.has(order.status)
+  return order.paymentStatus === "PAID" && !PAYMENT_LOCKED_STATUSES.has(order.status)
 }
 
 function statusTone(status: string) {
   if (status === "COMPLETED") return "secondary"
   if (status === "FAILED" || status === "PAYMENT_FAILED") return "destructive"
   return "outline"
+}
+
+function getDisplayStatus(order: DashboardOrderRow) {
+  if (order.paymentStatus === "FAILED") return "PAYMENT FAILED"
+  if (order.paymentStatus === "PENDING") return "AWAITING PAYMENT"
+  if (order.status === "COMPLETED") return "DELIVERED"
+  return order.status
 }
 
 export function DashboardOrdersWorkspace({ rows }: Props) {
@@ -516,7 +523,7 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
                       endpointBase="/api/dashboard/orders"
                     />
                   ) : (
-                    <Badge variant={statusTone(order.status)} className="rounded-md">{order.status}</Badge>
+                    <Badge variant={statusTone(order.status)} className="rounded-md">{getDisplayStatus(order)}</Badge>
                   )}
                 </TableCell>
                 <TableCell>
