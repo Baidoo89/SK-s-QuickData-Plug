@@ -110,7 +110,7 @@ export default function ResellerWalletPage() {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Wallet</h1>
           <p className="text-sm text-muted-foreground max-w-xl">
-            View your current reseller wallet balance and recent top-ups. Your agent can credit this wallet manually, or you can top up via Paystack.
+            View your reseller wallet balance and recent activity. Use Paystack for instant top-up, or ask your agent for manual top-up.
           </p>
         </div>
 
@@ -164,7 +164,7 @@ export default function ResellerWalletPage() {
               <EmptyState
                 icon={WalletCards}
                 title="No top-ups yet"
-                description="Top up with Paystack or ask your agent to credit your wallet manually. Funding records will appear here."
+                description="Use Paystack for instant top-up, or ask your agent for manual top-up to avoid Paystack fees."
                 secondaryAction={{ label: "Buy Data", href: "/reseller/buy/single" }}
                 className="mt-3 py-5"
               />
@@ -193,6 +193,8 @@ export default function ResellerWalletPage() {
                 });
                 const payload = await res.json().catch(() => null as any);
                 const authorizationUrl = payload?.data?.authorizationUrl ?? payload?.authorizationUrl;
+                const fee = payload?.data?.paystackFee;
+                const checkoutAmount = payload?.data?.checkoutAmount;
                 const message = payload?.error?.message || payload?.message || "Could not start Paystack top up.";
                 if (!res.ok || !authorizationUrl) {
                   return toast({
@@ -200,6 +202,10 @@ export default function ResellerWalletPage() {
                     title: "Error",
                     description: message,
                   });
+                }
+
+                if (typeof fee === "number" && typeof checkoutAmount === "number") {
+                  toast({ title: "Redirecting to Paystack", description: `You will pay ${formatGhanaCedis(checkoutAmount)} including ${formatGhanaCedis(fee)} fee.` });
                 }
 
                 setTopupAmount("");
@@ -216,6 +222,7 @@ export default function ResellerWalletPage() {
             }}
           >
             <p className="font-medium text-foreground">Top Up via Paystack</p>
+            <p className="text-[11px] text-muted-foreground">Your wallet receives the amount you enter. Paystack fees are added at checkout.</p>
             <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
               <Input
                 type="number"
@@ -236,14 +243,14 @@ export default function ResellerWalletPage() {
               </Button>
             </div>
             <p className="text-[11px] text-muted-foreground">
-              You will be redirected to Paystack to complete payment. Once successful, your reseller wallet balance updates automatically.
+              Manual top-up through your agent is cheaper because Paystack fees do not apply.
             </p>
           </form>
 
           <div id="transactions" className="space-y-2 pt-2">
             <p className="font-medium text-foreground">Transactions</p>
             <p className="text-[11px] text-muted-foreground">
-              All wallet logs and activities, including Paystack top-ups, manual credits, and debits.
+              All wallet logs and activities, including Paystack top-ups, manual credits, and order debits.
             </p>
             {activities.length === 0 ? (
               <EmptyState

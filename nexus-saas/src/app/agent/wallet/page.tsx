@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, ChangeEvent, FormEvent } from "react"
+import { useSearchParams } from "next/navigation"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -60,6 +61,7 @@ interface WalletActivity {
 
 export default function AgentWalletPage() {
   const { toast } = useToast()
+  const searchParams = useSearchParams()
   const [summary, setSummary] = useState<OrdersSummary | null>(null)
   const [loading, setLoading] = useState(false)
   const [balance, setBalance] = useState(0)
@@ -68,6 +70,8 @@ export default function AgentWalletPage() {
   const [activityFilter, setActivityFilter] = useState("")
   const [activityMethod, setActivityMethod] = useState("")
   const [activityStatus, setActivityStatus] = useState("")
+  const [topupAmount, setTopupAmount] = useState("")
+  const [savingTopup, setSavingTopup] = useState(false)
   const [beneficiaryEmail, setBeneficiaryEmail] = useState("")
   const [beneficiaryAmount, setBeneficiaryAmount] = useState("")
   const [savingManual, setSavingManual] = useState(false)
@@ -114,6 +118,20 @@ export default function AgentWalletPage() {
   }, [])
 
   useEffect(() => {
+    const status = searchParams.get("walletTopup")
+    if (!status) return
+
+    if (status === "success") {
+      toast({ title: "Top up successful", description: "Your wallet has been credited. Paystack fees were included at checkout." })
+      return
+    }
+
+    if (status === "failed") {
+      toast({ variant: "destructive", title: "Top up failed", description: "Paystack verification failed. Please try again or use manual top-up." })
+    }
+  }, [searchParams, toast])
+
+  useEffect(() => {
     async function loadActivities() {
       try {
         const params = new URLSearchParams()
@@ -139,10 +157,6 @@ export default function AgentWalletPage() {
     loadActivities()
   }, [activityFilter, activityMethod, activityStatus])
 
-  useEffect(() => {
-    // In the agent wallet we only support manual credits; Paystack top-up is reserved for the storefront.
-  }, [])
-
   const estimatedCommission = summary ? summary.totalNumbers * 1 : 0
 
   function statusBadgeClass(status: string) {
@@ -157,14 +171,14 @@ export default function AgentWalletPage() {
       <div className="space-y-1 max-w-2xl mx-auto text-center">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Wallet & Activity</h1>
         <p className="text-sm text-muted-foreground">
-          Track your VTU balance, commissions, and wallet activity.
+          Track your order wallet, reseller credits, and wallet activity.
         </p>
       </div>
       <div className="grid min-w-0 gap-4 md:grid-cols-3">
         <MetricCard
           label="Wallet Balance"
           value={formatGhanaCedis(balance)}
-          description="Available balance for VTU orders and reseller credits."
+          description="Available balance for your own dashboard orders."
           icon={WalletCards}
           tone="success"
         />
@@ -184,11 +198,79 @@ export default function AgentWalletPage() {
         />
       </div>
       <div className="grid min-w-0 gap-4 md:grid-cols-1 lg:grid-cols-2">
+        <Card id="paystack-top-up" className="premium-surface overflow-hidden rounded-lg">
+          <CardHeader className="border-b border-border/70 bg-muted/20">
+            <CardTitle className="text-sm font-semibold">Top Up Your Wallet</CardTitle>
+            <CardDescription className="text-xs">
+              Paystack fees are added at checkout. Your wallet receives the amount you enter.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-xs">
+            <form
+              onSubmit={async (e: FormEvent) => {
+                e.preventDefault()
+                const amountNumber = Number(topupAmount)
+                if (!amountNumber || amountNumber <= 0) {
+                  return toast({
+                    variant: "destructive",
+                    title: "Validation",
+                    description: "Enter a valid wallet amount.",
+                  })
+                }
+
+                setSavingTopup(true)
+                try {
+                  const res = await fetch("/api/wallet/paystack/checkout", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ amount: amountNumber, returnPath: "/agent/wallet" }),
+                  })
+                  const payload = await res.json().catch(() => null as any)
+                  const authorizationUrl = payload?.data?.authorizationUrl ?? payload?.authorizationUrl
+                  const fee = payload?.data?.paystackFee
+                  const checkoutAmount = payload?.data?.checkoutAmount
+                  const message = payload?.error?.message || payload?.message || "Could not start Paystack top-up."
+                  if (!res.ok || !authorizationUrl) {
+                    return toast({ variant: "destructive", title: "Top up failed", description: message })
+                  }
+
+                  if (typeof fee === "number" && typeof checkoutAmount === "number") {
+                    toast({ title: "Redirecting to Paystack", description: `You will pay ${formatGhanaCedis(checkoutAmount)} including ${formatGhanaCedis(fee)} fee.` })
+                  }
+
+                  setTopupAmount("")
+                  window.location.href = authorizationUrl as string
+                } catch {
+                  toast({ variant: "destructive", title: "Network error", description: "Could not reach Paystack service." })
+                } finally {
+                  setSavingTopup(false)
+                }
+              }}
+              className="space-y-3"
+            >
+              <Input
+                type="number"
+                min={1}
+                step="0.01"
+                value={topupAmount}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setTopupAmount(e.target.value)}
+                placeholder="Amount to credit wallet, e.g. 100"
+                className="text-xs"
+              />
+              <Button type="submit" disabled={savingTopup} className="w-full sm:w-auto text-xs">
+                {savingTopup ? "Redirecting..." : "Top up with Paystack"}
+              </Button>
+              <p className="text-[11px] text-muted-foreground">
+                Manual top-up from the business owner is cheaper because Paystack fees do not apply.
+              </p>
+            </form>
+          </CardContent>
+        </Card>
         <Card id="top-up" className="premium-surface overflow-hidden rounded-lg">
           <CardHeader className="border-b border-border/70 bg-muted/20">
-            <CardTitle className="text-sm font-semibold">Wallet Top Up</CardTitle>
+            <CardTitle className="text-sm font-semibold">Credit Reseller Wallet</CardTitle>
             <CardDescription className="text-xs">
-              Credit your own wallet or a linked reseller wallet by email.
+              Credit only resellers linked to your agent account.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-xs">
@@ -216,7 +298,7 @@ export default function AgentWalletPage() {
                   })
                   const data = await res.json().catch(() => null)
                   if (!res.ok) {
-                    const message = data?.message || "Top up failed."
+                    const message = data?.error?.message || data?.message || "Wallet credit failed."
                     return toast({ variant: "destructive", title: "Error", description: message })
                   }
                   if (typeof data.balance === "number") setBalance(data.balance)
@@ -225,7 +307,7 @@ export default function AgentWalletPage() {
                   setBeneficiaryAmount("")
                   setSelectedBeneficiary(null)
                   setHighlightedIndex(-1)
-                  toast({ title: "Manual credit recorded", description: "The credit has been saved to the selected wallet." })
+                  toast({ title: "Reseller wallet credited", description: "The credit has been saved to the selected reseller wallet." })
                 } catch {
                   toast({ variant: "destructive", title: "Network error", description: "Could not reach wallet service." })
                 } finally {
@@ -289,7 +371,7 @@ export default function AgentWalletPage() {
                       setHighlightedIndex(-1)
                     }
                   }}
-                  placeholder="agent-or-reseller@example.com"
+                  placeholder="reseller@example.com"
                   className="text-xs"
                 />
                 {beneficiarySuggestions.length > 0 && (
@@ -332,7 +414,7 @@ export default function AgentWalletPage() {
                   </div>
                 )}
                 {searchingBeneficiaries && beneficiaryEmail.trim().length >= 2 && beneficiarySuggestions.length === 0 && (
-                  <p className="mt-1 text-[11px] text-muted-foreground">Searching your account and resellers...</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">Searching linked resellers...</p>
                 )}
                 {!searchingBeneficiaries && beneficiaryEmail.trim().length >= 2 && beneficiarySuggestions.length === 0 && !selectedBeneficiary && (
                   <p className="mt-1 text-[11px] text-muted-foreground">No matching users found.</p>
@@ -377,7 +459,7 @@ export default function AgentWalletPage() {
                 {savingManual ? "Confirming..." : "Confirm manual credit"}
               </Button>
                 <p className="text-[11px] text-muted-foreground">
-                This adjusts only your wallet or reseller wallets linked to your agent account.
+                Your own wallet can be topped up with Paystack above or credited by the business owner. This form only credits linked resellers.
               </p>
             </form>
           </CardContent>
@@ -392,7 +474,7 @@ export default function AgentWalletPage() {
         </CardHeader>
         <CardContent>
           <p className="mb-2 text-sm text-muted-foreground">
-            This section shows confirmed wallet activity, manual credits, Paystack top-ups, and transfers linked to your agent account.
+            This section shows confirmed wallet activity, manual credits, Paystack top-ups, and order debits linked to your agent account.
           </p>
           <p className="text-xs">
             Current wallet balance: <span className="font-semibold">{formatGhanaCedis(balance)}</span>

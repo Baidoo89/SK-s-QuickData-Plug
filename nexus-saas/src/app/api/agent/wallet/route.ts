@@ -81,6 +81,10 @@ export async function POST(req: Request) {
       return ApiErrors.BAD_REQUEST("Invalid top up method")
     }
 
+    if (method !== "manual") {
+      return ApiErrors.BAD_REQUEST("Wallet credits must be recorded manually by an authorized account.")
+    }
+
     const role = actor.role
     const actorRow = await db.user.findUnique({
       where: { id: actor.id },
@@ -89,7 +93,7 @@ export async function POST(req: Request) {
 
     const isAgentOperator = role === "AGENT" || Boolean(actorRow?.agentId)
 
-    if (method === "manual" && role !== "SUPERADMIN" && role !== "AGENT" && role !== "SUBSCRIBER") {
+    if (role !== "SUPERADMIN" && role !== "AGENT" && role !== "SUBSCRIBER") {
       return ApiErrors.FORBIDDEN()
     }
 
@@ -118,16 +122,19 @@ export async function POST(req: Request) {
     }
 
     if (role !== "SUPERADMIN" && isAgentOperator) {
-      const sameUser = beneficiary.id === actor.id
       const ownReseller = Boolean(
         actorRow?.agentId &&
         beneficiary.role === "RESELLER" &&
         beneficiary.parentAgentId === actorRow.agentId
       )
 
-      if (!sameUser && !ownReseller) {
+      if (!ownReseller) {
         return ApiErrors.FORBIDDEN()
       }
+    }
+
+    if (role === "SUBSCRIBER" && beneficiary.role !== "AGENT" && beneficiary.role !== "RESELLER") {
+      return ApiErrors.BAD_REQUEST("Subscriber wallet credits are only for agents and resellers.")
     }
 
     const created = await db.walletTransaction.create({

@@ -9,6 +9,42 @@ interface CheckoutBody {
   returnPath?: string;
 }
 
+function getWalletPaystackFeeConfig() {
+  const percent = Number(process.env.PAYSTACK_WALLET_FEE_PERCENT ?? "1.95");
+  const flat = Number(process.env.PAYSTACK_WALLET_FEE_FLAT_GHS ?? "0");
+  const cap = Number(process.env.PAYSTACK_WALLET_FEE_CAP_GHS ?? "0");
+
+  return {
+    percent: Number.isFinite(percent) && percent > 0 ? percent : 0,
+    flat: Number.isFinite(flat) && flat > 0 ? flat : 0,
+    cap: Number.isFinite(cap) && cap > 0 ? cap : 0,
+  };
+}
+
+function roundMoney(value: number) {
+  return Math.ceil(value * 100) / 100;
+}
+
+function calculateGrossWalletCharge(netAmount: number) {
+  const { percent, flat, cap } = getWalletPaystackFeeConfig();
+  const rate = percent / 100;
+
+  if (rate <= 0 && flat <= 0) {
+    return { netAmount, feeAmount: 0, grossAmount: netAmount };
+  }
+
+  const uncappedGross = rate >= 1 ? netAmount + flat : (netAmount + flat) / (1 - rate);
+  const uncappedFee = uncappedGross - netAmount;
+
+  if (cap > 0 && uncappedFee > cap) {
+    const grossAmount = roundMoney(netAmount + cap);
+    return { netAmount, feeAmount: roundMoney(grossAmount - netAmount), grossAmount };
+  }
+
+  const grossAmount = roundMoney(uncappedGross);
+  return { netAmount, feeAmount: roundMoney(grossAmount - netAmount), grossAmount };
+}
+
 export async function POST(req: Request) {
   try {
     const authResult = await requireAuth();
@@ -44,10 +80,12 @@ export async function POST(req: Request) {
       return ApiErrors.BAD_REQUEST("Subscriber Paystack is not connected. Ask the organization owner to connect Paystack in dashboard settings.");
     }
 
-    // Convert GHS to pesewas (1 GHS = 100 pesewas)
-    const amountInPesewas = Math.round(rawAmount * 100);
+    const charge = calculateGrossWalletCharge(rawAmount);
 
-    const defaultReturnPath = user.role === "RESELLER" ? "/reseller/wallet" : "/dashboard/wallet";
+    // Convert GHS to pesewas (1 GHS = 100 pesewas). Agents/resellers pay the gross amount so fees are not absorbed by the platform.
+    const amountInPesewas = Math.round(charge.grossAmount * 100);
+
+    const defaultReturnPath = user.role === "RESELLER" ? "/reseller/wallet" : user.role === "AGENT" ? "/agent/wallet" : "/dashboard/wallet";
     const safeReturnPath =
       typeof body.returnPath === "string" && body.returnPath.startsWith("/")
         ? body.returnPath
@@ -69,7 +107,10 @@ export async function POST(req: Request) {
           walletUserId: user.id,
           walletUserEmail: user.email,
           walletUserRole: user.role,
-          walletTopupAmountGHS: rawAmount,
+          walletTopupAmountGHS: charge.netAmount,
+          walletGrossAmountGHS: charge.grossAmount,
+          walletPaystackFeeGHS: charge.feeAmount,
+          walletFeePaidBy: user.role === "AGENT" || user.role === "RESELLER" ? "seller" : "wallet_owner",
           returnPath: safeReturnPath,
         },
         callback_url: `${baseUrl}/api/wallet/paystack/verify?organizationId=${encodeURIComponent(user.organizationId)}`,
@@ -90,6 +131,9 @@ export async function POST(req: Request) {
       authorizationUrl: paystackData.data.authorization_url as string,
       accessCode: paystackData.data.access_code as string,
       reference: paystackData.data.reference as string,
+      walletAmount: charge.netAmount,
+      paystackFee: charge.feeAmount,
+      checkoutAmount: charge.grossAmount,
     });
   } catch (error) {
     logApiError("[WALLET_PAYSTACK_CHECKOUT]", error);

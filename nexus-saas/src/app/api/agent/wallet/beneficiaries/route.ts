@@ -73,15 +73,14 @@ export async function GET(req: Request) {
       where.organizationId = organizationId
       where.AND = [
         {
-          OR: [
-            { id: actor.id },
-            { role: "RESELLER", parentAgentId: actorRow?.agentId ?? "" },
-          ],
+          role: "RESELLER",
+          parentAgentId: actorRow?.agentId ?? "",
         },
       ]
     } else if (role === "SUBSCRIBER" && organizationId) {
-      // Subscriber admin can credit any user inside the same organization.
+      // Subscriber admin funds sellers inside the same organization.
       where.organizationId = organizationId
+      where.role = { in: ["AGENT", "RESELLER"] }
     } else if (organizationId) {
       where.organizationId = organizationId
       where.role = { in: ["AGENT", "RESELLER"] }
