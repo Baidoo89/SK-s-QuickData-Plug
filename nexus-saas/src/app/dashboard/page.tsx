@@ -568,7 +568,7 @@ export default async function DashboardPage() {
           )}
         </div>
       </div>
-      <StoreLinkCard storePath={storeUrl !== "#" ? storeUrl : null} />
+      <div id="shop-link" className="scroll-mt-24"><StoreLinkCard storePath={storeUrl !== "#" ? storeUrl : null} /></div>
 
       {sellingAccess ? (
         <div>

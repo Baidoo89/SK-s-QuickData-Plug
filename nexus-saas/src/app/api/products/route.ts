@@ -1,33 +1,19 @@
-import { requireAuthAndOrg, isAuthError } from "@/lib/auth-guard"
+import { requireAuthAndOrg, requireOrgManager, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
 import { requireActiveSubscription } from "@/lib/subscription-access"
 import { getSubscriberStorefrontPrices, mapStorefrontPrices, upsertSubscriberStorefrontPrice } from "@/lib/storefront-pricing"
-import { z } from "zod"
-
-const createProductSchema = z.object({
-  name: z.string().min(1, "Product name is required"),
-  description: z.string().optional().default(""),
-  price: z.number().min(0, "Price must be >= 0"),
-  basePrice: z.number().min(0).optional(),
-  storefrontPrice: z.number().min(0).optional(),
-  stock: z.number().int().min(0).optional().default(0),
-  imageUrl: z.string().url().optional().default(""),
-  provider: z.string().optional().default("MTN"),
-  bundleType: z.string().optional().default("DATA"),
-  category: z.string().optional().default("DATA_BUNDLE"),
-  serviceForm: z.string().optional().nullable(),
-  active: z.boolean().optional().default(true),
-})
+import { createProductSchema } from "@/lib/product-input"
 
 export async function POST(req: Request) {
   try {
-    const authResult = await requireAuthAndOrg()
+    const authResult = await requireOrgManager()
     if (isAuthError(authResult)) {
       return authResult
     }
 
-    const body = await req.json()
+    let body: unknown
+    try { body = await req.json() } catch { return ApiErrors.BAD_REQUEST("Request body must be valid JSON") }
     const validation = createProductSchema.safeParse(body)
 
     if (!validation.success) {
@@ -82,13 +68,13 @@ export async function POST(req: Request) {
         update: { price: basePriceValue },
       })
 
-      return product
-    })
+      await upsertSubscriberStorefrontPrice({
+        productId: product.id,
+        organizationId,
+        price: storefrontPrice ?? price,
+      }, tx)
 
-    await upsertSubscriberStorefrontPrice({
-      productId: result.id,
-      organizationId,
-      price: storefrontPrice ?? price,
+      return product
     })
 
     return apiSuccess(result, "Product created successfully", 201)
@@ -129,6 +115,8 @@ export async function GET(req: Request) {
       ...p,
       basePrice: p.basePrices?.[0]?.price ?? p.price,
       storefrontPrice: storefrontPriceMap.get(p.id) ?? p.price,
+      hasBasePrice: p.basePrices.length > 0,
+      hasStorefrontPrice: storefrontPriceMap.has(p.id),
     }))
 
     return apiSuccess(response)

@@ -1,104 +1,92 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { requireAuthAndOrg, isAuthError } from "@/lib/auth-guard"
-import { apiSuccess, ApiErrors } from "@/lib/api-response"
+import { requireOrgManager, isAuthError } from "@/lib/auth-guard"
+import { ApiErrors, logApiError } from "@/lib/api-response"
 import { upsertSubscriberStorefrontPrice } from "@/lib/storefront-pricing"
+import { updateProductSchema } from "@/lib/product-input"
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   try {
-    const authResult = await requireAuthAndOrg()
+    const authResult = await requireOrgManager()
     if (isAuthError(authResult)) return authResult
     const organizationId = authResult.user.organizationId!
 
-    const body = await req.json()
-    const { name, description, price, basePrice, storefrontPrice, stock, imageUrl, provider, bundleType, category, serviceForm, active } = body
+    let body: unknown
+    try { body = await req.json() } catch { return ApiErrors.BAD_REQUEST("Request body must be valid JSON") }
+    const validation = updateProductSchema.safeParse(body)
+    if (!validation.success) return ApiErrors.VALIDATION_ERROR(validation.error.flatten().fieldErrors)
+    const { basePrice, storefrontPrice, ...productFields } = validation.data
 
-    const existing = await db.product.findFirst({
-      where: { id: params.id, organizationId },
-    })
+    const updated = await db.$transaction(async tx => {
+      const existing = await tx.product.findFirst({
+        where: { id: params.id, organizationId },
+        select: { id: true },
+      })
+      if (!existing) return null
 
-    if (!existing) {
-      return ApiErrors.NOT_FOUND("Product not found")
-    }
-
-    const numericPrice = price !== undefined ? parseFloat(price) : existing.price
-    const numericBasePrice = basePrice !== undefined ? parseFloat(basePrice) : existing.price
-    const numericStorefrontPrice = storefrontPrice !== undefined ? parseFloat(storefrontPrice) : numericPrice
-
-    const updated = await db.$transaction(async (tx) => {
       const product = await tx.product.update({
-        where: { id: params.id },
+        where: { id: existing.id, organizationId },
         data: {
-          name: name ?? existing.name,
-          description: description ?? existing.description,
-          price: numericPrice,
-          stock: stock !== undefined ? parseInt(stock) : existing.stock,
-          imageUrl: imageUrl ?? existing.imageUrl,
-          provider: provider ?? existing.provider,
-          bundleType: bundleType ?? existing.bundleType,
-          category: category ?? existing.category,
-          serviceForm: serviceForm !== undefined ? serviceForm || null : existing.serviceForm,
-          active: active !== undefined ? Boolean(active) : existing.active,
+          ...productFields,
+          serviceForm: productFields.serviceForm === undefined ? undefined : productFields.serviceForm || null,
         },
       })
-
-      // Maintain basePrice using dynamic client to avoid type mismatch until prisma client is regenerated
-      await tx.basePrice.upsert({
-        where: {
-          productId_organizationId: { productId: product.id, organizationId: organizationId },
-        },
-        create: {
-          price: numericBasePrice,
-          productId: product.id,
-          organizationId: organizationId,
-        },
-        update: { price: numericBasePrice },
-      })
-
+      if (basePrice !== undefined) {
+        await tx.basePrice.upsert({
+          where: { productId_organizationId: { productId: product.id, organizationId } },
+          create: { price: basePrice, productId: product.id, organizationId },
+          update: { price: basePrice },
+        })
+      }
+      if (storefrontPrice !== undefined) {
+        await upsertSubscriberStorefrontPrice({ productId: product.id, organizationId, price: storefrontPrice }, tx)
+      }
       return product
     })
 
-    await upsertSubscriberStorefrontPrice({
-      productId: updated.id,
-      organizationId,
-      price: numericStorefrontPrice,
-    })
-
+    if (!updated) return ApiErrors.NOT_FOUND("Product")
+    // Keep the existing successful PUT response shape for current clients.
     return NextResponse.json(updated)
   } catch (error) {
-    console.error("[PRODUCT_UPDATE]", error)
-    return new NextResponse("Internal Error", { status: 500 })
+    logApiError("[PRODUCT_UPDATE]", error)
+    return ApiErrors.INTERNAL_ERROR()
   }
 }
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   try {
-    const authResult = await requireAuthAndOrg()
+    const authResult = await requireOrgManager()
     if (isAuthError(authResult)) return authResult
     const organizationId = authResult.user.organizationId!
 
-    const existing = await db.product.findFirst({
-      where: { id: params.id, organizationId },
-    })
+    const outcome = await db.$transaction(async tx => {
+      const existing = await tx.product.findFirst({
+        where: { id: params.id, organizationId },
+        select: { id: true, _count: { select: { orderItems: true } } },
+      })
+      if (!existing) return "not_found"
+      // Preserve past purchases. The owner can hide the bundle instead.
+      if (existing._count.orderItems > 0) return "has_orders"
 
-    if (!existing) {
-      return ApiErrors.NOT_FOUND("Product")
-    }
-
-    await db.$transaction(async (tx) => {
       await tx.$executeRaw`DELETE FROM "SubscriberStorefrontPrice" WHERE "productId" = ${existing.id} AND "organizationId" = ${organizationId}`
       await tx.$executeRaw`DELETE FROM "AgentStorefrontPrice" WHERE "productId" = ${existing.id} AND "organizationId" = ${organizationId}`
       await tx.$executeRaw`DELETE FROM "ResellerStorefrontPrice" WHERE "productId" = ${existing.id} AND "organizationId" = ${organizationId}`
       await tx.agentPrice.deleteMany({ where: { productId: existing.id, organizationId } })
       await tx.basePrice.deleteMany({ where: { productId: existing.id, organizationId } })
       await tx.customPrice.deleteMany({ where: { productId: existing.id, organizationId } })
-      await tx.orderItem.deleteMany({ where: { productId: existing.id } })
-      await tx.product.delete({ where: { id: existing.id } })
+      await tx.product.delete({ where: { id: existing.id, organizationId } })
+      return "deleted"
     })
 
+    if (outcome === "not_found") return ApiErrors.NOT_FOUND("Product")
+    if (outcome === "has_orders") return ApiErrors.CONFLICT("This product has order history. Hide it from sale instead of deleting it.")
     return new NextResponse(null, { status: 204 })
   } catch (error) {
-    console.error("[PRODUCT_DELETE]", error)
+    // A purchase created during deletion must also keep its product/history.
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "P2003") {
+      return ApiErrors.CONFLICT("This product is still in use. Hide it from sale instead of deleting it.")
+    }
+    logApiError("[PRODUCT_DELETE]", error)
     return ApiErrors.INTERNAL_ERROR()
   }
 }

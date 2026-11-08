@@ -1,4 +1,5 @@
 import crypto from "crypto"
+import type { Prisma } from "@prisma/client"
 import { db } from "@/lib/db"
 
 type StorefrontPriceRow = {
@@ -40,9 +41,9 @@ export async function upsertSubscriberStorefrontPrice(input: {
   productId: string
   organizationId: string
   price: number
-}) {
+}, tx: Pick<Prisma.TransactionClient, "$queryRaw">) {
   const id = crypto.randomUUID()
-  const rows = await db.$queryRaw<Array<{ id: string; price: number; productId: string; organizationId: string }>>`
+  const rows = await tx.$queryRaw<Array<{ id: string; price: number; productId: string; organizationId: string }>>`
     INSERT INTO "SubscriberStorefrontPrice" ("id", "price", "productId", "organizationId", "createdAt", "updatedAt")
     VALUES (${id}, ${input.price}, ${input.productId}, ${input.organizationId}, NOW(), NOW())
     ON CONFLICT ("productId", "organizationId")

@@ -3,6 +3,7 @@
 
 import { useEffect, useState, useMemo } from "react"
 import { AddEditProductDialog } from "@/components/products/add-edit-product-dialog"
+import { BundleCatalog } from "@/components/products/bundle-catalog"
 import Link from "next/link"
 import { BarChart3, FileText, Layers3, Pencil, Trash2, Plus, Loader2, Package, Percent, Tags } from "lucide-react"
 import { MtnLogo, AirtelTigoLogo, TelecelLogo } from "@/components/products/network-logos"
@@ -312,8 +313,17 @@ function BundlePricingContent() {
 
   const handleDelete = async (product: any) => {
     if (!confirm(`Delete "${product.name}"? This cannot be undone.`)) return
-    await fetch(`/api/products/${product.id}`, { method: "DELETE" })
-    await fetchProducts()
+    try {
+      const response = await fetch(`/api/products/${product.id}`, { method: "DELETE" })
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null)
+        alert(payload?.error?.message || payload?.message || "Could not delete this product. Try hiding it from sale instead.")
+        return
+      }
+      await fetchProducts()
+    } catch {
+      alert("Could not reach the service. Refresh the product list before trying again.")
+    }
   }
 
   async function saveProductInline(product: any, updates: Partial<{ name: string; basePrice: number; price: number; storefrontPrice: number; active: boolean }>) {
@@ -746,7 +756,7 @@ function BundlePricingContent() {
         </CardContent>
       </Card>
 
-      <Card className="premium-surface rounded-lg">
+      <Card id="service-forms" className="premium-surface scroll-mt-24 rounded-lg">
         <CardHeader className="border-b border-border/70 bg-muted/20">
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
@@ -1157,10 +1167,16 @@ function BundlePricingContent() {
   )
 }
 
+function ProductsWorkspace() {
+  const params = useSearchParams()
+  const tab = params.get("tab")
+  return tab === "advanced" || tab === "pricing_profiles" || tab === "network_pricing" ? <BundlePricingContent /> : <BundleCatalog />
+}
+
 export default function ProductsPage() {
   return (
     <Suspense fallback={<div className="p-8"><div className="w-12 h-12 rounded-lg bg-muted animate-pulse" /></div>}>
-      <BundlePricingContent />
+      <ProductsWorkspace />
     </Suspense>
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState, type FormEvent } from "react"
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
 import { AlertCircle, CheckCircle2, CreditCard, FileText, Layers3, Loader2, Smartphone, ShoppingBag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -225,6 +225,10 @@ function parseBulkLine(line: string, bundleBySize: Map<string, StoreBundle>, sel
 
 export function SimpleBuySections({ subscriberSlug, bundles, services = [], agentId, resellerId, returnPath, storeActive, storeInactiveReason }: SimpleBuySectionsProps) {
   const [submittingSingle, setSubmittingSingle] = useState(false)
+  const [reviewingSingle, setReviewingSingle] = useState(false)
+  const [singleError, setSingleError] = useState("")
+  const singleSubmitting = useRef(false)
+  const singleReviewHeading = useRef<HTMLHeadingElement>(null)
   const [submittingBulk, setSubmittingBulk] = useState(false)
   const [submittingService, setSubmittingService] = useState(false)
   const [singlePhone, setSinglePhone] = useState("")
@@ -257,6 +261,9 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
   )
 
   const totalSingleCost = selectedBundle ? selectedBundle.effectivePrice : 0
+  useEffect(() => {
+    if (reviewingSingle) singleReviewHeading.current?.focus()
+  }, [reviewingSingle])
   const selectedService = useMemo(
     () => services.find((service) => service.id === serviceProductId),
     [services, serviceProductId],
@@ -344,9 +351,12 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
 
   const handleSingleBuy = async (event: FormEvent) => {
     event.preventDefault()
+    if (singleSubmitting.current) return
+    setSingleError("")
 
     const normalizedPhone = normalizePhoneNumber(singlePhone)
     if (!selectedBundleId || !normalizedPhone) {
+      setSingleError("Choose a bundle and enter a valid Ghana phone number, such as 0241234567 or +233241234567.")
       toast({
         title: "Error",
         description: "Select a network, choose a bundle, and enter a valid phone number",
@@ -365,6 +375,7 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
     }
 
     if (!phoneMatchesProvider(normalizedPhone, selectedBundle.provider)) {
+      setSingleError("The recipient number does not match the selected network. Check the number or choose another network.")
       toast({
         title: "Error",
         description: "Phone prefix does not match the selected network",
@@ -373,14 +384,12 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
       return
     }
 
-    const shouldContinue = window.confirm(
-      `Confirm purchase for ${normalizedPhone}?\nBundle: ${selectedBundle.name}\nAmount: ${formatGhanaCedis(totalSingleCost)}`,
-    )
-
-    if (!shouldContinue) {
+    if (!reviewingSingle) {
+      setReviewingSingle(true)
       return
     }
 
+    singleSubmitting.current = true
     setSubmittingSingle(true)
     try {
       await startCheckout([
@@ -393,12 +402,14 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
 
       toast({ title: "Redirecting to payment", description: "Complete payment to submit the order." })
     } catch (error) {
+      setSingleError(error instanceof Error ? error.message : "Could not start checkout. Please try again.")
       toast({
         variant: "destructive",
         title: "Checkout failed",
         description: error instanceof Error ? error.message : "Could not start checkout",
       })
       setSubmittingSingle(false)
+      singleSubmitting.current = false
     }
   }
 
@@ -615,8 +626,8 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
             <CreditCard className="h-4 w-4" />
           </div>
           <div className="min-w-0">
-            <p className="font-semibold">Secure payment first</p>
-            <p className="break-words">After payment, the seller receives your order.</p>
+            <p className="font-semibold">Choose, review, then pay</p>
+            <p className="break-words">Check the recipient and total before paying securely with Paystack. Delivery starts after payment is confirmed.</p>
           </div>
         </div>
       )}
@@ -625,11 +636,11 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
         <TabsList className={`grid h-auto w-full max-w-2xl gap-1 rounded-lg border border-border/70 bg-muted/60 p-1 shadow-sm ${services.length > 0 ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-2"}`}>
           <TabsTrigger value="single" className="min-w-0 rounded-md px-2 py-2 text-xs font-semibold sm:text-sm">
             <ShoppingBag className="mr-1.5 h-4 w-4 shrink-0 sm:mr-2" />
-            <span className="truncate">Single Buy</span>
+            <span className="truncate">Buy data</span>
           </TabsTrigger>
           <TabsTrigger value="bulk" className="min-w-0 rounded-md px-2 py-2 text-xs font-semibold sm:text-sm">
             <Layers3 className="mr-1.5 h-4 w-4 shrink-0 sm:mr-2" />
-            <span className="truncate">Bulk Buy</span>
+            <span className="truncate">Buy for many</span>
           </TabsTrigger>
           {services.length > 0 ? (
             <TabsTrigger value="services" className="min-w-0 rounded-md px-2 py-2 text-xs font-semibold sm:text-sm">
@@ -654,10 +665,11 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
                 </CardHeader>
                 <CardContent className="space-y-5 p-4 sm:p-6">
                   <form className="space-y-5" onSubmit={handleSingleBuy}>
+                    <fieldset disabled={reviewingSingle || submittingSingle} className={reviewingSingle ? "hidden" : "space-y-5"}>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Network</label>
-                      <div className="table-scroll flex gap-2 pb-1">
-                        <Button type="button" size="sm" variant={selectedProvider === "ALL" ? "default" : "outline"} onClick={() => setSelectedProvider("ALL")} className="shrink-0" disabled={!storefrontCanSellBundles}>
+                      <p id="store-network-label" className="text-sm font-medium text-foreground">1. Choose a network</p>
+                      <div role="group" aria-labelledby="store-network-label" className="table-scroll flex gap-2 pb-1">
+                        <Button type="button" size="sm" aria-pressed={selectedProvider === "ALL"} variant={selectedProvider === "ALL" ? "default" : "outline"} onClick={() => setSelectedProvider("ALL")} className="min-h-11 shrink-0" disabled={!storefrontCanSellBundles}>
                           All
                         </Button>
                         {providers.map((provider) => (
@@ -666,8 +678,9 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
                             type="button"
                             size="sm"
                             variant={selectedProvider === provider ? "default" : "outline"}
+                            aria-pressed={selectedProvider === provider}
                             onClick={() => setSelectedProvider(provider)}
-                            className="max-w-36 shrink-0 truncate"
+                            className="min-h-11 max-w-36 shrink-0 truncate"
                             disabled={!storefrontCanSellBundles}
                           >
                             {provider}
@@ -677,8 +690,9 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Bundle</label>
+                      <label htmlFor="store-single-bundle" className="text-sm font-medium text-foreground">2. Choose a bundle</label>
                       <select
+                        id="store-single-bundle"
                         className="w-full rounded-lg border border-input bg-background/70 px-3 py-3 text-sm shadow-sm outline-none transition hover:border-ring focus:border-ring focus:ring-2 focus:ring-ring/20"
                         value={selectedBundleId}
                         onChange={(event) => setSelectedBundleId(event.target.value)}
@@ -695,11 +709,15 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Number</label>
+                      <label htmlFor="store-single-phone" className="text-sm font-medium text-foreground">3. Enter the recipient number</label>
                       <div className="relative">
                         <Smartphone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
+                          id="store-single-phone"
                           type="tel"
+                          inputMode="tel"
+                          autoComplete="tel"
+                          aria-describedby="store-single-phone-help"
                           value={singlePhone}
                           onChange={(event) => setSinglePhone(event.target.value)}
                           placeholder="0240000000"
@@ -708,7 +726,11 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
                           className="h-11 pl-9"
                         />
                       </div>
+                      <p id="store-single-phone-help" className="text-xs text-muted-foreground">Use 0241234567 or +233241234567. Check the recipient’s network before paying.</p>
                     </div>
+                    </fieldset>
+
+                    {reviewingSingle && <h2 ref={singleReviewHeading} tabIndex={-1} className="text-lg font-semibold outline-none">Review your order</h2>}
 
                     {selectedBundle && (
                       <div className="grid min-w-0 gap-3 rounded-lg border border-primary/20 bg-primary/10 p-4 shadow-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
@@ -717,6 +739,7 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
                           <p className="break-words text-muted-foreground">
                             {selectedBundle.name} - {selectedBundle.provider}
                           </p>
+                          {reviewingSingle && <p className="break-words font-semibold">Recipient: {normalizePhoneNumber(singlePhone)}</p>}
                         </div>
                         <div className="min-w-0 text-left sm:text-right">
                           <p className="text-xs uppercase tracking-wide text-muted-foreground">Total</p>
@@ -725,6 +748,9 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
                       </div>
                     )}
 
+                    {singleError && <p role="alert" className="text-sm text-destructive">{singleError}</p>}
+                    {reviewingSingle && <p className="text-sm leading-6 text-muted-foreground">Confirm the number and bundle above. You’ll complete payment on Paystack, then return to this shop for your order details.</p>}
+
                     <Button
                       type="submit"
                       size="lg"
@@ -732,8 +758,9 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
                       disabled={!storefrontCanSellBundles || submittingSingle || !selectedBundleId || !singlePhone.trim()}
                     >
                       {submittingSingle ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                      {submittingSingle ? "Redirecting..." : "Pay Now"}
+                      {submittingSingle ? "Opening payment..." : reviewingSingle ? "Continue to payment" : "Review order"}
                     </Button>
+                    {reviewingSingle && <Button type="button" variant="outline" disabled={submittingSingle} onClick={() => { setReviewingSingle(false); setSingleError("") }} className="ml-0 sm:ml-2">Edit details</Button>}
                   </form>
                 </CardContent>
               </Card>

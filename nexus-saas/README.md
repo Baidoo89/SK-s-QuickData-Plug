@@ -23,7 +23,21 @@ Nexus SaaS is built around a B2B2C sales flow:
 
 Core integrations include Paystack wallet funding, provider dispatch/callback handling, manual order queues, signup approvals, pricing profiles, and withdrawal workflows.
 
+## Usability improvements
+
+See [the usability review and competitor comparison](docs/ux-review.md) for the first improvements to owner setup, navigation, agent/reseller purchases, and customer checkout, plus the next priorities.
+
+Run `npm run preview:ux` and open [the owner setup preview](http://127.0.0.1:3016/?view=setup). Use the preview links to switch to agent buying, reseller buying, or the customer shop. This isolated app uses sample responses; it never charges a wallet, contacts a payment gateway, or delivers data. Full management screens require the configured app described below.
+
+The [products and prices preview](http://127.0.0.1:3016/?view=products) lets you add, edit, and hide sample bundles. Sample catalog edits reset when the preview server restarts. The normal product screen uses an explicit save form; existing price-group and service tools remain under its expandable advanced section.
+
+Run `npm run test:ux` for browser checks using an isolated fixture app and mocked API responses. After installing dependencies, install Chromium with `npx playwright install chromium` if it is not already available. These checks do not require a database or payment keys. They do not replace integration testing with a disposable PostgreSQL database and sandbox payment/provider accounts.
+
 ## Getting Started
+
+For an isolated Windows test environment with real PostgreSQL and local owner/agent/reseller/admin accounts, see [full local testing](docs/local-testing.md). Start with `npm.cmd run setup:local`, then `npm.cmd run dev:local`; the app runs at `http://127.0.0.1:3017/login`.
+
+Run `npm run test:api` for server-side permission, tenant-boundary, validation and product-save regression tests. They use real route/guard code with a simulated database transaction. See [product permissions and saving](docs/product-write-safety.md) for behavior and the remaining PostgreSQL integration checks.
 
 1.  **Install Dependencies:**
     ```bash
@@ -70,3 +84,7 @@ This assigns unlinked reseller accounts to the earliest agent in each organizati
 - **Authentication:** Secure login and registration.
 - **Dashboard:** Protected user area.
 - **Multi-tenancy:** Organization support (Schema ready).
+
+## Vercel release
+
+See [the Vercel release guide](docs/vercel-release.md) for the app root, production settings, deployment checks, and rollback instructions.

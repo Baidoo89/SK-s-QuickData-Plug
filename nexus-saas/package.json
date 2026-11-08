@@ -4,9 +4,19 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "setup:local": "node scripts/local-db.mjs setup",
+    "db:local:start": "node scripts/local-db.mjs start",
+    "db:local:stop": "node scripts/local-db.mjs stop",
+    "dev:local": "node scripts/dev-local.mjs",
+    "preview:ux": "next dev tests/fixtures/ux-app --hostname 127.0.0.1 --port 3016",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "test:ux": "playwright test",
+    "test:api": "vitest run",
+    "test:db": "node scripts/run-database-tests.mjs",
+    "test:local:browser": "node scripts/smoke-local.mjs",
+    "test:paystack": "node scripts/check-local-payments.mjs",
     "seed:superadmin": "node scripts/reset_users_seed_superadmin.js",
     "seed:qa": "node scripts/create_portal_users.js",
     "postinstall": "prisma generate"
@@ -41,6 +51,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@prisma/client": "5.22.0",
     "@types/node": "^20",
     "@types/react": "18.3.27",
@@ -51,6 +62,7 @@
     "postcss": "^8.5.6",
     "prisma": "5.22.0",
     "tailwindcss": "^3.4.18",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.12"
   }
 }

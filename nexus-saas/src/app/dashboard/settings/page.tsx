@@ -137,28 +137,28 @@ export default async function SettingsPage() {
           productCount={productCount}
           basePriceCount={basePriceCount}
         />
-        <section className="grid gap-3">
+        <section id="business" className="grid scroll-mt-24 gap-3">
           <div>
             <h2 className="break-words text-base font-semibold">Business Name</h2>
             <p className="break-words text-sm text-muted-foreground">This name appears across the dashboard and shop pages.</p>
           </div>
           <SettingsForm initialName={user.organization.name} />
         </section>
-        <section className="grid gap-3">
+        <section id="verification" className="grid scroll-mt-24 gap-3">
           <div>
             <h2 className="break-words text-base font-semibold">Account Verification</h2>
             <p className="break-words text-sm text-muted-foreground">Confirm contact details used for security and account notifications.</p>
           </div>
           <PhoneVerificationCard initialPhoneNumber={user.phoneNumber} verified={Boolean(user.phoneVerified)} />
         </section>
-        <section className="grid gap-3">
+        <section id="payments" className="grid scroll-mt-24 gap-3">
           <div>
             <h2 className="break-words text-base font-semibold">Customer Payments</h2>
             <p className="break-words text-sm text-muted-foreground">Connect your own Paystack account so customer money goes directly to your business.</p>
           </div>
           <PaymentSettingsCard />
         </section>
-        <section className="grid gap-3">
+        <section id="delivery" className="grid scroll-mt-24 gap-3">
           <div>
             <h2 className="flex min-w-0 items-center gap-2 text-base font-semibold">
               <RadioTower className="h-4 w-4 shrink-0 text-primary" />
@@ -179,7 +179,7 @@ export default async function SettingsPage() {
             </div>
           </div>
         </section>
-        <section className="grid gap-3">
+        <section id="website-api" className="grid scroll-mt-24 gap-3">
           <div>
             <h2 className="flex min-w-0 items-center gap-2 text-base font-semibold">
               <Activity className="h-4 w-4 shrink-0 text-primary" />
