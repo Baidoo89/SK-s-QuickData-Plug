@@ -8,7 +8,10 @@ import ProductsPage from "@/app/dashboard/products/page"
 
 // A separate test app imports production UI with fixture data. It has no database,
 // auth, payment or provider credentials and adds no routes to the real application.
-export default function FixturePage({ searchParams }: { searchParams: { view?: string; role?: string; done?: string } }) {
+export default async function FixturePage(
+  props: { searchParams: Promise<{ view?: string; role?: string; done?: string }> }
+) {
+  const searchParams = await props.searchParams;
   if (searchParams.view === "products") return <PortalShell role="owner"><PreviewNotice /><ProductsPage /></PortalShell>
   if (searchParams.view === "store") return <div className="mx-auto max-w-5xl p-4"><PreviewNotice /><SimpleBuySections subscriberSlug="test-shop" storeActive bundles={[
     { id: "mtn-1", name: "1 GB", provider: "MTN", effectivePrice: 5 },

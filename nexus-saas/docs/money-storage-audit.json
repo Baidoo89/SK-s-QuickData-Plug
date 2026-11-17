@@ -1,0 +1,246 @@
+﻿{
+  "checkedUtc": "2026-11-17T10:17:51.257Z",
+  "scope": "isolated local databases only",
+  "results": [
+    {
+      "database": "quickdata_dev",
+      "fields": [
+        {
+          "table": "Product",
+          "column": "price",
+          "rows": 4,
+          "flaggedRows": 0
+        },
+        {
+          "table": "Order",
+          "column": "total",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "ServiceRequest",
+          "column": "total",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "ServiceRequest",
+          "column": "profit",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "StorefrontPayment",
+          "column": "amount",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "CustomPrice",
+          "column": "price",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "BasePrice",
+          "column": "price",
+          "rows": 4,
+          "flaggedRows": 0
+        },
+        {
+          "table": "AgentPrice",
+          "column": "price",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "OrderItem",
+          "column": "price",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "OrderItem",
+          "column": "profit",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "Plan",
+          "column": "priceGHS",
+          "rows": 1,
+          "flaggedRows": 0
+        },
+        {
+          "table": "Payment",
+          "column": "amount",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "WalletTransaction",
+          "column": "amount",
+          "rows": 4,
+          "flaggedRows": 0
+        },
+        {
+          "table": "WithdrawalRequest",
+          "column": "amount",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "ResellerPrice",
+          "column": "price",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "AgentStorefrontPrice",
+          "column": "price",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "ResellerStorefrontPrice",
+          "column": "price",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "SubscriberStorefrontPrice",
+          "column": "price",
+          "rows": 4,
+          "flaggedRows": 0
+        },
+        {
+          "table": "PricingProfileItem",
+          "column": "price",
+          "rows": 0,
+          "flaggedRows": 0
+        }
+      ],
+      "requiresReview": false
+    },
+    {
+      "database": "quickdata_integration",
+      "fields": [
+        {
+          "table": "Product",
+          "column": "price",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "Order",
+          "column": "total",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "ServiceRequest",
+          "column": "total",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "ServiceRequest",
+          "column": "profit",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "StorefrontPayment",
+          "column": "amount",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "CustomPrice",
+          "column": "price",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "BasePrice",
+          "column": "price",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "AgentPrice",
+          "column": "price",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "OrderItem",
+          "column": "price",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "OrderItem",
+          "column": "profit",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "Plan",
+          "column": "priceGHS",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "Payment",
+          "column": "amount",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "WalletTransaction",
+          "column": "amount",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "WithdrawalRequest",
+          "column": "amount",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "ResellerPrice",
+          "column": "price",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "AgentStorefrontPrice",
+          "column": "price",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "ResellerStorefrontPrice",
+          "column": "price",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "SubscriberStorefrontPrice",
+          "column": "price",
+          "rows": 0,
+          "flaggedRows": 0
+        },
+        {
+          "table": "PricingProfileItem",
+          "column": "price",
+          "rows": 0,
+          "flaggedRows": 0
+        }
+      ],
+      "requiresReview": false
+    }
+  ]
+}

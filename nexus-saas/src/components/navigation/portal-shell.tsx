@@ -22,7 +22,7 @@ function navigation(role: Role): { home: string; title: string; primary: NavLink
     primary: [link("Overview", "/dashboard", Home), link("Set up my shop", "/dashboard/setup", Rocket), link("Orders", "/dashboard/orders", ShoppingBag), link("Products & prices", "/dashboard/products", Package), link("My shop link", "/dashboard#shop-link", Store), link("Wallet", "/dashboard/wallet", Wallet)],
     groups: [
       { label: "Team & customers", links: [link("Agents", "/dashboard/agents", Users), link("Resellers", "/dashboard/users/resellers", Users), link("Signup approvals", "/dashboard/approvals"), link("All users", "/dashboard/users"), link("Customers", "/dashboard/customers")] },
-      { label: "More sales tools", links: [link("Reports", "/dashboard/analytics"), link("Service forms", "/dashboard/service-requests"), link("Payments", "/dashboard/payments"), link("Price groups", "/dashboard/products?tab=pricing_profiles"), link("Withdrawals", "/dashboard/withdrawals"), link("Add funds", "/dashboard/wallet?tab=manual_credit"), link("Subscription", "/dashboard/subscription")] },
+      { label: "More sales tools", links: [link("Reports", "/dashboard/analytics"), link("Service forms", "/dashboard/service-requests"), link("Payments", "/dashboard/payments"), link("Price groups", "/dashboard/products?tab=pricing_profiles"), link("Withdrawals", "/dashboard/withdrawals"), link("Credit & debt", "/dashboard/credit", Wallet), link("Financial review", "/dashboard/reconciliation", FileText), link("Add funds", "/dashboard/wallet?tab=manual_credit"), link("Subscription", "/dashboard/subscription")] },
       { label: "Settings & integrations", links: [link("Business settings", "/dashboard/settings#business", Settings), link("Payment settings", "/dashboard/settings#payments"), link("Automatic delivery", "/dashboard/settings#delivery"), link("Website API keys", "/dashboard/settings#website-api"), link("Activity log", "/dashboard/system/logs"), link("Support", "/dashboard/support")] },
     ],
   }
@@ -32,7 +32,7 @@ function navigation(role: Role): { home: string; title: string; primary: NavLink
     primary: [link("Overview", base, Home), link("Buy data", `${base}/buy/single`, ShoppingBag), link("Orders", `${base}/orders`, FileText), link("Wallet", `${base}/wallet`, Wallet), link("My shop link", `${base}/storefronts`, Store)],
     groups: [
       ...(role === "agent" ? [{ label: "My team", links: [link("Resellers", "/agent/resellers", Users), link("Signup approvals", "/agent/approvals"), link("Customers", "/agent/customers")] }] : []),
-      { label: "More sales tools", links: [...(role === "agent" ? [link("Buy for many numbers", "/agent/buy/bulk")] : []), link("Shop prices", `${base}/storefront-pricing`), link("Service forms", `${base}/service-requests`), link("Withdrawals", `${base}/withdrawals`), link("Website API", `${base}/api-docs`)] },
+      { label: "More sales tools", links: [...(role === "agent" ? [link("Buy for many numbers", "/agent/buy/bulk")] : []), link("Shop prices", `${base}/storefront-pricing`), link("Service forms", `${base}/service-requests`), link("Withdrawals", `${base}/withdrawals`), link("Credit & debt", `${base}/credit`, Wallet), link("Website API", `${base}/api-docs`)] },
       { label: "Account", links: [link("My profile", `${base}/account`, CircleUser)] },
     ],
   }

@@ -1,8 +1,8 @@
 import { requireAuth, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
-import { getUserWithdrawableSummary } from "@/lib/withdrawal-balance"
-import { canTransitionWithdrawalStatus, isWithdrawalStatus, normalizeWithdrawalStatus } from "@/lib/withdrawal-status"
+import { updateWithdrawalRequest } from "@/lib/withdrawal-review"
+import { isWithdrawalStatus, normalizeWithdrawalStatus } from "@/lib/withdrawal-status"
 
 async function resolveActorAgentId(userId: string, organizationId: string | null) {
   const user = await db.user.findUnique({
@@ -24,7 +24,8 @@ async function resolveActorAgentId(userId: string, organizationId: string | null
   return fallback?.id ?? null
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authResult = await requireAuth()
     if (isAuthError(authResult)) {
@@ -54,158 +55,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     const status = normalizeWithdrawalStatus(rawStatus)
     const note = typeof (body as { note?: string }).note === "string" ? (body as { note?: string }).note?.trim() : ""
 
-    const requestRow = await db.withdrawalRequest.findUnique({
-      where: { id: params.id },
-      select: {
-        id: true,
-        userId: true,
-        status: true,
-        organizationId: true,
-        user: {
-          select: {
-            role: true,
-            parentAgentId: true,
-          },
-        },
-      },
-    })
-
-    if (!requestRow) {
-      return ApiErrors.NOT_FOUND("Withdrawal request")
+    const result = await updateWithdrawalRequest({ requestId: params.id, actor, organizationId: actor.organizationId ?? undefined, status, note, requesterRole: "RESELLER", parentAgentId: actorAgentId })
+    if (!result.ok) {
+      if (result.code === "NOT_FOUND") return ApiErrors.NOT_FOUND("Withdrawal request")
+      if (result.code === "FORBIDDEN") return ApiErrors.FORBIDDEN()
+      if (result.code === "INSUFFICIENT_EARNINGS") return ApiErrors.BAD_REQUEST("This request exceeds currently available completed-order profit.")
+      return ApiErrors.BAD_REQUEST("Withdrawal status changed or the transition is invalid. Refresh and retry.")
     }
-
-    if (
-      requestRow.organizationId !== actor.organizationId ||
-      requestRow.user?.role !== "RESELLER" ||
-      requestRow.user?.parentAgentId !== actorAgentId
-    ) {
-      return ApiErrors.FORBIDDEN()
-    }
-
-    // Idempotent replay: if state already matches requested status, return success.
-    if (requestRow.status === status) {
-      const existing = await db.withdrawalRequest.findUnique({ where: { id: requestRow.id } })
-      if (!existing) {
-        return ApiErrors.NOT_FOUND("Withdrawal request")
-      }
-
-      return apiSuccess({
-        withdrawal: {
-          id: existing.id,
-          amount: existing.amount,
-          status: existing.status,
-          note: existing.note,
-          requestedByEmail: existing.requestedByEmail,
-          requestedByRole: existing.requestedByRole,
-          reviewedByEmail: existing.reviewedByEmail,
-          reviewedAt: existing.reviewedAt ? existing.reviewedAt.toISOString() : null,
-          createdAt: existing.createdAt.toISOString(),
-          updatedAt: existing.updatedAt.toISOString(),
-        },
-        idempotent: true,
-      })
-    }
-
-    if (!canTransitionWithdrawalStatus(requestRow.status, status)) {
-      return ApiErrors.BAD_REQUEST(`Invalid transition: ${requestRow.status} -> ${status}`)
-    }
-
-    if (status === "APPROVED" || status === "PAID") {
-      const requestBalance = await getUserWithdrawableSummary(requestRow.userId, {
-        excludeWithdrawalRequestId: requestRow.id,
-      })
-      const requestAmount = await db.withdrawalRequest.findUnique({
-        where: { id: requestRow.id },
-        select: { amount: true },
-      })
-
-      if (!requestAmount) {
-        return ApiErrors.NOT_FOUND("Withdrawal request")
-      }
-
-      if (requestAmount.amount > requestBalance.availableBalance) {
-        return ApiErrors.BAD_REQUEST("This request exceeds the reseller's currently available completed-order profit.")
-      }
-    }
-
-    const now = new Date()
-
-    const updateResult = await db.withdrawalRequest.updateMany({
-      where: {
-        id: requestRow.id,
-        status: requestRow.status,
-      },
-      data: {
-        status,
-        note: note || undefined,
-        reviewedByEmail: actor.email,
-        reviewedAt: now,
-      },
-    })
-
-    if (updateResult.count === 0) {
-      const latest = await db.withdrawalRequest.findUnique({ where: { id: requestRow.id } })
-      if (!latest) {
-        return ApiErrors.NOT_FOUND("Withdrawal request")
-      }
-
-      if (latest.status === status) {
-        return apiSuccess({
-          withdrawal: {
-            id: latest.id,
-            amount: latest.amount,
-            status: latest.status,
-            note: latest.note,
-            requestedByEmail: latest.requestedByEmail,
-            requestedByRole: latest.requestedByRole,
-            reviewedByEmail: latest.reviewedByEmail,
-            reviewedAt: latest.reviewedAt ? latest.reviewedAt.toISOString() : null,
-            createdAt: latest.createdAt.toISOString(),
-            updatedAt: latest.updatedAt.toISOString(),
-          },
-          idempotent: true,
-        })
-      }
-
-      return ApiErrors.BAD_REQUEST("Withdrawal request status changed by another reviewer. Refresh and retry.")
-    }
-
-    const updated = await db.withdrawalRequest.findUnique({ where: { id: requestRow.id } })
-    if (!updated) {
-      return ApiErrors.NOT_FOUND("Withdrawal request")
-    }
-
-    await db.auditLog.create({
-      data: {
-        action: "WITHDRAWAL_STATUS_CHANGED",
-        targetType: "WITHDRAWAL_REQUEST",
-        targetId: updated.id,
-        organizationId: requestRow.organizationId,
-        actorId: actor.id,
-        actorName: actor.email,
-        meta: JSON.stringify({
-          from: requestRow.status,
-          to: status,
-          reviewedByEmail: actor.email,
-          scope: "AGENT_REVIEW",
-        }),
-      },
-    })
-
-    return apiSuccess({
-      withdrawal: {
-        id: updated.id,
-        amount: updated.amount,
-        status: updated.status,
-        note: updated.note,
-        requestedByEmail: updated.requestedByEmail,
-        requestedByRole: updated.requestedByRole,
-        reviewedByEmail: updated.reviewedByEmail,
-        reviewedAt: updated.reviewedAt ? updated.reviewedAt.toISOString() : null,
-        createdAt: updated.createdAt.toISOString(),
-        updatedAt: updated.updatedAt.toISOString(),
-      },
-    })
+    return apiSuccess({ withdrawal: result.withdrawal, idempotent: result.idempotent })
   } catch (error) {
     logApiError("[AGENT_WITHDRAWALS_PATCH]", error)
     return ApiErrors.INTERNAL_ERROR()

@@ -3,7 +3,8 @@ import { db } from "@/lib/db"
 import { requireAdmin, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess } from "@/lib/api-response"
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authResult = await requireAdmin()
     if (isAuthError(authResult)) return authResult

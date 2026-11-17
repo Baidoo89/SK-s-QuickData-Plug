@@ -1,3 +1,4 @@
+import { ApiPaymentRules } from "@/components/api-access/api-payment-rules"
 import { BadgeCheck, Code2, KeyRound, ShoppingCart, Wallet } from "lucide-react"
 
 import { auth } from "@/auth"
@@ -61,6 +62,8 @@ export default async function AgentApiDocsPage() {
         </p>
       </div>
 
+      <ApiPaymentRules creditPath="/agent/credit" />
+
       <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="Access" value={active ? "Active" : "Restricted"} description={`Signup status: ${user.signupStatus}`} icon={BadgeCheck} tone={active ? "success" : "warning"} />
         <MetricCard label="Agent Orders" value={orderCount} description="Orders attributed to your agent profile" icon={ShoppingCart} tone="info" />
@@ -105,7 +108,7 @@ export default async function AgentApiDocsPage() {
             <li><span className="font-medium text-foreground">GET /api/resellers</span> - List resellers owned by the current agent.</li>
             <li><span className="font-medium text-foreground">POST /api/resellers</span> - Create reseller account and invite link.</li>
             <li><span className="font-medium text-foreground">GET /api/shop/{user.organization?.slug ?? "tenant"}/agent/{user.agentId ?? "agentId"}/products</span> - Fetch public products in agent context.</li>
-            <li><span className="font-medium text-foreground">POST /api/v1/orders</span> - Create an external paid order with your approved API key.</li>
+            <li><span className="font-medium text-foreground">POST /api/v1/orders</span> - Create an order funded by your wallet or approved credit.</li>
             <li><span className="font-medium text-foreground">GET /api/v1/orders?externalReference=...</span> - Check an order created by the same API key.</li>
           </ul>
         </CardContent>

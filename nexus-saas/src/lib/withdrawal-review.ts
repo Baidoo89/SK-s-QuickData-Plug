@@ -1,4 +1,6 @@
 import { db } from "@/lib/db"
+import { lockWallet } from "@/lib/wallet-lock"
+import { moneyToMinor } from "@/lib/money"
 import { getUserWithdrawableSummary } from "@/lib/withdrawal-balance"
 import {
   canTransitionWithdrawalStatus,
@@ -26,6 +28,8 @@ type ListAgentWithdrawalOptions = {
 
 type UpdateAgentWithdrawalOptions = {
   requestId: string
+  requesterRole?: "AGENT" | "RESELLER"
+  parentAgentId?: string
   actor: WithdrawalReviewActor
   status: string
   note?: string
@@ -72,6 +76,7 @@ export async function listAgentWithdrawalRequests(options: ListAgentWithdrawalOp
   const completedAgentOrderWhere = {
     ...orgWhere,
     status: "COMPLETED",
+    source: { not: "API" },
     agentId: { not: null },
     OR: [
       { userId: null },
@@ -145,13 +150,17 @@ export async function listAgentWithdrawalRequests(options: ListAgentWithdrawalOp
   }
 }
 
-export async function updateAgentWithdrawalRequest(options: UpdateAgentWithdrawalOptions) {
+export async function updateWithdrawalRequest(options: UpdateAgentWithdrawalOptions) {
   if (!isWithdrawalStatus(options.status)) {
-    return { ok: false as const, code: "BAD_STATUS" }
+    return { ok: false as const, code: "BAD_STATUS" as const }
   }
 
+  const preliminary = await db.withdrawalRequest.findUnique({ where: { id: options.requestId }, select: { userId: true } })
+  if (!preliminary) return { ok: false as const, code: "NOT_FOUND" as const }
+  return db.$transaction(async tx => {
+  await lockWallet(tx, preliminary.userId)
   const status = normalizeWithdrawalStatus(options.status)
-  const requestRow = await db.withdrawalRequest.findUnique({
+  const requestRow = await tx.withdrawalRequest.findUnique({
     where: { id: options.requestId },
     select: {
       id: true,
@@ -161,30 +170,33 @@ export async function updateAgentWithdrawalRequest(options: UpdateAgentWithdrawa
       user: {
         select: {
           role: true,
+          parentAgentId: true,
         },
       },
     },
   })
 
   if (!requestRow) {
-    return { ok: false as const, code: "NOT_FOUND" }
+    return { ok: false as const, code: "NOT_FOUND" as const }
   }
 
-  if (requestRow.user?.role !== "AGENT") {
-    return { ok: false as const, code: "FORBIDDEN" }
+  const expectedRole = options.requesterRole ?? "AGENT"
+  const scopedActor = options.actor.role === "SUPERADMIN" || (options.actor.organizationId === requestRow.organizationId && (expectedRole === "AGENT" ? options.actor.role === "SUBSCRIBER" : options.actor.role === "AGENT"))
+  if (!scopedActor || requestRow.user?.role !== expectedRole || (expectedRole === "RESELLER" && (!options.parentAgentId || requestRow.user.parentAgentId !== options.parentAgentId))) {
+    return { ok: false as const, code: "FORBIDDEN" as const }
   }
 
   if (options.organizationId && requestRow.organizationId !== options.organizationId) {
-    return { ok: false as const, code: "FORBIDDEN" }
+    return { ok: false as const, code: "FORBIDDEN" as const }
   }
 
   if (requestRow.status === status) {
-    const existing = await db.withdrawalRequest.findUnique({
+    const existing = await tx.withdrawalRequest.findUnique({
       where: { id: requestRow.id },
     })
 
     if (!existing) {
-      return { ok: false as const, code: "NOT_FOUND" }
+      return { ok: false as const, code: "NOT_FOUND" as const }
     }
 
     return {
@@ -197,7 +209,7 @@ export async function updateAgentWithdrawalRequest(options: UpdateAgentWithdrawa
   if (!canTransitionWithdrawalStatus(requestRow.status, status)) {
     return {
       ok: false as const,
-      code: "INVALID_TRANSITION",
+      code: "INVALID_TRANSITION" as const,
       from: requestRow.status,
       to: status,
     }
@@ -206,21 +218,21 @@ export async function updateAgentWithdrawalRequest(options: UpdateAgentWithdrawa
   if (status === WITHDRAWAL_STATUS.APPROVED || status === WITHDRAWAL_STATUS.PAID) {
     const balance = await getUserWithdrawableSummary(requestRow.userId, {
       excludeWithdrawalRequestId: requestRow.id,
-    })
+    }, tx)
 
-    const request = await db.withdrawalRequest.findUnique({
+    const request = await tx.withdrawalRequest.findUnique({
       where: { id: requestRow.id },
       select: { amount: true },
     })
 
     if (!request) {
-      return { ok: false as const, code: "NOT_FOUND" }
+      return { ok: false as const, code: "NOT_FOUND" as const }
     }
 
-    if (request.amount > balance.availableBalance) {
+    if (moneyToMinor(request.amount) > moneyToMinor(balance.availableBalance)) {
       return {
         ok: false as const,
-        code: "INSUFFICIENT_EARNINGS",
+        code: "INSUFFICIENT_EARNINGS" as const,
         availableBalance: balance.availableBalance,
         amount: request.amount,
       }
@@ -229,7 +241,7 @@ export async function updateAgentWithdrawalRequest(options: UpdateAgentWithdrawa
 
   const now = new Date()
 
-  const updateResult = await db.withdrawalRequest.updateMany({
+  const updateResult = await tx.withdrawalRequest.updateMany({
     where: {
       id: requestRow.id,
       status: requestRow.status,
@@ -243,9 +255,9 @@ export async function updateAgentWithdrawalRequest(options: UpdateAgentWithdrawa
   })
 
   if (updateResult.count === 0) {
-    const latest = await db.withdrawalRequest.findUnique({ where: { id: requestRow.id } })
+    const latest = await tx.withdrawalRequest.findUnique({ where: { id: requestRow.id } })
     if (!latest) {
-      return { ok: false as const, code: "NOT_FOUND" }
+      return { ok: false as const, code: "NOT_FOUND" as const }
     }
 
     if (latest.status === status) {
@@ -256,15 +268,15 @@ export async function updateAgentWithdrawalRequest(options: UpdateAgentWithdrawa
       }
     }
 
-    return { ok: false as const, code: "CONFLICT" }
+    return { ok: false as const, code: "CONFLICT" as const }
   }
 
-  const updated = await db.withdrawalRequest.findUnique({ where: { id: requestRow.id } })
+  const updated = await tx.withdrawalRequest.findUnique({ where: { id: requestRow.id } })
   if (!updated) {
-    return { ok: false as const, code: "NOT_FOUND" }
+    return { ok: false as const, code: "NOT_FOUND" as const }
   }
 
-  await db.auditLog.create({
+  await tx.auditLog.create({
     data: {
       action: "WITHDRAWAL_STATUS_CHANGED",
       targetType: "WITHDRAWAL_REQUEST",
@@ -284,6 +296,11 @@ export async function updateAgentWithdrawalRequest(options: UpdateAgentWithdrawa
     ok: true as const,
     withdrawal: serializeWithdrawal(updated),
   }
+  }, { maxWait: 10000, timeout: 20000 })
+}
+
+export async function updateAgentWithdrawalRequest(options: UpdateAgentWithdrawalOptions) {
+  return updateWithdrawalRequest({ ...options, requesterRole: "AGENT" })
 }
 
 function serializeWithdrawal(withdrawal: {

@@ -144,7 +144,13 @@ export function getNextBillingDate(currentNextBillingAt?: Date | null, months = 
   const now = new Date()
   const base = currentNextBillingAt && currentNextBillingAt > now ? currentNextBillingAt : now
   const next = new Date(base)
-  next.setMonth(next.getMonth() + months)
+  if (!Number.isSafeInteger(months) || months <= 0) throw new Error("INVALID_BILLING_PERIOD")
+  const day = next.getUTCDate()
+  next.setUTCDate(1)
+  next.setUTCMonth(next.getUTCMonth() + months)
+  if (!Number.isFinite(next.getTime())) throw new Error("INVALID_BILLING_PERIOD")
+  const lastDay = new Date(Date.UTC(next.getUTCFullYear(), next.getUTCMonth() + 1, 0)).getUTCDate()
+  next.setUTCDate(Math.min(day, lastDay))
   return next
 }
 
@@ -158,10 +164,11 @@ export async function refreshOrganizationSubscriptionStatus(organizationId: stri
     subscription.nextBillingAt &&
     subscription.nextBillingAt <= new Date()
   ) {
-    return db.subscription.update({
-      where: { id: subscription.id },
+    await db.subscription.updateMany({
+      where: { id: subscription.id, status: "ACTIVE", nextBillingAt: { lte: new Date() } },
       data: { status: "EXPIRED" },
     })
+    return db.subscription.findUnique({ where: { id: subscription.id } })
   }
 
   return subscription

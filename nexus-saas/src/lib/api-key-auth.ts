@@ -33,10 +33,24 @@ export async function authenticateApiKey(req: Request): Promise<ApiKeyAuthResult
 
   if (!apiKey) return null
 
-  await db.apiKey.update({
-    where: { id: apiKey.id },
-    data: { lastUsed: new Date() },
-  })
+  if (!["SUBSCRIBER", "AGENT", "RESELLER"].includes(apiKey.ownerType)) return null
+  const organization = await db.organization.findUnique({ where: { id: apiKey.organizationId }, select: { active: true } })
+  if (!organization?.active) return null
+  if (apiKey.ownerType !== "SUBSCRIBER" || apiKey.ownerUserId) {
+    if (!apiKey.ownerUserId) return null
+    const user = await db.user.findUnique({ where: { id: apiKey.ownerUserId } })
+    if (!user || !user.active || user.signupStatus !== "APPROVED" || user.organizationId !== apiKey.organizationId) return null
+    if (apiKey.ownerType === "SUBSCRIBER" && !["SUBSCRIBER", "SUPERADMIN"].includes(user.role)) return null
+    if (apiKey.ownerType === "AGENT" && (user.role !== "AGENT" || user.agentId !== apiKey.ownerAgentId)) return null
+    if (apiKey.ownerType === "RESELLER" && (user.role !== "RESELLER" || user.parentAgentId !== apiKey.ownerAgentId)) return null
+    if (apiKey.ownerType !== "SUBSCRIBER") {
+      if (!apiKey.ownerAgentId) return null
+      const agent = await db.agent.findFirst({ where: { id: apiKey.ownerAgentId, organizationId: apiKey.organizationId, active: true }, select: { id: true } })
+      if (!agent) return null
+    }
+  }
+  const updated = await db.apiKey.updateMany({ where: { id: apiKey.id }, data: { lastUsed: new Date() } })
+  if (!updated.count) return null
 
   return {
     apiKeyId: apiKey.id,

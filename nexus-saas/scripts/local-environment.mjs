@@ -45,6 +45,7 @@ export function localEnvironment(config, database = "quickdata_dev") {
     NEXT_PUBLIC_APP_URL: `http://127.0.0.1:${appPort}`,
     NEXTAUTH_SECRET: config.authSecret,
     AUTH_SECRET: config.authSecret,
+    AUTH_TRUST_HOST: "true",
     PAYMENT_SETTINGS_ENCRYPTION_KEY: config.encryptionKey,
     DISPATCH_MODE: "manual",
     NEXT_TELEMETRY_DISABLED: "1",

@@ -2,7 +2,8 @@ import { requireAdmin, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { getOrderTimeline } from "@/lib/order-timeline"
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(_req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authResult = await requireAdmin()
     if (isAuthError(authResult)) return authResult

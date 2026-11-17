@@ -28,11 +28,12 @@ function orderStatusBadgeClass(status: string) {
   return "status-info border";
 }
 
-export default async function ResellerOrdersPage({
-  searchParams,
-}: {
-  searchParams?: { [key: string]: string | string[] | undefined };
-}) {
+export default async function ResellerOrdersPage(
+  props: {
+    searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const status = typeof searchParams?.status === "string" ? searchParams.status : undefined;
   const from = typeof searchParams?.from === "string" ? searchParams.from : undefined;
   const to = typeof searchParams?.to === "string" ? searchParams.to : undefined;
@@ -65,7 +66,7 @@ export default async function ResellerOrdersPage({
 
   function formatBundleSize(name: string) {
     const match = name.match(/\b\d+(?:\.\d+)?\s?(?:GB|MB|KB|TB)\b/i)
-    return match ? match[0].replace(/\s+/g, "").toUpperCase() : name
+    return match ? match[0].replace(/\s+/g, "").toUpperCase() : name;
   }
 
   const where: any = {

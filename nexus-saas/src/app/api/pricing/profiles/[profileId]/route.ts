@@ -11,7 +11,8 @@ const updateProfileSchema = z.object({
   price: z.number().min(0).optional(),
 })
 
-export async function GET(_: Request, { params }: { params: { profileId: string } }) {
+export async function GET(_: Request, props: { params: Promise<{ profileId: string }> }) {
+  const params = await props.params;
   try {
     const auth = await requireOrgManager()
     if (isAuthError(auth)) return auth
@@ -72,7 +73,8 @@ export async function GET(_: Request, { params }: { params: { profileId: string 
   }
 }
 
-export async function PATCH(req: Request, { params }: { params: { profileId: string } }) {
+export async function PATCH(req: Request, props: { params: Promise<{ profileId: string }> }) {
+  const params = await props.params;
   try {
     const auth = await requireOrgManager()
     if (isAuthError(auth)) return auth
@@ -138,7 +140,8 @@ export async function PATCH(req: Request, { params }: { params: { profileId: str
   }
 }
 
-export async function DELETE(_: Request, { params }: { params: { profileId: string } }) {
+export async function DELETE(_: Request, props: { params: Promise<{ profileId: string }> }) {
+  const params = await props.params;
   try {
     const auth = await requireOrgManager()
     if (isAuthError(auth)) return auth

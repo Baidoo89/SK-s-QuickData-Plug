@@ -66,3 +66,22 @@ npm.cmd run db:local:stop
 ```
 
 `npm.cmd run dev:local` starts the local database again before launching the app. Keep `.local` if you want to preserve test data and keys.
+
+## Financial and credit verification — 17 November 2026
+
+Both local databases now have 33 migrations. The current checks pass: 119 real PostgreSQL integration tests, 80 API/environment tests, 15 fixture browser tests, TypeScript and the production build. The earlier seven-test counts above describe the initial product-only baseline.
+
+With the full app running, also run:
+
+```powershell
+node.exe scripts/smoke-credit.mjs
+node.exe scripts/smoke-reconciliation.mjs
+node.exe scripts/smoke-financial-report.mjs
+npm.cmd run test:local:browser
+```
+
+These passed against the built local app, including actual four-role login, credit approval/self-approval rejection, borrower dashboard debt visibility, review/reopen persistence, unchanged order/wallet, overdue debt navigation, financial report reconciliation labels and mobile overflow checks. The database suite also covers expired subscription quotes and late-payment review routing. Synthetic browser fixtures are removed afterward. They do not perform real gateway/provider requests. See [financial review](financial-review.md) and [credit policy](credit-policy.md).
+
+## Framework and dependency hardening — 17 November 2026
+
+The local app now runs on Next.js 15.5.28 and Auth.js 5.0.0-beta.32. Route and fixture request props are Promise-based, and the local launcher sets `AUTH_TRUST_HOST=true` for the generated loopback origin. The production build, TypeScript, API, database, UI, four-role browser smoke, credit, reconciliation and financial-report checks all pass. `npm audit --omit=dev` reports 0 critical advisories; the remaining 14 advisories are moderate/high build-chain findings requiring future major upgrades.

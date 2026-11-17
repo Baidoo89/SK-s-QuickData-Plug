@@ -26,11 +26,12 @@ const ROLE_LABELS: Record<string, string> = {
 type RoleFilter = "all" | "SUBSCRIBER" | "AGENT" | "RESELLER";
 type SortOption = "joined_desc" | "wallet_desc" | "orders_desc";
 
-export default async function DashboardUsersPage({
-  searchParams,
-}: {
-  searchParams?: { [key: string]: string | string[] | undefined };
-}) {
+export default async function DashboardUsersPage(
+  props: {
+    searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const session = await auth();
   if (!session?.user?.email) {
     redirect("/login");

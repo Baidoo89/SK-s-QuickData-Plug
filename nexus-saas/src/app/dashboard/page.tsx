@@ -18,6 +18,8 @@ import { getOrganizationSellingAccess, type SellingAccessStatus } from "@/lib/se
 import { getDispatchMetaByOrderIds } from "@/lib/admin-order-dispatch";
 import { getEffectiveProviderConnection } from "@/lib/provider-connection";
 import { getOrCreateSubscriberStorefrontLink } from "@/lib/storefront-links";
+import { minorToMoney } from "@/lib/money";
+import { CreditStatusCard } from "@/components/wallet/credit-status-card";
 
 type OnboardingItem = {
   label: string;
@@ -84,6 +86,11 @@ export default async function DashboardPage() {
   let activeServiceProducts = 0;
   let providerConnected = false;
   let walletBalance = 0;
+  let creditEnabled = false;
+  let creditLimit = 0;
+  let creditDueAt: Date | null = null;
+  let creditOwed = 0;
+  let creditOverdue = false;
   let recentSales: any[] = [];
   let monthlySalesData: any[] = [];
   let onboardingItems: OnboardingItem[] = [];
@@ -313,6 +320,16 @@ export default async function DashboardPage() {
         serviceRevenueToday = todayServiceRows.reduce((sum, request) => sum + request.total, 0);
         activeServiceProducts = serviceProductCount;
 
+        const creditAccount = await db.creditAccount.findUnique({
+          where: { userId: user.id },
+          select: { enabled: true, limitMinor: true, dueAt: true },
+        });
+        creditEnabled = creditAccount?.enabled ?? false;
+        creditLimit = creditAccount ? minorToMoney(Number(creditAccount.limitMinor)) : 0;
+        creditDueAt = creditAccount?.dueAt ?? null;
+        creditOwed = Math.max(-walletBalance, 0);
+        creditOverdue = creditOwed > 0 && Boolean(creditDueAt && creditDueAt <= now);
+
         const manualDispatchMap = await getDispatchMetaByOrderIds(manualCandidates.map((order) => order.id));
         const manualRows = manualCandidates.filter((order) => (manualDispatchMap.get(order.id)?.mode || "MANUAL") === "MANUAL");
         pendingManualOrders = manualRows.filter((order) => order.status === "PENDING").length;
@@ -351,6 +368,19 @@ export default async function DashboardPage() {
         ];
 
         alertItems = [
+          ...(creditOverdue ? [{
+            label: "Credit is overdue",
+            description: "Repay the outstanding balance before borrowing again.",
+            href: "/dashboard/credit",
+            action: "View debt",
+            tone: "warning" as const,
+          }] : creditOwed > 0 ? [{
+            label: "Credit balance due",
+            description: `${formatGhanaCedis(creditOwed)} outstanding on your wallet.`,
+            href: "/dashboard/credit",
+            action: "View debt",
+            tone: "info" as const,
+          }] : []),
           ...(!subscriptionActive ? [{
             label: "Plan inactive",
             description: "Selling is blocked until your plan is active.",
@@ -614,6 +644,8 @@ export default async function DashboardPage() {
           </div>
         </div>
       )}
+
+      <CreditStatusCard href="/dashboard/credit" enabled={creditEnabled} limit={creditLimit} balance={walletBalance} dueAt={creditDueAt} />
 
       <Card className="premium-surface overflow-hidden rounded-lg">
         <CardHeader className="pb-3">

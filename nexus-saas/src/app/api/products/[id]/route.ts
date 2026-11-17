@@ -5,7 +5,8 @@ import { ApiErrors, logApiError } from "@/lib/api-response"
 import { upsertSubscriberStorefrontPrice } from "@/lib/storefront-pricing"
 import { updateProductSchema } from "@/lib/product-input"
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authResult = await requireOrgManager()
     if (isAuthError(authResult)) return authResult
@@ -53,7 +54,8 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authResult = await requireOrgManager()
     if (isAuthError(authResult)) return authResult

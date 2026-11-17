@@ -137,11 +137,12 @@ async function getAgentServiceRequests(status?: string, serviceId?: string) {
   return { rows, accessError: null as null }
 }
 
-export default async function AgentServiceRequestsPage({
-  searchParams,
-}: {
-  searchParams?: { [key: string]: string | string[] | undefined }
-}) {
+export default async function AgentServiceRequestsPage(
+  props: {
+    searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
+  }
+) {
+  const searchParams = await props.searchParams;
   const status = typeof searchParams?.status === "string" ? searchParams.status : undefined
   const serviceId = typeof searchParams?.service === "string" ? searchParams.service : undefined
   const [{ rows, accessError }, allRowsResult] = await Promise.all([

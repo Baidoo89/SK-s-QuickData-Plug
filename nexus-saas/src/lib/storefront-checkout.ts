@@ -1,3 +1,4 @@
+import { moneyToMinor, minorToMoney, multiplyMoney, subtractMoney } from "@/lib/money"
 import crypto from "crypto"
 import { db } from "@/lib/db"
 import { getBaseUrl } from "@/lib/mail"
@@ -269,11 +270,11 @@ export async function createStorefrontCheckout(input: StorefrontCheckoutInput) {
       quantity,
       unitPrice,
       basePrice: costBasis,
-      profit: Math.max((unitPrice - costBasis) * quantity, 0),
+      profit: Math.max(multiplyMoney(subtractMoney(unitPrice, costBasis), quantity), 0),
     })
   }
 
-  const total = resolvedItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
+  const total = minorToMoney(resolvedItems.reduce((sum, item) => sum + moneyToMinor(multiplyMoney(item.unitPrice, item.quantity)), 0))
   if (total <= 0) {
     throw new StorefrontCheckoutError("Checkout total must be greater than zero")
   }
@@ -308,7 +309,7 @@ export async function createStorefrontCheckout(input: StorefrontCheckoutInput) {
           customerId: customer.id,
           userId: resolvedResellerId ?? undefined,
           agentId: resolvedAgentId ?? undefined,
-          total: item.unitPrice * item.quantity,
+          total: multiplyMoney(item.unitPrice, item.quantity),
           status: "PENDING_PAYMENT",
           phoneNumber: item.phoneNumber,
           source: "STOREFRONT",
@@ -352,7 +353,7 @@ export async function createStorefrontCheckout(input: StorefrontCheckoutInput) {
   }, { maxWait: 10000, timeout: 20000 })
 
   const orderIds = orders.map((order) => order.id)
-  const amountInPesewas = Math.round(total * 100)
+  const amountInPesewas = moneyToMinor(total)
   const firstPhone = resolvedItems[0]?.phoneNumber || "customer"
   const returnPath = safeStorefrontReturnPath(input.returnPath) ?? resellerStorefrontReturnPath(subscriber.slug)
   const callbackUrl = `${baseUrl}/api/store/paystack/verify?organizationId=${encodeURIComponent(subscriber.id)}`
@@ -366,6 +367,7 @@ export async function createStorefrontCheckout(input: StorefrontCheckoutInput) {
     body: JSON.stringify({
       email: `${firstPhone}@placeholder.com`,
       amount: amountInPesewas,
+      currency: "GHS",
       metadata: {
         purpose: "storefront_order",
         paymentOwner: "subscriber",

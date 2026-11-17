@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, use } from "react";
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -73,7 +73,8 @@ interface PricingProfileRow {
   profilePrice: number
 }
 
-export default function ResellerDetailPage({ params }: { params: { id: string } }) {
+export default function ResellerDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const { toast } = useToast()
   const router = useRouter()
   const searchParams = useSearchParams()

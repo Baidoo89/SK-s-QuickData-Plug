@@ -26,13 +26,13 @@ type AgentOrderItemRow = {
 function formatItemName(name: string) {
   const sizeMatch = name.match(/\b\d+(?:\.\d+)?\s?(?:GB|MB|KB|TB)\b/i)
   if (sizeMatch) {
-    return sizeMatch[0].replace(/\s+/g, "").toUpperCase()
+    return sizeMatch[0].replace(/\s+/g, "").toUpperCase();
   }
 
   return name
     .replace(/(\d)([A-Za-z])/g, "$1 $2")
     .replace(/\s+/g, " ")
-    .trim()
+    .trim();
 }
 
 type AgentOrderRow = {
@@ -64,11 +64,12 @@ function orderStatusBadgeClass(status: string) {
   return "status-info border"
 }
 
-export default async function AgentOrdersPage({
-  searchParams,
-}: {
-  searchParams?: { [key: string]: string | string[] | undefined }
-}) {
+export default async function AgentOrdersPage(
+  props: {
+    searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
+  }
+) {
+  const searchParams = await props.searchParams;
   const status = typeof searchParams?.status === "string" ? searchParams.status : undefined
   const from = typeof searchParams?.from === "string" ? searchParams.from : undefined
   const to = typeof searchParams?.to === "string" ? searchParams.to : undefined

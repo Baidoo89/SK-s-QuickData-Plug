@@ -1,4 +1,4 @@
-import NextAuth, { getServerSession, type NextAuthOptions } from "next-auth"
+import NextAuth, { type NextAuthConfig } from "next-auth"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { db } from "@/lib/db"
 import { authConfig } from "./auth.config"
@@ -6,7 +6,7 @@ import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
 
-export const authOptions: NextAuthOptions = {
+export const authOptions: NextAuthConfig = {
   ...authConfig,
   adapter: PrismaAdapter(db),
   session: { strategy: "jwt" },
@@ -39,10 +39,4 @@ export const authOptions: NextAuthOptions = {
   ],
 }
 
-const handler = NextAuth(authOptions)
-
-export { handler as GET, handler as POST }
-
-export async function auth() {
-  return getServerSession(authOptions)
-}
+export const { handlers: { GET, POST }, auth } = NextAuth(authOptions)

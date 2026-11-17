@@ -1,7 +1,7 @@
 import { requireAdmin, isAuthError } from "@/lib/auth-guard"
 import { ApiErrors, logApiError } from "@/lib/api-response"
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const authResult = await requireAdmin()
     if (isAuthError(authResult)) {

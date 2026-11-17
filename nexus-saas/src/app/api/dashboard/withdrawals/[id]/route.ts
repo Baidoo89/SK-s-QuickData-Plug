@@ -2,7 +2,8 @@ import { requireRole, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { updateAgentWithdrawalRequest } from "@/lib/withdrawal-review"
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authResult = await requireRole("SUBSCRIBER")
     if (isAuthError(authResult)) {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, use } from "react";
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Copy, ArrowLeft, BadgePercent, MoreVertical, Activity, CircleDollarSign, UserCheck } from "lucide-react"
@@ -55,7 +55,8 @@ function marginPercent(sellingPrice: number, costPrice: number) {
   return (marginAmount(sellingPrice, costPrice) / sellingPrice) * 100
 }
 
-export default function AgentDetailPage({ params }: { params: { id: string } }) {
+export default function AgentDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const { toast } = useToast()
   const router = useRouter()
   const agentId = params.id

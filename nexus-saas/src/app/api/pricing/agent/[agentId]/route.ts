@@ -4,9 +4,9 @@ import { db } from "@/lib/db"
 import { z } from "zod"
 
 interface Params {
-  params: {
+  params: Promise<{
     agentId: string
-  }
+  }>
 }
 
 const setAgentPriceSchema = z.object({
@@ -14,7 +14,8 @@ const setAgentPriceSchema = z.object({
   price: z.number().min(0, "Price must be >= 0"),
 })
 
-export async function GET(_req: Request, { params }: Params) {
+export async function GET(_req: Request, props: Params) {
+  const params = await props.params;
   try {
     const authResult = await requireOrgManager()
     if (isAuthError(authResult)) {
@@ -42,7 +43,8 @@ export async function GET(_req: Request, { params }: Params) {
   }
 }
 
-export async function POST(req: Request, { params }: Params) {
+export async function POST(req: Request, props: Params) {
+  const params = await props.params;
   try {
     const authResult = await requireOrgManager()
     if (isAuthError(authResult)) {

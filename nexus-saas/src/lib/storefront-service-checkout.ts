@@ -1,3 +1,4 @@
+import { moneyToMinor } from "@/lib/money"
 import crypto from "crypto"
 import { db } from "@/lib/db"
 import { getBaseUrl } from "@/lib/mail"
@@ -379,7 +380,8 @@ export async function createStorefrontServiceCheckout(input: StorefrontServiceCh
     },
     body: JSON.stringify({
       email: `${phoneNumber}@placeholder.com`,
-      amount: Math.round(unitPrice * 100),
+      amount: moneyToMinor(unitPrice),
+      currency: "GHS",
       metadata: {
         purpose: "storefront_service_request",
         paymentOwner: "subscriber",

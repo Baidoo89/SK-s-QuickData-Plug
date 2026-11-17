@@ -1,3 +1,4 @@
+import { ApiPaymentRules } from "@/components/api-access/api-payment-rules"
 import { BadgeCheck, Code2, KeyRound, ShoppingCart, Wallet } from "lucide-react"
 
 import { auth } from "@/auth"
@@ -61,6 +62,8 @@ export default async function ResellerApiDocsPage() {
         </p>
       </div>
 
+      <ApiPaymentRules creditPath="/reseller/credit" />
+
       <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="Access" value={active ? "Active" : "Restricted"} description={`Signup status: ${user.signupStatus}`} icon={BadgeCheck} tone={active ? "success" : "warning"} />
         <MetricCard label="Orders" value={orderCount} description={`${completedOrderCount} completed orders`} icon={ShoppingCart} tone="info" />
@@ -100,7 +103,7 @@ export default async function ResellerApiDocsPage() {
             <li><span className="font-medium text-foreground">GET /api/reseller/orders/export</span> - Export your reseller orders.</li>
             <li><span className="font-medium text-foreground">GET /api/reseller/analytics/export</span> - Export reseller performance analytics.</li>
             <li><span className="font-medium text-foreground">GET /api/shop/{user.organization?.slug ?? "tenant"}/agent/{user.parentAgentId ?? "agentId"}/products</span> - Fetch products from your parent agent shop.</li>
-            <li><span className="font-medium text-foreground">POST /api/v1/orders</span> - Create an external paid order with your approved API key.</li>
+            <li><span className="font-medium text-foreground">POST /api/v1/orders</span> - Create an order funded by your wallet or approved credit.</li>
             <li><span className="font-medium text-foreground">GET /api/v1/orders?externalReference=...</span> - Check an order created by the same API key.</li>
           </ul>
         </CardContent>

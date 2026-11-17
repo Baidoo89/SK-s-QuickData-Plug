@@ -1,3 +1,4 @@
+import { requireNoAccountHistory } from "@/lib/account-history"
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { requireAuth, isAuthError } from "@/lib/auth-guard"
@@ -11,7 +12,8 @@ const updateAgentSchema = z.object({
   commissionPercent: z.number().min(0).max(100).optional(),
 })
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authResult = await requireAuth()
     if (isAuthError(authResult)) return authResult
@@ -46,6 +48,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     }
 
     const agent = await db.$transaction(async (tx) => {
+      const prior = await tx.$queryRaw<Array<{ active: boolean }>>`SELECT "active" FROM "Agent" WHERE "id" = ${existing.id} FOR NO KEY UPDATE`
       const updatedAgent = await tx.agent.update({
         where: { id: existing.id },
         data: {
@@ -70,6 +73,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
       }
 
+      if (parsed.data.active !== undefined && prior[0]?.active !== parsed.data.active) await tx.auditLog.create({ data: { action: "ACCOUNT_STATUS_CHANGED", targetType: "AGENT", targetId: existing.id, organizationId: existing.organizationId, actorId: authResult.user.id, actorName: authResult.user.email, meta: JSON.stringify({ activeBefore: prior[0]?.active, activeAfter: parsed.data.active }) } })
       return updatedAgent
     })
 
@@ -97,7 +101,8 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authResult = await requireAuth()
     if (isAuthError(authResult)) return authResult
@@ -117,8 +122,13 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
     await db.$transaction(async (tx) => {
       const linkedUsers = await tx.user.findMany({
         where: { agentId: existing.id },
-        select: { email: true },
+        select: { id: true, email: true },
+        orderBy: { id: "asc" },
       })
+      for (const user of linkedUsers) await requireNoAccountHistory(tx, user.id)
+      const dependentCount = (await tx.order.count({ where: { OR: [{ agentId: existing.id }, { sellerAgentId: existing.id }] } })) + (await tx.customer.count({ where: { agentId: existing.id } })) + (await tx.user.count({ where: { parentAgentId: existing.id } })) + (await tx.serviceRequest.count({ where: { agentId: existing.id } }))
+      if (dependentCount > 0) throw new Error("ACCOUNT_HAS_FINANCIAL_HISTORY")
+      await tx.apiKey.deleteMany({ where: { OR: [{ ownerAgentId: existing.id }, { ownerUserId: { in: linkedUsers.map(user => user.id) } }] } })
       await tx.agentPrice.deleteMany({ where: { agentId: existing.id, organizationId: existing.organizationId } })
       await tx.order.updateMany({ where: { agentId: existing.id }, data: { agentId: null } })
       await tx.user.deleteMany({ where: { agentId: existing.id } })
@@ -140,6 +150,8 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
 
     return new NextResponse(null, { status: 204 })
   } catch (error) {
+    if (error instanceof Error && error.message === "ACCOUNT_HAS_FINANCIAL_HISTORY") return ApiErrors.BAD_REQUEST("This agent has linked or financial history. Deactivate the account instead; balances and debt must remain on record.")
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "P2003") return ApiErrors.BAD_REQUEST("This agent still has linked records. Deactivate the account instead.")
     console.error("[AGENT_DELETE]", error)
     return new NextResponse("Internal Error", { status: 500 })
   }

@@ -63,7 +63,8 @@ export async function GET(req: Request) {
     }
 
     if (userId) {
-      scopeWhere.userId = userId
+      // A search filter may narrow access, never replace the authorized scope.
+      scopeWhere.AND = [{ userId }]
     }
 
     if (userEmail) {

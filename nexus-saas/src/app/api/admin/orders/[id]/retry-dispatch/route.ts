@@ -2,13 +2,12 @@ import { requireAdmin, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
 import { dispatchOrderToProvider } from "@/lib/provider-dispatch"
-import { createOrderWalletDebit, reverseOrderProfitIfNeeded, reverseOrderWalletDebitIfNeeded } from "@/lib/order-wallet"
+import { prepareOrderWalletRetry } from "@/lib/order-wallet"
+import { applyProviderStatusUpdate } from "@/lib/provider-status"
 import { resolveOrderRecipientPhone } from "@/lib/order-recipient"
 
-export async function POST(
-  _req: Request,
-  { params }: { params: { id: string } },
-) {
+export async function POST(_req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authResult = await requireAdmin()
     if (isAuthError(authResult)) {
@@ -37,8 +36,8 @@ export async function POST(
       return ApiErrors.BAD_REQUEST("Order is not linked to organization")
     }
 
-    if (order.status === "COMPLETED") {
-      return ApiErrors.BAD_REQUEST("Completed orders cannot be retried")
+    if (order.status !== "FAILED") {
+      return ApiErrors.BAD_REQUEST("Only failed orders can be retried; check pending or processing orders before dispatching again")
     }
 
     const dispatchDecisionLog = await db.auditLog.findFirst({
@@ -71,53 +70,19 @@ export async function POST(
     const maxAttempts = Number(process.env.DISPATCH_RETRY_MAX_ATTEMPTS || "3")
     const backoffSeconds = Number(process.env.DISPATCH_RETRY_BACKOFF_SECONDS || "30")
 
-    const priorRetries = await db.auditLog.findMany({
-      where: {
-        action: "ORDER_RETRY_DISPATCH",
-        targetType: "ORDER",
-        targetId: order.id,
-      },
-      orderBy: { createdAt: "desc" },
-      select: { createdAt: true },
-    })
-
-    if (priorRetries.length >= maxAttempts) {
-      return ApiErrors.BAD_REQUEST(`Max retry attempts reached (${maxAttempts})`)
-    }
-
-    if (priorRetries.length > 0) {
-      const lastRetryAt = priorRetries[0].createdAt.getTime()
-      const nextAllowedAt = lastRetryAt + backoffSeconds * 1000
-      const now = Date.now()
-      if (now < nextAllowedAt) {
-        const waitSeconds = Math.ceil((nextAllowedAt - now) / 1000)
-        return ApiErrors.BAD_REQUEST(`Retry too soon. Try again in ${waitSeconds}s`)
-      }
-    }
-
     const firstItem = order.items[0]
     if (!firstItem) {
       return ApiErrors.BAD_REQUEST("Order has no items")
     }
 
-    if (order.status === "FAILED") {
-      if (!order.userId) {
-        return ApiErrors.BAD_REQUEST("Cannot re-debit wallet for order without user")
-      }
-
-      await createOrderWalletDebit({
-        orderId: order.id,
-        organizationId: order.organizationId,
-        userId: order.userId,
-        amount: order.total,
-        performedByRole: "SYSTEM",
-      })
-
-      await db.order.update({
-        where: { id: order.id },
-        data: { status: "PENDING" },
-      })
-    }
+    await prepareOrderWalletRetry({
+      orderId: order.id,
+      organizationId: order.organizationId,
+      maxAttempts: Number.isSafeInteger(maxAttempts) && maxAttempts > 0 ? maxAttempts : 3,
+      backoffSeconds: Number.isFinite(backoffSeconds) && backoffSeconds >= 0 ? backoffSeconds : 30,
+      actorId: authResult.user.id,
+      actorName: authResult.user.email,
+    })
 
     const dispatchResult = await dispatchOrderToProvider({
       orderId: order.id,
@@ -130,30 +95,8 @@ export async function POST(
       providerName,
     })
 
-    let finalStatus = "PENDING"
-    if (dispatchResult.immediateStatus !== "PENDING") {
-      const updated = await db.order.update({
-        where: { id: order.id },
-        data: { status: dispatchResult.immediateStatus },
-        select: { status: true },
-      })
-      finalStatus = updated.status
-
-      if (dispatchResult.immediateStatus === "FAILED") {
-        await reverseOrderWalletDebitIfNeeded({
-          orderId: order.id,
-          organizationId: order.organizationId,
-          reason: "Retry dispatch failed",
-        })
-
-        await reverseOrderProfitIfNeeded({
-          orderId: order.id,
-          organizationId: order.organizationId,
-          previousStatus: "COMPLETED",
-          reason: "Retry dispatch failed",
-        })
-      }
-    }
+    const updated = await applyProviderStatusUpdate({ orderId: order.id, status: dispatchResult.immediateStatus, externalRef: dispatchResult.externalRef, source: "poll", message: dispatchResult.message })
+    const finalStatus = updated?.status ?? "PENDING"
 
     await db.auditLog.create({
       data: {
@@ -181,6 +124,18 @@ export async function POST(
       return ApiErrors.BAD_REQUEST("Insufficient wallet balance for retry")
     }
 
+    if (error instanceof Error) {
+      const messages: Record<string, string> = {
+        WALLET_ACCOUNT_RESTRICTED: "The seller account is inactive or not approved. Review the account before retrying.",
+        CREDIT_OVERDUE: "The seller has overdue credit. Clear the debt before retrying.",
+        ORDER_NOT_RETRYABLE: "Order is already being retried or is no longer eligible for retry.",
+        RETRY_LIMIT_REACHED: "Maximum retry attempts reached.",
+        RETRY_BACKOFF: "Please wait before retrying this order again.",
+        MISSING_RETRY_DEBIT: "The original wallet charge could not be verified. Review this order before retrying.",
+        INVALID_WALLET_ORDER: "The wallet charge could not be verified. Review this order before retrying.",
+      }
+      if (messages[error.message]) return ApiErrors.BAD_REQUEST(messages[error.message])
+    }
     logApiError("[ADMIN_ORDER_RETRY_DISPATCH_POST]", error)
     return ApiErrors.INTERNAL_ERROR()
   }

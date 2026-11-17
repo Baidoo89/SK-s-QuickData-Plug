@@ -1,14 +1,8 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { WhatsAppSupportButton } from "@/components/support/whatsapp-support-button";
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-sans",
-  weight: ["400", "500", "600", "700", "800"],
-});
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://techdalt.com";
 
 export const metadata: Metadata = {
@@ -79,7 +73,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={plusJakartaSans.variable}>
+      <body>
         {children}
         <WhatsAppSupportButton variant="floating" />
         <Toaster />

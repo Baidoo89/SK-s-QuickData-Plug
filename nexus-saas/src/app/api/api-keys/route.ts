@@ -29,6 +29,7 @@ export async function POST(req: Request) {
         key,
         organizationId: authResult.user.organizationId!,
         ownerType: "SUBSCRIBER",
+        ownerUserId: authResult.user.role === "SUBSCRIBER" ? authResult.user.id : null,
       },
     });
 

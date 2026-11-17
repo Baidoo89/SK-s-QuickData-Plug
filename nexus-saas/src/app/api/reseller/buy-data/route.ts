@@ -1,3 +1,6 @@
+import { assertWalletPurchase } from "@/lib/credit-account"
+import { getWalletBalance, multiplyMoney } from "@/lib/money"
+import { lockWallet } from "@/lib/wallet-lock"
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { requireAuth, isAuthError, hasRole } from "@/lib/auth-guard"
@@ -178,10 +181,13 @@ export async function POST(req: Request) {
       }
     }
 
-    const total = effectivePrice * quantity
+    const total = multiplyMoney(effectivePrice, quantity)
     const phoneVariants = buildPhoneVariants(normalizedPhone)
 
+    if (!Number.isFinite(total) || total < 0) return ApiErrors.BAD_REQUEST("The bundle price is invalid. Contact your store owner.")
+
     const order = await db.$transaction(async (tx) => {
+      await lockWallet(tx, user.id)
       const existingInProgress = await tx.order.findFirst({
         where: {
           organizationId: user.organizationId,
@@ -195,14 +201,7 @@ export async function POST(req: Request) {
         throw new Error("PHONE_ORDER_IN_PROGRESS")
       }
 
-      const balanceAgg = await tx.walletTransaction.aggregate({
-        _sum: { amount: true },
-        where: { userId: user.id, status: "success" },
-      })
-      const balance: number = balanceAgg._sum.amount ?? 0
-      if (balance < total) {
-        throw new Error("INSUFFICIENT_FUNDS")
-      }
+      await assertWalletPurchase(tx, user.id, total)
 
       const debit = await tx.walletTransaction.create({
         data: {
@@ -296,6 +295,9 @@ export async function POST(req: Request) {
       201
     )
   } catch (error) {
+    if (error instanceof Error && error.message === "WALLET_ACCOUNT_RESTRICTED") return ApiErrors.FORBIDDEN()
+    if (error instanceof Error && error.message === "CREDIT_OVERDUE") return ApiErrors.BAD_REQUEST("Your credit is overdue. Clear the outstanding debt before borrowing again.")
+    if (error instanceof Error && error.message === "INVALID_MONEY") return ApiErrors.BAD_REQUEST("A price or balance needs review. Contact your store owner.")
     if (error instanceof Error && error.message === "INSUFFICIENT_FUNDS") {
       return ApiErrors.BAD_REQUEST("Insufficient wallet balance. Please top up before placing this order.")
     }

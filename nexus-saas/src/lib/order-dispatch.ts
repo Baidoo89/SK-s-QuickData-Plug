@@ -1,8 +1,7 @@
 import { db } from "@/lib/db"
 import { getEffectiveDispatchPolicy, shouldUseProviderApi } from "@/lib/dispatch-policy"
 import { dispatchOrderToProvider, type ProviderDispatchResult } from "@/lib/provider-dispatch"
-import { notifyApiOrderStatus } from "@/lib/api-order-tracking"
-import { reverseOrderWalletDebitIfNeeded } from "@/lib/order-wallet"
+import { applyProviderStatusUpdate } from "@/lib/provider-status"
 
 export type ResolveOrderDispatchInput = {
   orderId: string
@@ -47,11 +46,14 @@ export async function resolveOrderDispatch(input: ResolveOrderDispatchInput): Pr
     },
   })
 
-  await db.order.update({
-    where: { id: input.orderId },
+  const eligible = await db.order.updateMany({
+    where: { id: input.orderId, organizationId: input.organizationId, status: "PENDING", paymentStatus: "PAID" },
     data: { fulfillmentMode: initialDispatchMode },
-    select: { id: true },
   })
+  if (!eligible.count) {
+    const current = await db.order.findUnique({ where: { id: input.orderId }, select: { status: true, fulfillmentMode: true } })
+    return { finalStatus: current?.status ?? "FAILED", dispatchMode: current?.fulfillmentMode === "API" ? "API" : "MANUAL", dispatchProvider: decision.providerName, dispatchReason: "Order is no longer awaiting dispatch", dispatchResult: null }
+  }
 
   if (!decision.useApi) {
     return {
@@ -97,11 +99,14 @@ export async function resolveOrderDispatch(input: ResolveOrderDispatchInput): Pr
   if (!dispatchResult || (!dispatchResult.accepted && dispatchResult.retryable)) {
     const dispatchReason = dispatchResult?.message || "No provider connection is available"
 
-    await db.order.update({
-      where: { id: input.orderId },
-      data: { fulfillmentMode: "MANUAL", status: "PENDING" },
-      select: { id: true },
+    const fallback = await db.order.updateMany({
+      where: { id: input.orderId, organizationId: input.organizationId, status: "PENDING", paymentStatus: "PAID" },
+      data: { fulfillmentMode: "MANUAL" },
     })
+    if (!fallback.count) {
+      const current = await db.order.findUnique({ where: { id: input.orderId }, select: { status: true, fulfillmentMode: true } })
+      return { finalStatus: current?.status ?? "FAILED", dispatchMode: current?.fulfillmentMode === "API" ? "API" : "MANUAL", dispatchProvider, dispatchReason: "Order state changed; manual fallback skipped", dispatchResult }
+    }
 
     await db.auditLog.create({
       data: {
@@ -131,11 +136,14 @@ export async function resolveOrderDispatch(input: ResolveOrderDispatchInput): Pr
   if (!dispatchResult.accepted && policy.mode === "HYBRID") {
     const dispatchReason = `${dispatchResult.message}. Routed to manual fallback because dispatch mode is hybrid.`
 
-    await db.order.update({
-      where: { id: input.orderId },
-      data: { fulfillmentMode: "MANUAL", status: "PENDING" },
-      select: { id: true },
+    const fallback = await db.order.updateMany({
+      where: { id: input.orderId, organizationId: input.organizationId, status: "PENDING", paymentStatus: "PAID" },
+      data: { fulfillmentMode: "MANUAL" },
     })
+    if (!fallback.count) {
+      const current = await db.order.findUnique({ where: { id: input.orderId }, select: { status: true, fulfillmentMode: true } })
+      return { finalStatus: current?.status ?? "FAILED", dispatchMode: current?.fulfillmentMode === "API" ? "API" : "MANUAL", dispatchProvider, dispatchReason: "Order state changed; manual fallback skipped", dispatchResult }
+    }
 
     await db.auditLog.create({
       data: {
@@ -166,22 +174,8 @@ export async function resolveOrderDispatch(input: ResolveOrderDispatchInput): Pr
 
   let finalStatus = "PENDING"
   if (dispatchResult.immediateStatus !== "PENDING") {
-    const updatedOrder = await db.order.update({
-      where: { id: input.orderId },
-      data: { status: dispatchResult.immediateStatus },
-      select: { status: true },
-    })
-    finalStatus = updatedOrder.status
-
-    if (dispatchResult.immediateStatus === "FAILED") {
-      await reverseOrderWalletDebitIfNeeded({
-        orderId: input.orderId,
-        organizationId: input.organizationId,
-        reason: "Immediate provider failure",
-      })
-    }
-
-    await notifyApiOrderStatus(input.orderId, dispatchResult.immediateStatus)
+    const updated = await applyProviderStatusUpdate({ orderId: input.orderId, status: dispatchResult.immediateStatus, externalRef: dispatchResult.externalRef, source: "poll", message: dispatchResult.message })
+    finalStatus = updated?.status ?? "PENDING"
   }
 
   return {

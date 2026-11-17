@@ -217,11 +217,12 @@ function subscriptionBadgeClass(status: string) {
   return ""
 }
 
-export default async function AdminSubscriptionsPage({
-  searchParams,
-}: {
-  searchParams?: { notice?: string }
-}) {
+export default async function AdminSubscriptionsPage(
+  props: {
+    searchParams?: Promise<{ notice?: string }>
+  }
+) {
+  const searchParams = await props.searchParams;
   await requireSuperAdmin()
   await ensureSaasPlans()
   await expireOverdueSubscriptions()

@@ -218,16 +218,18 @@ async function loadStore(handle: string) {
 }
 
 interface ShopPageProps {
-  params: {
+  params: Promise<{
     handle: string
-  }
-  searchParams?: {
+  }>
+  searchParams?: Promise<{
     checkout?: string
     orders?: string
-  }
+  }>
 }
 
-export default async function ShopPage({ params, searchParams }: ShopPageProps) {
+export default async function ShopPage(props: ShopPageProps) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const handle = decodeURIComponent(params.handle || "").trim().toLowerCase()
   if (!handle) return notFound()
 

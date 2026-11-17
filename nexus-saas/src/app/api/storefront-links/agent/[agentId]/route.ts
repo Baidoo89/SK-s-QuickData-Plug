@@ -4,7 +4,8 @@ import { auth } from "@/auth"
 import { db } from "@/lib/db"
 import { getOrCreateAgentStorefrontLink } from "@/lib/storefront-links"
 
-export async function GET(_req: Request, { params }: { params: { agentId: string } }) {
+export async function GET(_req: Request, props: { params: Promise<{ agentId: string }> }) {
+  const params = await props.params;
   const session = await auth()
   if (!session?.user?.email) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })

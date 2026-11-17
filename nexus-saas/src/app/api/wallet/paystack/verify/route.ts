@@ -1,7 +1,8 @@
+import { getWalletPaystackSecret } from "@/lib/paystack"
 import { NextResponse } from "next/server";
 import { ApiErrors, logApiError } from "@/lib/api-response";
 
-import { db } from "@/lib/db";
+import { recordVerifiedWalletTopup } from "@/lib/wallet-topup";
 import { getBaseUrl } from "@/lib/mail";
 import { getOrganizationPaymentSettings } from "@/lib/organization-payment-settings";
 
@@ -35,14 +36,15 @@ export async function GET(req: Request) {
       return ApiErrors.BAD_REQUEST("Missing organization");
     }
 
-    const paymentSettings = await getOrganizationPaymentSettings(organizationId);
-    if (!paymentSettings.paystackConnected || !paymentSettings.paystackSecretKey) {
-      return ApiErrors.BAD_REQUEST("Subscriber Paystack is not connected");
-    }
+    const fundingOwner = searchParams.get("fundingOwner") || "SUBSCRIBER"
+    if (fundingOwner !== "PLATFORM" && fundingOwner !== "SUBSCRIBER") return ApiErrors.BAD_REQUEST("Invalid wallet payment owner")
+    const paymentSettings = fundingOwner === "SUBSCRIBER" ? await getOrganizationPaymentSettings(organizationId) : null
+    const secret = fundingOwner === "PLATFORM" ? getWalletPaystackSecret() : paymentSettings?.paystackConnected ? paymentSettings.paystackSecretKey : null
+    if (!secret) return ApiErrors.BAD_REQUEST("Wallet payment provider is not configured")
 
-    const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
+    const response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
       headers: {
-        Authorization: `Bearer ${paymentSettings.paystackSecretKey}`,
+        Authorization: `Bearer ${secret}`,
       },
     });
 
@@ -69,30 +71,7 @@ export async function GET(req: Request) {
       return NextResponse.redirect(failRedirect);
     }
 
-    const amountFromMeta = typeof meta.walletTopupAmountGHS === "number" ? meta.walletTopupAmountGHS : undefined;
-    const amountFromResponse = typeof data.data?.amount === "number" ? data.data.amount / 100 : undefined;
-    const finalAmount = amountFromMeta ?? amountFromResponse;
-
-    if (!finalAmount || finalAmount <= 0) {
-      console.error("Invalid wallet top up amount from Paystack", {
-        amountFromMeta,
-        amountFromResponse,
-      });
-      const failRedirect = `${baseUrl}${returnPath}?walletTopup=failed`;
-      return NextResponse.redirect(failRedirect);
-    }
-
-    // Create wallet transaction record
-    await db.walletTransaction.create({
-      data: {
-        userId: walletUserId,
-        performedByEmail: typeof meta.walletUserEmail === "string" ? meta.walletUserEmail : null,
-        performedByRole: typeof meta.walletUserRole === "string" ? meta.walletUserRole : null,
-        method: "paystack",
-        amount: finalAmount,
-        status: "success",
-      },
-    });
+    await recordVerifiedWalletTopup({ organizationId, reference, fundingOwner, payment: data.data });
 
     const successRedirect = `${baseUrl}${returnPath}?walletTopup=success`;
     return NextResponse.redirect(successRedirect);

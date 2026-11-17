@@ -11,6 +11,8 @@ import { PortalAccessMessage } from "@/components/access/portal-access-message"
 import { Badge } from "@/components/ui/badge"
 import { getUserWithdrawableSummary } from "@/lib/withdrawal-balance"
 import { getOrCreateAgentStorefrontLink } from "@/lib/storefront-links"
+import { getWalletBalance, minorToMoney } from "@/lib/money"
+import { CreditStatusCard } from "@/components/wallet/credit-status-card"
 
 function getGreetingByTime(date: Date): string {
   const hour = date.getHours()
@@ -63,7 +65,8 @@ function getRangeLabel(range: ProfitRangeKey): string {
   return "Today"
 }
 
-export default async function AgentOverviewPage({ searchParams }: { searchParams?: { profitRange?: string } }) {
+export default async function AgentOverviewPage(props: { searchParams?: Promise<{ profitRange?: string }> }) {
+  const searchParams = await props.searchParams;
   const session = await auth()
   if (!session?.user?.email) {
     return <PortalAccessMessage title="Login required" description="Sign in with an approved agent account to access this workspace." />
@@ -102,7 +105,8 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
   const profitStart = getRangeStart(now, selectedProfitRange)
 
   const [
-    walletAgg,
+    walletBalanceValue,
+    creditAccount,
     agentProfile,
     todaysOrders,
     completedOrders,
@@ -116,10 +120,8 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
     todayServiceRequests,
     pendingServiceRequestCount,
   ] = await Promise.all([
-    db.walletTransaction.aggregate({
-      _sum: { amount: true },
-      where: { userId: user.id, status: "success" },
-    }),
+    getWalletBalance(db, user.id),
+    db.creditAccount.findUnique({ where: { userId: user.id }, select: { enabled: true, limitMinor: true, dueAt: true } }),
     db.agent.findFirst({
       where: { id: agentId, organizationId: user.organizationId },
       select: { name: true, commissionPercent: true },
@@ -202,7 +204,10 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
     }),
   ])
 
-  const walletBalance = walletAgg._sum.amount ?? 0
+  const walletBalance = walletBalanceValue
+  const creditLimit = creditAccount ? minorToMoney(Number(creditAccount.limitMinor)) : 0
+  const owed = Math.max(-walletBalance, 0)
+  const creditOverdue = owed > 0 && Boolean(creditAccount?.dueAt && creditAccount.dueAt <= now)
   const todayCompletedOrders = todaysOrders.filter((order) => order.status === "COMPLETED")
   const todayBuys = todaysOrders.filter((order) => order.source === "DASHBOARD_BUY" && order.sellerUserId === user.id)
   const todayStorefrontSales = todaysOrders.filter((order) => order.source === "STOREFRONT" && order.sellerRole === "AGENT" && order.sellerAgentId === agentId)
@@ -256,7 +261,19 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
   ]
 
   const alertItems: AlertItem[] = [
-    ...(walletBalance <= 0 ? [{
+    ...(creditOverdue ? [{
+      label: "Credit is overdue",
+      description: "Repay the outstanding balance before borrowing again.",
+      href: "/agent/credit",
+      action: "View debt",
+      tone: "warning" as const,
+    }] : owed > 0 ? [{
+      label: "Credit balance due",
+      description: `${formatGhanaCedis(owed)} outstanding on your wallet.`,
+      href: "/agent/credit",
+      action: "View debt",
+      tone: "info" as const,
+    }] : walletBalance <= 0 ? [{
       label: "Wallet needs funding",
       description: "Top up before buying data.",
       href: "/agent/wallet",
@@ -369,6 +386,8 @@ export default async function AgentOverviewPage({ searchParams }: { searchParams
           </div>
         </div>
       )}
+
+      <CreditStatusCard href="/agent/credit" enabled={creditAccount?.enabled ?? false} limit={creditLimit} balance={walletBalance} dueAt={creditAccount?.dueAt ?? null} />
 
       <div className="grid min-w-0 gap-4 md:grid-cols-2 lg:grid-cols-6">
         <MetricCard

@@ -2,16 +2,14 @@ import { z } from "zod"
 
 import { requireOrgManager, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
-import { notifyApiOrderStatus } from "@/lib/api-order-tracking"
 import { db } from "@/lib/db"
-import { reverseOrderProfitIfNeeded, reverseOrderWalletDebitIfNeeded } from "@/lib/order-wallet"
+import { applyManualOrderStatus } from "@/lib/manual-order-status"
 
 const schema = z.object({
   orderIds: z.array(z.string().min(1)).min(1).max(200),
   status: z.enum(["PROCESSING", "COMPLETED", "FAILED", "CANCELLED", "REFUNDED"]),
 })
 
-const REVERSAL_STATUSES = new Set(["FAILED", "CANCELLED", "REFUNDED"])
 const ALLOWED_CURRENT_STATUSES = new Set(["PENDING", "PROCESSING"])
 
 export async function POST(req: Request) {
@@ -56,42 +54,9 @@ export async function POST(req: Request) {
         continue
       }
 
-      await db.order.update({
-        where: { id: order.id },
-        data: { status: parsed.data.status },
-      })
+      const saved = await applyManualOrderStatus({ orderId: order.id, organizationId: order.organizationId, status: parsed.data.status, actorId: authResult.user.id, actorName: authResult.user.email, action: "ORDER_BULK_MANUAL_STATUS", expectedStatuses: ["PENDING", "PROCESSING"], manualOnly: true })
+      if (!saved) { skipped += 1; continue }
 
-      if (REVERSAL_STATUSES.has(parsed.data.status)) {
-        await reverseOrderWalletDebitIfNeeded({
-          orderId: order.id,
-          organizationId: order.organizationId,
-          reason: `Bulk manual action marked ${parsed.data.status.toLowerCase()}`,
-        })
-
-        await reverseOrderProfitIfNeeded({
-          orderId: order.id,
-          organizationId: order.organizationId,
-          previousStatus: order.status,
-          reason: `Bulk manual action marked ${parsed.data.status.toLowerCase()}`,
-        })
-      }
-
-      await db.auditLog.create({
-        data: {
-          actorId: authResult.user.id,
-          actorName: authResult.user.email,
-          action: "ORDER_BULK_MANUAL_STATUS",
-          targetType: "ORDER",
-          targetId: order.id,
-          organizationId: order.organizationId,
-          meta: JSON.stringify({
-            previousStatus: order.status,
-            status: parsed.data.status,
-          }),
-        },
-      })
-
-      await notifyApiOrderStatus(order.id, parsed.data.status)
       updated += 1
     }
 

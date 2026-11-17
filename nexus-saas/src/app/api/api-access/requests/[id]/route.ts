@@ -30,10 +30,8 @@ function parseMeta(meta: string | null): RequestMeta {
   }
 }
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const authResult = await requireAuthAndOrg()
   if (isAuthError(authResult)) return authResult
 

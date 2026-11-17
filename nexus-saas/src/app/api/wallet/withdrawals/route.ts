@@ -2,7 +2,7 @@ import { requireAuth, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
 import { getUserWithdrawableSummary } from "@/lib/withdrawal-balance"
-import { WITHDRAWAL_STATUS } from "@/lib/withdrawal-status"
+import { createWithdrawalRequest } from "@/lib/withdrawal-create"
 
 type WithdrawalRow = {
   id: string
@@ -95,37 +95,7 @@ export async function POST(req: Request) {
       return ApiErrors.BAD_REQUEST("Withdrawal amount must be greater than zero")
     }
 
-    const summary = await getUserWithdrawableSummary(actor.id)
-    if (amount > summary.availableBalance) {
-      return ApiErrors.BAD_REQUEST("Withdrawal amount exceeds available balance")
-    }
-
-    const created = await db.withdrawalRequest.create({
-      data: {
-        userId: actor.id,
-        organizationId: actor.organizationId,
-        amount,
-        status: WITHDRAWAL_STATUS.PENDING,
-        note: note || null,
-        requestedByEmail: actor.email,
-        requestedByRole: actor.role,
-      },
-    })
-
-    await db.auditLog.create({
-      data: {
-        action: "WITHDRAWAL_REQUESTED",
-        targetType: "WITHDRAWAL_REQUEST",
-        targetId: created.id,
-        organizationId: actor.organizationId,
-        actorId: actor.id,
-        actorName: actor.email,
-        meta: JSON.stringify({
-          amount: created.amount,
-          role: actor.role,
-        }),
-      },
-    })
+    const { created, summary } = await createWithdrawalRequest(actor, amount, note)
 
     return apiSuccess({
       request: {
@@ -149,6 +119,9 @@ export async function POST(req: Request) {
       withdrawableSource: "COMPLETED_ORDER_PROFIT",
     }, undefined, 201)
   } catch (error) {
+    if (error instanceof Error && error.message === "INSUFFICIENT_EARNINGS") return ApiErrors.BAD_REQUEST("Withdrawal amount exceeds available balance")
+    if (error instanceof Error && error.message === "INVALID_MONEY") return ApiErrors.BAD_REQUEST("Enter a valid amount with at most two decimal places")
+    if (error instanceof Error && error.message === "WITHDRAWAL_FORBIDDEN") return ApiErrors.FORBIDDEN()
     logApiError("[WITHDRAWALS_POST]", error)
     return ApiErrors.INTERNAL_ERROR()
   }

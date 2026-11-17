@@ -1,3 +1,5 @@
+import { lockWallet } from "@/lib/wallet-lock"
+import { getWalletBalance, moneyToMinor } from "@/lib/money"
 import { requireAuth, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
@@ -28,10 +30,7 @@ export async function GET() {
     const user = authResult.user
 
     const [sum, recent] = await Promise.all([
-      db.walletTransaction.aggregate({
-        _sum: { amount: true },
-        where: { userId: user.id, status: "success" },
-      }),
+      getWalletBalance(db, user.id),
       db.walletTransaction.findMany({
         where: { userId: user.id, status: "success" },
         orderBy: { createdAt: "desc" },
@@ -39,7 +38,7 @@ export async function GET() {
       }),
     ])
 
-    const balance = sum._sum.amount ?? 0
+    const balance = sum
     const topups: WalletTopupResponse[] = (recent as any[]).map((t: any) => ({
       id: t.id,
       createdAt: t.createdAt.toISOString(),
@@ -107,6 +106,8 @@ export async function POST(req: Request) {
       return ApiErrors.BAD_REQUEST("Amount must be greater than zero")
     }
 
+    moneyToMinor(numericAmount)
+
     const beneficiary = await getUserByEmail(trimmedEmail)
     if (!beneficiary) {
       return ApiErrors.NOT_FOUND("Beneficiary user")
@@ -115,8 +116,7 @@ export async function POST(req: Request) {
     // Non-superadmins can only top up users within the same organization.
     if (
       role !== "SUPERADMIN" &&
-      actor.organizationId &&
-      beneficiary.organizationId !== actor.organizationId
+      (!actor.organizationId || beneficiary.organizationId !== actor.organizationId)
     ) {
       return ApiErrors.FORBIDDEN()
     }
@@ -137,22 +137,19 @@ export async function POST(req: Request) {
       return ApiErrors.BAD_REQUEST("Subscriber wallet credits are only for agents and resellers.")
     }
 
-    const created = await db.walletTransaction.create({
-      data: {
-        userId: beneficiary.id,
-        performedByEmail: actor.email,
-        performedByRole: role ?? null,
-        method,
-        amount: numericAmount,
-      },
-    })
-
-    const sum = await db.walletTransaction.aggregate({
-      _sum: { amount: true },
-      where: { userId: beneficiary.id, status: "success" },
-    })
-
-    const balance = sum._sum.amount ?? 0
+    const { created, balance } = await db.$transaction(async tx => {
+      const transfer = role === "AGENT" || (role !== "SUPERADMIN" && isAgentOperator)
+      for (const id of [...new Set(transfer ? [actor.id, beneficiary.id] : [beneficiary.id])].sort()) await lockWallet(tx, id)
+      let debitId: string | null = null
+      if (transfer) {
+        if (moneyToMinor(await getWalletBalance(tx, actor.id)) < moneyToMinor(numericAmount)) throw new Error("INSUFFICIENT_TRANSFER_FUNDS")
+        const debit = await tx.walletTransaction.create({ data: { userId: actor.id, performedByEmail: actor.email, performedByRole: role, method: "manual", amount: -numericAmount, status: "success" } })
+        debitId = debit.id
+      }
+      const created = await tx.walletTransaction.create({ data: { userId: beneficiary.id, performedByEmail: actor.email, performedByRole: role, method, amount: numericAmount, status: "success" } })
+      await tx.auditLog.create({ data: { action: transfer ? "WALLET_TRANSFER" : "WALLET_MANUAL_CREDIT", targetType: "WALLET_TRANSACTION", targetId: created.id, organizationId: beneficiary.organizationId, actorId: actor.id, actorName: actor.email, meta: JSON.stringify({ beneficiaryUserId: beneficiary.id, amount: numericAmount, debitTransactionId: debitId, creditTransactionId: created.id }) } })
+      return { created, balance: await getWalletBalance(tx, beneficiary.id) }
+    }, { maxWait: 10000, timeout: 20000 })
 
     const topup: WalletTopupResponse = {
       id: created.id,
@@ -167,6 +164,8 @@ export async function POST(req: Request) {
 
     return apiSuccess({ topup, balance })
   } catch (error) {
+    if (error instanceof Error && error.message === "INVALID_MONEY") return ApiErrors.BAD_REQUEST("Enter an amount with at most two decimal places")
+    if (error instanceof Error && error.message === "INSUFFICIENT_TRANSFER_FUNDS") return ApiErrors.BAD_REQUEST("Insufficient wallet funds to transfer. Approved credit cannot be transferred.")
     logApiError("[AGENT_WALLET_POST]", error)
     return ApiErrors.INTERNAL_ERROR()
   }

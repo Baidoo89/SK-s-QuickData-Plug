@@ -1,4 +1,4 @@
-import type { NextAuthOptions, Session, User } from "next-auth"
+import type { NextAuthConfig, Session, User } from "next-auth"
 import type { JWT } from "next-auth/jwt"
 import type { NextRequest } from "next/server"
 import { db } from "@/lib/db"
@@ -7,15 +7,11 @@ type TokenUser = { role?: string; organizationId?: string | null; hasActiveSubsc
 type AppToken = JWT & TokenUser
 type AppSessionUser = NonNullable<Session["user"]> & TokenUser
 type AuthorizedParams = {
-  auth: { user?: TokenUser } | null
-  request: { nextUrl: NextRequest["nextUrl"] }
+  auth: Session | null
+  request: NextRequest
 }
 
-type AuthConfig = Omit<NextAuthOptions, "callbacks"> & {
-  callbacks: NonNullable<NextAuthOptions["callbacks"]> & {
-    authorized?: (params: AuthorizedParams) => boolean
-  }
-}
+type AuthConfig = NextAuthConfig
 
 export const authConfig = {
   pages: {
@@ -81,10 +77,10 @@ export const authConfig = {
       else if (new URL(url).origin === baseUrl) return url
       return baseUrl
     },
-    authorized({ auth, request: { nextUrl } }: AuthorizedParams) {
+  authorized({ auth, request }: AuthorizedParams) {
       const isLoggedIn = !!auth?.user
-      const role = auth?.user?.role
-      const path = nextUrl.pathname
+    const role = (auth?.user as AppSessionUser | undefined)?.role
+    const path = request.nextUrl.pathname
       const isDashboard = path.startsWith("/dashboard")
       const isAdmin = path.startsWith("/admin")
       const isAuthPage = path.startsWith("/login") || path.startsWith("/register") || path.startsWith("/reset")

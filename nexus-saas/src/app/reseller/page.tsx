@@ -12,6 +12,8 @@ import { PortalAccessMessage } from "@/components/access/portal-access-message";
 import { Badge } from "@/components/ui/badge";
 import { getUserWithdrawableSummary } from "@/lib/withdrawal-balance";
 import { getOrCreateResellerStorefrontLink } from "@/lib/storefront-links";
+import { getWalletBalance, minorToMoney } from "@/lib/money";
+import { CreditStatusCard } from "@/components/wallet/credit-status-card";
 
 function getGreetingByTime(date: Date): string {
   const hour = date.getHours();
@@ -64,7 +66,8 @@ function getRangeLabel(range: SalesRangeKey): string {
   return "Today";
 }
 
-export default async function ResellerDashboardPage({ searchParams }: { searchParams?: { salesRange?: string } }) {
+export default async function ResellerDashboardPage(props: { searchParams?: Promise<{ salesRange?: string }> }) {
+  const searchParams = await props.searchParams;
   const session = await auth();
   if (!session?.user?.email) {
     return <PortalAccessMessage title="Login required" description="Sign in with an approved reseller account to access this workspace." />;
@@ -98,7 +101,8 @@ export default async function ResellerDashboardPage({ searchParams }: { searchPa
   const salesStart = getRangeStart(now, selectedSalesRange);
 
   const [
-    walletAgg,
+    walletBalanceValue,
+    creditAccount,
     todaysOrders,
     completedOrders,
     selectedRangeOrders,
@@ -109,10 +113,8 @@ export default async function ResellerDashboardPage({ searchParams }: { searchPa
     todayServiceRequests,
     pendingServiceRequestCount,
   ] = await Promise.all([
-    db.walletTransaction.aggregate({
-      _sum: { amount: true },
-      where: { userId: user.id, status: "success" },
-    }),
+    getWalletBalance(db, user.id),
+    db.creditAccount.findUnique({ where: { userId: user.id }, select: { enabled: true, limitMinor: true, dueAt: true } }),
     db.order.findMany({
       where: {
         organizationId: user.organizationId,
@@ -180,7 +182,10 @@ export default async function ResellerDashboardPage({ searchParams }: { searchPa
     }),
   ]);
 
-  const walletBalance = walletAgg._sum.amount ?? 0;
+  const walletBalance = walletBalanceValue;
+  const creditLimit = creditAccount ? minorToMoney(Number(creditAccount.limitMinor)) : 0;
+  const owed = Math.max(-walletBalance, 0);
+  const creditOverdue = owed > 0 && Boolean(creditAccount?.dueAt && creditAccount.dueAt <= now);
   const todayCompletedOrders = todaysOrders.filter((order) => order.status === "COMPLETED");
   const todayBuys = todaysOrders.filter((order) => order.source === "DASHBOARD_BUY");
   const todayStorefrontSales = todaysOrders.filter((order) => order.source === "STOREFRONT");
@@ -227,7 +232,19 @@ export default async function ResellerDashboardPage({ searchParams }: { searchPa
   ];
 
   const alertItems: AlertItem[] = [
-    ...(walletBalance <= 0 ? [{
+    ...(creditOverdue ? [{
+      label: "Credit is overdue",
+      description: "Repay the outstanding balance before borrowing again.",
+      href: "/reseller/credit",
+      action: "View debt",
+      tone: "warning" as const,
+    }] : owed > 0 ? [{
+      label: "Credit balance due",
+      description: `${formatGhanaCedis(owed)} outstanding on your wallet.`,
+      href: "/reseller/credit",
+      action: "View debt",
+      tone: "info" as const,
+    }] : walletBalance <= 0 ? [{
       label: "Wallet needs funding",
       description: "Top up before buying data.",
       href: "/reseller/wallet",
@@ -343,6 +360,8 @@ export default async function ResellerDashboardPage({ searchParams }: { searchPa
           </div>
         </div>
       )}
+
+      <CreditStatusCard href="/reseller/credit" enabled={creditAccount?.enabled ?? false} limit={creditLimit} balance={walletBalance} dueAt={creditAccount?.dueAt ?? null} />
 
       <div className="grid min-w-0 gap-4 md:grid-cols-2 lg:grid-cols-6">
         <MetricCard

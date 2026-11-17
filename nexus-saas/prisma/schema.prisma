@@ -15,6 +15,9 @@ model Organization {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  financialReviewCases FinancialReviewCase[]
+  creditAccounts CreditAccount[]
+  subscriptionCheckouts SubscriptionCheckout[]
   users       User[]
   products    Product[]
   orders      Order[]
@@ -65,6 +68,7 @@ model User {
   orders        Order[]
   resellerPrices ResellerPrice[]
 
+  creditAccount CreditAccount?
   walletTransactions WalletTransaction[]
   withdrawalRequests WithdrawalRequest[]
   pricingProfileAssignment UserPricingProfileAssignment?
@@ -127,6 +131,7 @@ model Order {
   paymentOwner    String  @default("WALLET") // WALLET, STOREFRONT, EXTERNAL
   paymentStatus   String  @default("PAID") // PAID, PENDING, FAILED
   fulfillmentMode String  @default("MANUAL") // MANUAL, API
+  apiKeyId String?
   externalReference String?
 
   createdAt DateTime    @default(now())
@@ -140,6 +145,7 @@ model Order {
   @@index([sellerAgentId])
   @@index([paymentStatus])
   @@index([fulfillmentMode])
+  @@unique([apiKeyId, externalReference])
   @@index([externalReference])
   @@index([publicOrderCode])
 }
@@ -382,6 +388,7 @@ model Plan {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  subscriptionCheckouts SubscriptionCheckout[]
   subscriptions Subscription[]
 }
 
@@ -414,6 +421,11 @@ model Payment {
 }
 
 model WalletTransaction {
+  paymentReference String? @unique
+  refundOfTransactionId String? @unique
+  refundOfTransaction WalletTransaction? @relation("WalletRefund", fields: [refundOfTransactionId], references: [id], onDelete: Restrict)
+  refund WalletTransaction? @relation("WalletRefund")
+
   id               String   @id @default(cuid())
   userId           String
   user             User     @relation(fields: [userId], references: [id])
@@ -592,3 +604,60 @@ model OrganizationPaymentSettings {
   @@index([organizationId])
 }
 
+
+model SubscriptionCheckout {
+  reference String @id
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  planId String
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Restrict)
+  createdByUserId String
+  amountMinor BigInt
+  currency String @default("GHS")
+  status String @default("PENDING")
+  expiresAt DateTime
+  paidAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([organizationId])
+  @@index([planId])
+  @@index([status, expiresAt])
+}
+
+model CreditAccount {
+  userId String @id
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  enabled Boolean @default(false)
+  limitMinor BigInt @default(0)
+  dueAt DateTime?
+  approvedByUserId String
+  note String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([organizationId])
+}
+
+model FinancialReviewCase {
+  id String @id @default(cuid())
+  caseKey String @unique
+  organizationId String?
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  kind String
+  targetType String
+  targetId String
+  reference String?
+  reason String
+  sourceAuditId String
+  status String @default("OPEN")
+  version Int @default(1)
+  reviewNote String?
+  reviewedByUserId String?
+  reviewedByName String?
+  reviewedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([organizationId, status, createdAt])
+  @@index([kind, targetId])
+}

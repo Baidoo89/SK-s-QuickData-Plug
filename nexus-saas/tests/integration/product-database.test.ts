@@ -21,7 +21,7 @@ const lockTrigger = `${runId}_delete_trigger`
 let productId: string
 let databaseVerified = false
 
-const context = (id: string) => ({ params: { id } })
+const context = (id: string) => ({ params: Promise.resolve({ id }) })
 const request = (method: string, body?: unknown) => new Request("http://localhost/api/products", { method, ...(body === undefined ? {} : { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }) })
 
 async function readPrices(id: string, organizationId = orgA) {

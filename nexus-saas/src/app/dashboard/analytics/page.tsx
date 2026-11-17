@@ -9,6 +9,7 @@ import { notFound } from "next/navigation";
 import { AdvancedAnalyticsTables } from "@/components/dashboard/advanced-analytics-tables";
 import { formatGhanaCedis } from "@/lib/currency";
 import { MetricCard } from "@/components/ui/metric-card";
+import { summarizeFinancialOrders } from "@/lib/financial-report";
 
 function getRangeDates(range: string) {
   const now = new Date();
@@ -45,7 +46,8 @@ function formatDateLabel(date: Date) {
   return `${date.getDate()} ${date.toLocaleString("default", { month: "short" })}`;
 }
 
-export default async function AnalyticsPage({ searchParams }: { searchParams: { range?: string } }) {
+export default async function AnalyticsPage(props: { searchParams: Promise<{ range?: string }> }) {
+  const searchParams = await props.searchParams;
   const session = await auth();
   if (!session?.user?.email) {
     return notFound();
@@ -83,8 +85,9 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: { 
     orderBy: { createdAt: "asc" },
   });
 
-  let revenue = 0;
-  let profit = 0;
+  const financial = summarizeFinancialOrders(orders);
+  const revenue = financial.grossSales;
+  const profit = financial.grossMargin;
   let completed = 0;
   let failed = 0;
   const byDay = new Map<string, number>();
@@ -98,7 +101,6 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: { 
     const isCompleted = order.status === "COMPLETED";
 
     if (order.status === "COMPLETED") {
-      revenue += order.total;
       completed += 1;
     }
     if (order.status === "FAILED") {
@@ -113,8 +115,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: { 
 
     for (const item of order.items) {
       if (isCompleted) {
-        // Profit is meaningful only for completed sales.
-        profit += item.profit;
+        // Profit is already summarized with exact pesewa arithmetic above.
       }
 
       const lineRevenue = isCompleted ? item.price * item.quantity : 0;
@@ -211,8 +212,8 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: { 
       </div>
 
       <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard label="Revenue" value={formatGhanaCedis(revenue)} description="Completed orders in selected period" icon={DollarSign} tone="success" />
-        <MetricCard label="Profit" value={formatGhanaCedis(profit)} description="Sum of item-level profit" icon={DollarSign} tone="primary" />
+        <MetricCard label="Gross sales" value={formatGhanaCedis(revenue)} description="Completed customer sales" icon={DollarSign} tone="success" />
+        <MetricCard label="Gross margin" value={formatGhanaCedis(profit)} description="Item margin across all channels" icon={DollarSign} tone="primary" />
         <MetricCard label="Orders" value={orders.length} description="All statuses in selected period" icon={Activity} tone="info" />
         <Card className="premium-surface overflow-hidden rounded-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b border-border/70 bg-muted/20 pb-2">
@@ -228,6 +229,20 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: { 
         <MetricCard label="Active Customers" value={activeCustomerIds.size} description="Placed at least one order in period" icon={Users} tone="primary" />
         <MetricCard label="Active Agents" value={activeAgentIds.size} description="Agents with at least one order" icon={Users} tone="info" />
       </div>
+
+      <Card className="premium-surface overflow-hidden rounded-lg" data-testid="financial-reconciliation-summary">
+        <CardHeader className="border-b border-border/70 bg-muted/20">
+          <CardTitle>Financial reconciliation</CardTitle>
+          <p className="mt-1 text-xs text-muted-foreground">Gross sales include every completed channel. External/API sales are customer money collected outside QuickData and are excluded from withdrawal-eligible margin.</p>
+        </CardHeader>
+        <CardContent className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div><p className="text-xs text-muted-foreground">Wallet-backed sales</p><p className="mt-1 font-semibold">{formatGhanaCedis(financial.walletBackedSales)}</p></div>
+          <div><p className="text-xs text-muted-foreground">Storefront payments</p><p className="mt-1 font-semibold">{formatGhanaCedis(financial.storefrontSales)}</p></div>
+          <div><p className="text-xs text-muted-foreground">External/API sales</p><p className="mt-1 font-semibold">{formatGhanaCedis(financial.externalSales)}</p></div>
+          <div><p className="text-xs text-muted-foreground">Withdrawal-eligible margin</p><p className="mt-1 font-semibold">{formatGhanaCedis(financial.withdrawalEligibleMargin)}</p></div>
+          <div><p className="text-xs text-muted-foreground">External margin excluded</p><p className="mt-1 font-semibold">{formatGhanaCedis(financial.externalMargin)}</p></div>
+        </CardContent>
+      </Card>
 
       <div className="grid min-w-0 gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="premium-surface col-span-1 min-w-0 overflow-hidden rounded-lg lg:col-span-4">

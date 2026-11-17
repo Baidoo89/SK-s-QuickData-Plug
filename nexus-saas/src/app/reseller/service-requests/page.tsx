@@ -91,11 +91,12 @@ async function getResellerServiceRequests(userId: string, organizationId: string
   })
 }
 
-export default async function ResellerServiceRequestsPage({
-  searchParams,
-}: {
-  searchParams?: { [key: string]: string | string[] | undefined }
-}) {
+export default async function ResellerServiceRequestsPage(
+  props: {
+    searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
+  }
+) {
+  const searchParams = await props.searchParams;
   const status = typeof searchParams?.status === "string" ? searchParams.status : undefined
   const serviceId = typeof searchParams?.service === "string" ? searchParams.service : undefined
   const session = await auth()

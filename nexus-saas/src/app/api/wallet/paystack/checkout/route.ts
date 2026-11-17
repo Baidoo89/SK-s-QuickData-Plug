@@ -1,3 +1,4 @@
+import { getWalletPaystackSecret } from "@/lib/paystack"
 import { requireAuth, isAuthError } from "@/lib/auth-guard";
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response";
 import { db } from "@/lib/db";
@@ -75,12 +76,14 @@ export async function POST(req: Request) {
       return ApiErrors.INVALID_ORGANIZATION();
     }
 
-    const paymentSettings = await getOrganizationPaymentSettings(user.organizationId);
-    if (!paymentSettings.paystackConnected || !paymentSettings.paystackSecretKey) {
-      return ApiErrors.BAD_REQUEST("Subscriber Paystack is not connected. Ask the organization owner to connect Paystack in dashboard settings.");
-    }
+    const fundingOwner = ["SUBSCRIBER", "SUPERADMIN"].includes(user.role) ? "PLATFORM" : "SUBSCRIBER"
+    const paymentSettings = fundingOwner === "SUBSCRIBER" ? await getOrganizationPaymentSettings(user.organizationId) : null
+    const secret = fundingOwner === "PLATFORM" ? getWalletPaystackSecret() : paymentSettings?.paystackConnected ? paymentSettings.paystackSecretKey : null
+    if (!secret) return ApiErrors.BAD_REQUEST(fundingOwner === "PLATFORM" ? "Platform wallet payments are not configured. Contact the platform admin." : "Your store owner's Paystack is not connected.")
 
-    const charge = calculateGrossWalletCharge(rawAmount);
+    const netPesewas = Math.round(rawAmount * 100);
+    if (!Number.isSafeInteger(netPesewas) || netPesewas <= 0 || Math.abs(rawAmount * 100 - netPesewas) > 0.000001) return ApiErrors.BAD_REQUEST("Enter an amount with at most two decimal places");
+    const charge = calculateGrossWalletCharge(netPesewas / 100);
 
     // Convert GHS to pesewas (1 GHS = 100 pesewas). Agents/resellers pay the gross amount so fees are not absorbed by the platform.
     const amountInPesewas = Math.round(charge.grossAmount * 100);
@@ -94,15 +97,17 @@ export async function POST(req: Request) {
     const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${paymentSettings.paystackSecretKey}`,
+        Authorization: `Bearer ${secret}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         email: user.email,
         amount: amountInPesewas,
+        currency: "GHS",
         metadata: {
           purpose: "wallet_topup",
-          paymentOwner: "subscriber",
+          paymentOwner: fundingOwner === "PLATFORM" ? "platform" : "subscriber",
+          walletFundingOwner: fundingOwner,
           organizationId: user.organizationId,
           walletUserId: user.id,
           walletUserEmail: user.email,
@@ -113,7 +118,7 @@ export async function POST(req: Request) {
           walletFeePaidBy: user.role === "AGENT" || user.role === "RESELLER" ? "seller" : "wallet_owner",
           returnPath: safeReturnPath,
         },
-        callback_url: `${baseUrl}/api/wallet/paystack/verify?organizationId=${encodeURIComponent(user.organizationId)}`,
+        callback_url: `${baseUrl}/api/wallet/paystack/verify?organizationId=${encodeURIComponent(user.organizationId)}&fundingOwner=${fundingOwner}`,
       }),
     });
 

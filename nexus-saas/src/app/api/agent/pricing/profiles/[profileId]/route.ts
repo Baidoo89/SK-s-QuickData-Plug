@@ -23,7 +23,8 @@ async function resolveOwnedProfile(userId: string, organizationId: string, profi
   return { agentId, profile }
 }
 
-export async function GET(_: Request, { params }: { params: { profileId: string } }) {
+export async function GET(_: Request, props: { params: Promise<{ profileId: string }> }) {
+  const params = await props.params;
   try {
     const auth = await requireAuth()
     if (isAuthError(auth)) return auth
@@ -86,7 +87,8 @@ export async function GET(_: Request, { params }: { params: { profileId: string 
   }
 }
 
-export async function PATCH(req: Request, { params }: { params: { profileId: string } }) {
+export async function PATCH(req: Request, props: { params: Promise<{ profileId: string }> }) {
+  const params = await props.params;
   try {
     const auth = await requireAuth()
     if (isAuthError(auth)) return auth

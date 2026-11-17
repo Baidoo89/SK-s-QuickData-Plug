@@ -25,11 +25,12 @@ type CustomerFilters = {
   q?: string
 }
 
-export default async function AgentCustomersPage({
-  searchParams,
-}: {
-  searchParams?: { [key: string]: string | string[] | undefined }
-}) {
+export default async function AgentCustomersPage(
+  props: {
+    searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
+  }
+) {
+  const searchParams = await props.searchParams;
   const q = typeof searchParams?.q === "string" ? searchParams.q : undefined
   const filters: CustomerFilters = { q }
 

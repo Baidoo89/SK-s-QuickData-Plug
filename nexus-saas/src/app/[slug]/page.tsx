@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation"
 
 interface LegacyStorefrontProps {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }
 
-export default function LegacyStorefrontRedirect({ params }: LegacyStorefrontProps) {
+export default async function LegacyStorefrontRedirect(props: LegacyStorefrontProps) {
+  const params = await props.params;
   redirect(`/shop/${params.slug}`)
 }

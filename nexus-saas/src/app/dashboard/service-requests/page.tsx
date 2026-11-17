@@ -125,11 +125,12 @@ async function getServiceRequests(filters: ServiceRequestFilters = {}) {
   })
 }
 
-export default async function ServiceRequestsPage({
-  searchParams,
-}: {
-  searchParams?: { [key: string]: string | string[] | undefined }
-}) {
+export default async function ServiceRequestsPage(
+  props: {
+    searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
+  }
+) {
+  const searchParams = await props.searchParams;
   const status = typeof searchParams?.status === "string" ? searchParams.status : undefined
   const serviceId = typeof searchParams?.service === "string" ? searchParams.service : undefined
   const [rows, allRowsForStatus] = await Promise.all([

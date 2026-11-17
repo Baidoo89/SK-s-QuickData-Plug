@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client"
 import { db } from "@/lib/db"
 import { displayOrderCode } from "@/lib/order-code"
 import { resolveOrderRecipientPhone } from "@/lib/order-recipient"
@@ -26,9 +27,13 @@ export async function findApiOrderByExternalReference(params: {
   organizationId: string
   externalReference: string
   apiKeyId?: string
-}) {
+}, client: Prisma.TransactionClient = db) {
+  if (params.apiKeyId) {
+    const direct = await client.order.findFirst({ where: { organizationId: params.organizationId, apiKeyId: params.apiKeyId, source: "API", externalReference: params.externalReference }, include: { items: { include: { product: true }, take: 1 }, customer: true } })
+    if (direct) return direct
+  }
   if (!params.apiKeyId) {
-    const directOrder = await db.order.findFirst({
+    const directOrder = await client.order.findFirst({
       where: {
         organizationId: params.organizationId,
         source: "API",
@@ -43,7 +48,7 @@ export async function findApiOrderByExternalReference(params: {
     if (directOrder) return directOrder
   }
 
-  const logs = await db.auditLog.findMany({
+  const logs = await client.auditLog.findMany({
     where: {
       action: "API_ORDER_CREATED",
       targetType: "ORDER",
@@ -52,7 +57,6 @@ export async function findApiOrderByExternalReference(params: {
       meta: { contains: params.externalReference },
     },
     orderBy: { createdAt: "desc" },
-    take: 20,
     select: { targetId: true, meta: true },
   })
 
@@ -74,7 +78,7 @@ export async function findApiOrderByExternalReference(params: {
 export async function getApiOrderCreationMeta(orderId: string) {
   const order = await db.order.findUnique({
     where: { id: orderId },
-    select: { source: true, externalReference: true },
+    select: { source: true, externalReference: true, apiKeyId: true },
   })
 
   const log = await db.auditLog.findFirst({
@@ -92,6 +96,7 @@ export async function getApiOrderCreationMeta(orderId: string) {
     return {
       ...meta,
       source: "API",
+      apiKeyId: order.apiKeyId || meta.apiKeyId,
       externalReference: order.externalReference || meta.externalReference || null,
     }
   }
@@ -102,12 +107,12 @@ export async function getApiOrderCreationMeta(orderId: string) {
 export async function assertApiOrderRateLimit(params: {
   apiKeyId: string
   organizationId: string
-}) {
+}, client: Prisma.TransactionClient = db) {
   const limit = Number(process.env.API_ORDER_RATE_LIMIT_PER_MINUTE || "60")
   if (!Number.isFinite(limit) || limit <= 0) return { ok: true as const }
 
   const since = new Date(Date.now() - 60 * 1000)
-  const count = await db.auditLog.count({
+  const count = await client.auditLog.count({
     where: {
       action: "API_ORDER_CREATED",
       targetType: "ORDER",

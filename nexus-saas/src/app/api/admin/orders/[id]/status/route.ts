@@ -1,18 +1,14 @@
 import { requireAdmin, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
-import { notifyApiOrderStatus } from "@/lib/api-order-tracking"
-import { reverseOrderProfitIfNeeded, reverseOrderWalletDebitIfNeeded } from "@/lib/order-wallet"
+import { applyManualOrderStatus } from "@/lib/manual-order-status"
 
 const ALLOWED_STATUSES = ["COMPLETED", "PROCESSING", "PENDING", "FAILED", "CANCELLED", "REFUNDED"] as const
 type AllowedStatus = (typeof ALLOWED_STATUSES)[number]
-const REVERSE_STATUSES = new Set(["FAILED", "CANCELLED", "REFUNDED"])
 const PAYMENT_LOCKED_STATUSES = new Set(["PENDING_PAYMENT", "PAYMENT_FAILED", "PAYMENT_INIT_FAILED"])
 
-export async function PATCH(
-  req: Request,
-  { params }: { params: { id: string } },
-) {
+export async function PATCH(req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authResult = await requireAdmin()
     if (isAuthError(authResult)) {
@@ -49,45 +45,12 @@ export async function PATCH(
       return ApiErrors.BAD_REQUEST("Only paid orders can be manually fulfilled.")
     }
 
-    const updated = await db.order.update({
-      where: { id: params.id },
-      data: { status },
-      select: { id: true, status: true, organizationId: true },
-    })
-
-    if (REVERSE_STATUSES.has(status) && existing.status !== status) {
-      await reverseOrderWalletDebitIfNeeded({
-        orderId: params.id,
-        organizationId: updated.organizationId,
-        reason: `Admin changed status to ${status}`,
-      })
-
-      await reverseOrderProfitIfNeeded({
-        orderId: params.id,
-        organizationId: updated.organizationId,
-        previousStatus: existing.status,
-        reason: `Admin changed status to ${status}`,
-      })
-    }
-
-    await db.auditLog.create({
-      data: {
-        actorId: authResult.user.id,
-        actorName: authResult.user.email,
-        action: "ORDER_MANUAL_STATUS_UPDATE",
-        targetType: "ORDER",
-        targetId: params.id,
-        organizationId: updated.organizationId,
-        meta: JSON.stringify({ status }),
-      },
-    })
-
-    if (existing.status !== updated.status) {
-      await notifyApiOrderStatus(updated.id, updated.status)
-    }
+    const updated = await applyManualOrderStatus({ orderId: existing.id, organizationId: existing.organizationId, status, actorId: authResult.user.id, actorName: authResult.user.email, action: "ORDER_MANUAL_STATUS_UPDATE" })
+    if (!updated) return ApiErrors.BAD_REQUEST("Order changed while updating; reload and try again.")
 
     return apiSuccess({ id: updated.id, status: updated.status })
   } catch (error) {
+    if (error instanceof Error && ["ORDER_STATUS_CONFLICT", "ORDER_NOT_PAID", "INVALID_ORDER_STATUS_TRANSITION"].includes(error.message)) return ApiErrors.BAD_REQUEST("This status change is no longer allowed. Reload the order; use retry for a failed order.")
     logApiError("[ADMIN_ORDER_STATUS_PATCH]", error)
     return ApiErrors.INTERNAL_ERROR()
   }

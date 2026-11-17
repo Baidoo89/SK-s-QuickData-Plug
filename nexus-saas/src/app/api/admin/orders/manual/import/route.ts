@@ -1,8 +1,7 @@
 import { requireAdmin, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
-import { notifyApiOrderStatus } from "@/lib/api-order-tracking"
-import { reverseOrderProfitIfNeeded, reverseOrderWalletDebitIfNeeded } from "@/lib/order-wallet"
+import { applyManualOrderStatus } from "@/lib/manual-order-status"
 import { z } from "zod"
 
 const rowSchema = z.object({
@@ -58,41 +57,8 @@ export async function POST(req: Request) {
           continue
         }
 
-        await db.order.update({
-          where: { id: existing.id },
-          data: { status: row.status },
-        })
-
-        if (["FAILED", "CANCELLED", "REFUNDED"].includes(row.status)) {
-          await reverseOrderWalletDebitIfNeeded({
-            orderId: existing.id,
-            organizationId: existing.organizationId,
-            reason: `Manual import marked ${row.status.toLowerCase()}`,
-          })
-
-          await reverseOrderProfitIfNeeded({
-            orderId: existing.id,
-            organizationId: existing.organizationId,
-            previousStatus: existing.status,
-            reason: `Manual import marked ${row.status.toLowerCase()}`,
-          })
-        }
-
-        await db.auditLog.create({
-          data: {
-            actorId: authResult.user.id,
-            actorName: authResult.user.email,
-            action: "ORDER_MANUAL_IMPORT_STATUS",
-            targetType: "ORDER",
-            targetId: existing.id,
-            organizationId: existing.organizationId,
-            meta: JSON.stringify({ status: row.status }),
-          },
-        })
-
-        if (existing.status !== row.status) {
-          await notifyApiOrderStatus(existing.id, row.status)
-        }
+        const saved = await applyManualOrderStatus({ orderId: existing.id, organizationId: existing.organizationId, status: row.status, actorId: authResult.user.id, actorName: authResult.user.email, action: "ORDER_MANUAL_IMPORT_STATUS", expectedStatuses: ["PENDING", "PROCESSING"], manualOnly: true })
+        if (!saved) { failed++; continue }
 
         updated++
       } catch {

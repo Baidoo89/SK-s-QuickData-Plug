@@ -92,6 +92,7 @@ export async function GET(req: Request) {
     const completedResellerOrderWhere = {
       organizationId: actor.organizationId ?? undefined,
       status: "COMPLETED",
+      source: { not: "API" },
       user: {
         role: "RESELLER",
         parentAgentId: actorAgentId,

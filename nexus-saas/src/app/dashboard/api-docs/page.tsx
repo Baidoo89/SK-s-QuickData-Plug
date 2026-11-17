@@ -1,3 +1,4 @@
+import { ApiPaymentRules } from "@/components/api-access/api-payment-rules"
 import { redirect } from "next/navigation"
 import { Code2, KeyRound, PackageSearch, UploadCloud } from "lucide-react"
 
@@ -49,6 +50,8 @@ export default async function ApiDocsPage() {
           Connect your website to TechDalt. Use API keys for external websites, including your own keys and approved agent or reseller keys.
         </p>
       </div>
+
+      <ApiPaymentRules creditPath="/dashboard/credit" />
 
       <div className="grid min-w-0 gap-4 md:grid-cols-3">
         <MetricCard label="API Keys" value={user.organization.apiKeys.length} description="Subscriber and approved seller credentials" icon={KeyRound} tone="primary" />

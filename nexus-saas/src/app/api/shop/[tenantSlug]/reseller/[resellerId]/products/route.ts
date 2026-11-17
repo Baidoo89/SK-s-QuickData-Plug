@@ -5,13 +5,14 @@ import { getResellerPricingProfileContext, resolveResellerBuyPrice } from "@/lib
 import { getResellerStorefrontPrices, mapStorefrontPrices } from "@/lib/storefront-pricing"
 
 interface Params {
-  params: {
+  params: Promise<{
     tenantSlug: string
     resellerId: string
-  }
+  }>
 }
 
-export async function GET(_req: Request, { params }: Params) {
+export async function GET(_req: Request, props: Params) {
+  const params = await props.params;
   try {
     const { tenantSlug, resellerId } = params
 

@@ -19,13 +19,14 @@ function appendSearch(path: string, searchParams?: SearchParams) {
   return query ? `${path}?${query}` : path
 }
 
-export default async function LegacyAgentStorefrontPage({
-  params,
-  searchParams,
-}: {
-  params: { subscriberSlug: string; agentId: string }
-  searchParams?: SearchParams
-}) {
+export default async function LegacyAgentStorefrontPage(
+  props: {
+    params: Promise<{ subscriberSlug: string; agentId: string }>
+    searchParams?: Promise<SearchParams>
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const organization = await db.organization.findUnique({
     where: { slug: params.subscriberSlug },
     select: { id: true, slug: true },

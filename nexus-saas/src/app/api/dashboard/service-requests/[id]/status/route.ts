@@ -6,7 +6,8 @@ const ALLOWED_STATUSES = ["PENDING_REVIEW", "PROCESSING", "COMPLETED", "FAILED",
 type AllowedStatus = (typeof ALLOWED_STATUSES)[number]
 const PAYMENT_LOCKED_STATUSES = new Set(["PENDING_PAYMENT", "PAYMENT_FAILED", "PAYMENT_INIT_FAILED"])
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authResult = await requireOrgManager()
     if (isAuthError(authResult)) {

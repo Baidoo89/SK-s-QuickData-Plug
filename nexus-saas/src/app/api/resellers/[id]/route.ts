@@ -1,3 +1,5 @@
+import { lockWallet } from "@/lib/wallet-lock"
+import { requireNoAccountHistory } from "@/lib/account-history"
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { requireAuth, isAuthError } from "@/lib/auth-guard"
@@ -23,7 +25,8 @@ function getRangeStart(now: Date, range: SalesRangeKey): Date {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate())
 }
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authResult = await requireAuth()
     if (isAuthError(authResult)) return authResult
@@ -171,7 +174,8 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authResult = await requireAuth()
     if (isAuthError(authResult)) return authResult
@@ -219,7 +223,12 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     }
 
     // Update reseller
-    const updated = await db.user.update({
+    const updated = await db.$transaction(async tx => {
+      await lockWallet(tx, params.id)
+      const current = await tx.user.findFirst({ where: { id: params.id, organizationId, role: "RESELLER", parentAgentId: agentId } })
+      if (!current) throw new Error("ACCOUNT_SCOPE_CHANGED")
+      if (parsed.data.active === true && current.emailVerificationRequired && !current.emailVerified) throw new Error("ACCOUNT_EMAIL_UNVERIFIED")
+      const changed = await tx.user.update({
       where: { id: params.id },
       data: {
         ...(parsed.data.name && { name: parsed.data.name }),
@@ -236,6 +245,9 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         createdAt: true,
       },
     })
+      if (parsed.data.active !== undefined && current.active !== parsed.data.active) await tx.auditLog.create({ data: { action: "ACCOUNT_STATUS_CHANGED", targetType: "USER", targetId: params.id, organizationId, actorId: authUser.id, actorName: authUser.email, meta: JSON.stringify({ activeBefore: current.active, activeAfter: parsed.data.active }) } })
+      return changed
+    })
 
     if (parsed.data.active === true && updated.email) {
       await sendSignupNotificationEmail({
@@ -250,12 +262,15 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
     return apiSuccess(updated, "Reseller updated")
   } catch (error) {
+    if (error instanceof Error && error.message === "ACCOUNT_SCOPE_CHANGED") return ApiErrors.FORBIDDEN()
+    if (error instanceof Error && error.message === "ACCOUNT_EMAIL_UNVERIFIED") return ApiErrors.BAD_REQUEST("Email verification is required before approval.")
     console.error("[RESELLER_PUT]", error)
     return ApiErrors.INTERNAL_ERROR()
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const authResult = await requireAuth()
     if (isAuthError(authResult)) return authResult
@@ -297,6 +312,8 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 
     // Delete reseller and their price overrides in transaction
     await db.$transaction(async (tx) => {
+      await requireNoAccountHistory(tx, params.id)
+      await tx.apiKey.deleteMany({ where: { ownerUserId: params.id } })
       await tx.resellerPrice.deleteMany({
         where: { resellerId: params.id, organizationId },
       })
@@ -306,6 +323,8 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 
     return new NextResponse(null, { status: 204 })
   } catch (error) {
+    if (error instanceof Error && error.message === "ACCOUNT_HAS_FINANCIAL_HISTORY") return ApiErrors.BAD_REQUEST("This reseller has financial history. Deactivate the account instead; balances and debt must remain on record.")
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "P2003") return ApiErrors.BAD_REQUEST("This reseller still has linked records. Deactivate the account instead.")
     console.error("[RESELLER_DELETE]", error)
     return ApiErrors.INTERNAL_ERROR()
   }

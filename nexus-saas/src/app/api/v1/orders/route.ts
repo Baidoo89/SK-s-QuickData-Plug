@@ -1,3 +1,6 @@
+import { assertWalletPurchase } from "@/lib/credit-account"
+import { getWalletBalance, moneyToMinor, minorToMoney, multiplyMoney, subtractMoney } from "@/lib/money"
+import { lockWallet } from "@/lib/wallet-lock"
 import { z } from "zod"
 
 import { apiSuccess, ApiErrors, apiError, logApiError } from "@/lib/api-response"
@@ -23,7 +26,7 @@ const createApiOrderSchema = z.object({
   quantity: z.number().int().min(1).max(100).default(1),
   customerName: z.string().optional(),
   customerEmail: z.string().email().optional(),
-  externalReference: z.string().optional(),
+  externalReference: z.string().trim().min(1).max(200).optional(),
   callbackUrl: z.string().url().optional(),
   amountPaid: z.number().positive().optional(),
 })
@@ -68,6 +71,16 @@ function toApiOrderResponse(order: {
   )
 }
 
+function apiSaleAmounts(unitPrice: number, quantity: number, amountPaid?: number) {
+  const total = amountPaid ?? multiplyMoney(unitPrice, quantity)
+  const minor = moneyToMinor(total)
+  if (minor % quantity !== 0) throw new Error("API_AMOUNT_NOT_DIVISIBLE")
+  return { total, sellingUnitPrice: minorToMoney(minor / quantity) }
+}
+function assertSameApiPurchase(order: { phoneNumber: string | null; total: number; items: { productId: string; quantity: number }[] }, request: { productId: string; quantity: number; amountPaid?: number }, phone: string) {
+  if (order.phoneNumber !== phone || order.items[0]?.productId !== request.productId || order.items[0]?.quantity !== request.quantity || (request.amountPaid !== undefined && moneyToMinor(request.amountPaid) !== moneyToMinor(order.total))) throw new Error("API_IDEMPOTENCY_CONFLICT")
+}
+
 async function resolveApiSellerPricing(input: {
   organizationId: string
   productId: string
@@ -100,8 +113,7 @@ async function resolveApiSellerPricing(input: {
       select: { price: true },
     })
     const defaultSellingPrice = storefrontPrice?.price ?? input.productPrice
-    const total = input.amountPaid ?? defaultSellingPrice * input.quantity
-    const sellingUnitPrice = total / input.quantity
+    const { total, sellingUnitPrice } = apiSaleAmounts(defaultSellingPrice, input.quantity, input.amountPaid)
 
     return {
       sellerRole: "SUBSCRIBER",
@@ -149,10 +161,11 @@ async function resolveApiSellerPricing(input: {
         select: { price: true },
       }),
     ])
-    const costUnitPrice = agentPrice?.price ?? basePrice
+    const agentProfile = await getResellerPricingProfileContext(input.organizationId, input.ownerUserId)
+    const costUnitPrice = resolveResellerBuyPrice({ overridePrice: agentPrice?.price, profilePrice: agentProfile.profilePriceMap.get(input.productId), parentCost: basePrice, strictPricing: agentProfile.strictPricing })
+    if (costUnitPrice === null) throw new Error("API_PRODUCT_NOT_AVAILABLE")
     const defaultSellingPrice = storefrontPrice?.price ?? costUnitPrice
-    const total = input.amountPaid ?? defaultSellingPrice * input.quantity
-    const sellingUnitPrice = total / input.quantity
+    const { total, sellingUnitPrice } = apiSaleAmounts(defaultSellingPrice, input.quantity, input.amountPaid)
 
     return {
       sellerRole: "AGENT",
@@ -222,8 +235,7 @@ async function resolveApiSellerPricing(input: {
   }
 
   const defaultSellingPrice = storefrontPrice?.price ?? resellerBuyPrice
-  const total = input.amountPaid ?? defaultSellingPrice * input.quantity
-  const sellingUnitPrice = total / input.quantity
+  const { total, sellingUnitPrice } = apiSaleAmounts(defaultSellingPrice, input.quantity, input.amountPaid)
 
   return {
     sellerRole: "RESELLER",
@@ -277,12 +289,13 @@ export async function GET(req: Request) {
     if (!externalReference && meta.source !== "API") {
       return ApiErrors.NOT_FOUND("API order")
     }
-    if (!externalReference && meta.apiKeyId && meta.apiKeyId !== apiAuth.apiKeyId) {
+    if (!externalReference && meta.apiKeyId !== apiAuth.apiKeyId) {
       return ApiErrors.NOT_FOUND("API order")
     }
 
     return toApiOrderResponse(order, externalReference || meta.externalReference || null)
   } catch (error) {
+    if (error instanceof Error && error.message === "WALLET_ACCOUNT_RESTRICTED") return ApiErrors.FORBIDDEN()
     logApiError("[API_V1_ORDERS_GET]", error)
     return ApiErrors.INTERNAL_ERROR()
   }
@@ -318,6 +331,7 @@ export async function POST(req: Request) {
       })
 
       if (existingOrder) {
+        assertSameApiPurchase(existingOrder, parsed.data, normalizedPhone)
         return toApiOrderResponse(existingOrder, externalReference, "API order already exists")
       }
     }
@@ -365,9 +379,27 @@ export async function POST(req: Request) {
       ownerUserId: apiAuth.ownerUserId,
       ownerAgentId: apiAuth.ownerAgentId,
     })
-    const computedTotal = pricing.costUnitPrice * parsed.data.quantity
+    const computedTotal = multiplyMoney(pricing.costUnitPrice, parsed.data.quantity)
+    if (computedTotal <= 0) return ApiErrors.BAD_REQUEST("A positive seller cost must be configured for this bundle.")
 
-    const order = await db.$transaction(async (tx) => {
+    const creation = await db.$transaction(async (tx) => {
+      const locked = await tx.$queryRaw<Array<{ id: string }>>`SELECT "id" FROM "ApiKey" WHERE "id" = ${apiAuth.apiKeyId} FOR UPDATE`
+      if (!locked.length) throw new Error("API_KEY_REVOKED")
+      if (externalReference) {
+        const existing = await findApiOrderByExternalReference({ organizationId: apiAuth.organizationId, apiKeyId: apiAuth.apiKeyId, externalReference }, tx)
+        if (existing) { assertSameApiPurchase(existing, parsed.data, normalizedPhone); return { created: false as const, order: existing } }
+      }
+      if (!(await assertApiOrderRateLimit({ apiKeyId: apiAuth.apiKeyId, organizationId: apiAuth.organizationId }, tx)).ok) throw new Error("API_RATE_LIMITED")
+      let walletUserId = apiAuth.ownerUserId
+      if (!walletUserId) {
+        const owners = await tx.user.findMany({ where: { organizationId: apiAuth.organizationId, role: "SUBSCRIBER", active: true, signupStatus: "APPROVED" }, select: { id: true }, take: 2 })
+        if (owners.length !== 1) throw new Error("API_OWNER_NOT_LINKED")
+        walletUserId = owners[0].id
+      }
+      if (!walletUserId) throw new Error("API_OWNER_NOT_LINKED")
+      await lockWallet(tx, walletUserId)
+      await assertWalletPurchase(tx, walletUserId, computedTotal)
+      const debit = await tx.walletTransaction.create({ data: { userId: walletUserId, method: "manual", amount: -computedTotal, status: "success", performedByRole: "API" } })
       const customerEmail = parsed.data.customerEmail || `${normalizedPhone}@api.placeholder.com`
       let customer = await tx.customer.findFirst({
         where: {
@@ -393,7 +425,8 @@ export async function POST(req: Request) {
           organizationId: apiAuth.organizationId,
           customerId: customer.id,
           agentId: pricing.agentId ?? undefined,
-          userId: pricing.sellerUserId ?? undefined,
+          userId: walletUserId,
+          apiKeyId: apiAuth.apiKeyId,
           total: pricing.total,
           status: "PENDING",
           phoneNumber: normalizedPhone,
@@ -402,7 +435,7 @@ export async function POST(req: Request) {
           sellerUserId: pricing.sellerUserId,
           sellerAgentId: pricing.sellerAgentId,
           customerType: "API_CUSTOMER",
-          paymentOwner: "EXTERNAL",
+          paymentOwner: "WALLET",
           paymentStatus: "PAID",
           fulfillmentMode: "MANUAL",
           externalReference: externalReference || null,
@@ -411,12 +444,13 @@ export async function POST(req: Request) {
               productId: product.id,
               quantity: parsed.data.quantity,
               price: pricing.sellingUnitPrice,
-              profit: Math.max(pricing.total - computedTotal, 0),
+              profit: 0,
             },
           },
         },
       })
 
+      await tx.auditLog.create({ data: { action: "ORDER_WALLET_DEBIT", targetType: "ORDER", targetId: created.id, organizationId: apiAuth.organizationId, meta: JSON.stringify({ walletTransactionId: debit.id, userId: walletUserId, amount: computedTotal, channel: "API_BUY", customerPaymentOwner: "EXTERNAL" }) } })
       await tx.auditLog.create({
         data: {
           action: "API_ORDER_CREATED",
@@ -435,6 +469,11 @@ export async function POST(req: Request) {
             externalReference: externalReference || null,
             callbackUrl: parsed.data.callbackUrl || null,
             amountPaid: pricing.total,
+            customerPaymentOwner: "EXTERNAL",
+            customerPaymentVerification: "SELLER_DECLARED",
+            walletCharged: computedTotal,
+            externalSalesMargin: Math.max(subtractMoney(pricing.total, computedTotal), 0),
+            profitPolicy: "EXTERNAL_MARGIN_NOT_WITHDRAWABLE",
             computedTotal,
             costUnitPrice: pricing.costUnitPrice,
             sellingUnitPrice: pricing.sellingUnitPrice,
@@ -443,8 +482,10 @@ export async function POST(req: Request) {
         },
       })
 
-      return created
+      return { created: true as const, order: created }
     }, { maxWait: 10000, timeout: 20000 })
+    if (!creation.created) return toApiOrderResponse(creation.order, externalReference || null, "API order already exists")
+    const order = creation.order
 
     const dispatch = await resolveOrderDispatch({
       orderId: order.id,
@@ -469,6 +510,8 @@ export async function POST(req: Request) {
         unitPrice: pricing.sellingUnitPrice,
         total: order.total,
         sellerRole: pricing.sellerRole,
+        walletCharged: computedTotal,
+        customerPaymentVerification: "SELLER_DECLARED",
         externalReference: externalReference || null,
         dispatchMode: dispatch.dispatchMode,
         dispatchProvider: dispatch.dispatchProvider,
@@ -478,6 +521,12 @@ export async function POST(req: Request) {
       201
     )
   } catch (error) {
+    if (error instanceof Error && error.message === "API_IDEMPOTENCY_CONFLICT") return apiError("IDEMPOTENCY_CONFLICT", "This reference was already used for a different purchase.", 409)
+    if (error instanceof Error && error.message === "API_RATE_LIMITED") return apiError("RATE_LIMITED", "API order limit exceeded. Try again in a minute.", 429)
+    if (error instanceof Error && error.message === "API_KEY_REVOKED") return ApiErrors.UNAUTHORIZED()
+    if (error instanceof Error && error.message === "CREDIT_OVERDUE") return ApiErrors.BAD_REQUEST("Your credit is overdue. Clear the outstanding debt before borrowing again.")
+    if (error instanceof Error && error.message === "INSUFFICIENT_FUNDS") return ApiErrors.BAD_REQUEST("Insufficient wallet balance for this API purchase.")
+    if (error instanceof Error && ["INVALID_MONEY", "API_AMOUNT_NOT_DIVISIBLE"].includes(error.message)) return ApiErrors.BAD_REQUEST("Use valid pesewa amounts that split evenly across the quantity.")
     if (error instanceof Error && error.message === "API_OWNER_NOT_LINKED") {
       return ApiErrors.BAD_REQUEST("API key owner is not linked to an active approved seller account.")
     }

@@ -1,3 +1,4 @@
+import { claimManualOrders } from "@/lib/manual-order-claim"
 import { NextResponse } from "next/server"
 import { requireAdmin, isAuthError } from "@/lib/auth-guard"
 import { db } from "@/lib/db"
@@ -50,7 +51,7 @@ export async function GET(req: Request) {
   const dispatchMap = await getDispatchMetaByOrderIds(orders.map((o) => o.id))
   const paymentMap = await getStorefrontPaymentMap(orders.map((o) => o.id), isSuperAdmin ? null : organizationId)
 
-  const manualOrders = orders.filter((order) => {
+  let manualOrders = orders.filter((order) => {
     const meta = dispatchMap.get(order.id) || { mode: order.fulfillmentMode || "MANUAL", network: "", provider: "Manual fulfillment" }
     const mode = meta.mode || order.fulfillmentMode || "MANUAL"
     const orderNetwork = (meta.network || "").toUpperCase()
@@ -60,51 +61,9 @@ export async function GET(req: Request) {
   })
 
   let claimedIds = new Set<string>()
-  if (claimPending && manualOrders.length > 0) {
-    const ids = manualOrders.filter((o) => o.status === "PENDING").map((o) => o.id)
-    if (ids.length > 0) {
-      await db.order.updateMany({
-        where: {
-          id: { in: ids },
-          status: "PENDING",
-          ...(isSuperAdmin ? {} : { organizationId: organizationId! }),
-        },
-        data: { status: "PROCESSING" },
-      })
-
-      claimedIds = new Set(ids)
-
-      await db.auditLog.create({
-        data: {
-          actorId: authResult.user.id,
-          actorName: authResult.user.email,
-          action: "ORDER_MANUAL_CLAIM_EXPORT",
-          targetType: "SYSTEM",
-          targetId: `manual-queue-${Date.now()}`,
-          organizationId: organizationId ?? undefined,
-          meta: JSON.stringify({
-            network: network || "ALL",
-            status: status || "PENDING",
-            claimedCount: ids.length,
-          }),
-        },
-      })
-
-      await db.auditLog.createMany({
-        data: ids.map((orderId) => ({
-          actorId: authResult.user.id,
-          actorName: authResult.user.email,
-          action: "ORDER_MANUAL_CLAIMED",
-          targetType: "ORDER",
-          targetId: orderId,
-          organizationId: organizationId ?? undefined,
-          meta: JSON.stringify({
-            network: network || "ALL",
-            exportType: "manual-queue",
-          }),
-        })),
-      })
-    }
+  if (claimPending) {
+    claimedIds = new Set(await claimManualOrders(manualOrders.map(order => order.id), authResult.user))
+    manualOrders = manualOrders.filter(order => claimedIds.has(order.id))
   }
 
   const header = [

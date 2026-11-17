@@ -25,6 +25,7 @@ export async function POST(req: Request) {
 
     return apiSuccess(checkout, "Service checkout created", 201)
   } catch (error) {
+    if (error instanceof Error && error.message === "INVALID_MONEY") return ApiErrors.BAD_REQUEST("A bundle price needs review. Please contact the shop owner.")
     if (isStorefrontServiceCheckoutError(error)) {
       return NextResponse.json(
         {

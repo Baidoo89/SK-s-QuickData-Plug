@@ -1,6 +1,7 @@
+import { recordFinancialReviewInTransaction } from "@/lib/financial-review"
 import { db } from "@/lib/db"
 import { notifyApiOrderStatus } from "@/lib/api-order-tracking"
-import { reverseOrderProfitIfNeeded, reverseOrderWalletDebitIfNeeded } from "@/lib/order-wallet"
+import { reverseOrderWalletDebitInTransaction } from "@/lib/order-wallet"
 
 export type ProviderOrderStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED"
 
@@ -55,53 +56,31 @@ export async function applyProviderStatusUpdate(input: {
   message?: string | null
   source: "callback" | "poll"
 }) {
-  const existing = await db.order.findUnique({
-    where: { id: input.orderId },
-    select: { id: true, organizationId: true, status: true },
-  })
-
-  if (!existing) return null
-
-  const updated = await db.order.update({
-    where: { id: input.orderId },
-    data: { status: input.status },
-    select: { id: true, status: true },
-  })
-
-  if (input.status === "FAILED") {
-    await reverseOrderWalletDebitIfNeeded({
-      orderId: input.orderId,
-      organizationId: existing.organizationId,
-      reason: `Provider ${input.source} failed`,
-    })
-
-    await reverseOrderProfitIfNeeded({
-      orderId: input.orderId,
-      organizationId: existing.organizationId,
-      previousStatus: existing.status,
-      reason: `Provider ${input.source} failed`,
-    })
-  }
-
-  await db.auditLog.create({
-    data: {
-      action: input.source === "poll" ? "ORDER_PROVIDER_STATUS_SYNC" : "ORDER_PROVIDER_CALLBACK",
-      targetType: "ORDER",
-      targetId: input.orderId,
-      organizationId: existing.organizationId,
-      meta: JSON.stringify({
-        previousStatus: existing.status,
-        status: input.status,
-        externalRef: input.externalRef || null,
-        message: input.message || null,
-        source: input.source,
-      }),
-    },
-  })
-
-  if (existing.status !== updated.status) {
-    await notifyApiOrderStatus(updated.id, updated.status)
-  }
-
-  return updated
+  const result = await db.$transaction(async tx => {
+    await tx.$queryRaw`SELECT "id" FROM "Order" WHERE "id" = ${input.orderId} FOR UPDATE`
+    const existing = await tx.order.findUnique({ where: { id: input.orderId }, select: { id: true, organizationId: true, status: true } })
+    if (!existing) return null
+    const latestAttempt = (input.externalRef || input.source === "callback") ? await tx.auditLog.findFirst({ where: { targetType: "ORDER", targetId: input.orderId, action: "ORDER_DISPATCH_ATTEMPT" }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], select: { meta: true, createdAt: true } }) : null
+    let latestReference: string | null = null
+    try { latestReference = JSON.parse(latestAttempt?.meta || "{}").externalRef || null } catch { /* No usable reference; transition checks still apply. */ }
+    const retry = input.source === "callback" ? await tx.auditLog.findFirst({ where: { targetType: "ORDER", targetId: input.orderId, action: "ORDER_RETRY_DISPATCH_STARTED" }, orderBy: { createdAt: "desc" }, select: { createdAt: true } }) : null
+    // Callbacks for retried orders need the current provider reference. A bare
+    // order ID cannot distinguish a delayed failure from the previous attempt.
+    const ambiguousRetry = Boolean(retry && (!input.externalRef || !latestReference || !latestAttempt || latestAttempt.createdAt <= retry.createdAt))
+    const staleReference = ambiguousRetry || Boolean(input.externalRef && latestReference && input.externalRef !== latestReference)
+    const allowed = !staleReference && (existing.status === input.status ||
+      (existing.status === "PENDING" && ["PROCESSING", "COMPLETED", "FAILED"].includes(input.status)) ||
+      (existing.status === "PROCESSING" && ["COMPLETED", "FAILED"].includes(input.status)))
+    if (!allowed) {
+      if (!staleReference && ["COMPLETED", "FAILED", "CANCELLED", "REFUNDED"].includes(existing.status) && ["COMPLETED", "FAILED"].includes(input.status) && existing.status !== input.status) await recordFinancialReviewInTransaction(tx, { kind: "PROVIDER_CONFLICT", organizationId: existing.organizationId, targetType: "ORDER", targetId: existing.id, reference: input.externalRef, reason: `Provider outcome ${input.status} conflicts with final order status ${existing.status}.` })
+      await tx.auditLog.create({ data: { action: "ORDER_PROVIDER_STATUS_IGNORED", targetType: "ORDER", targetId: input.orderId, organizationId: existing.organizationId, meta: JSON.stringify({ previousStatus: existing.status, incomingStatus: input.status, externalRef: input.externalRef || null, source: input.source }) } })
+      return { order: { id: existing.id, status: existing.status }, changed: false }
+    }
+    const order = await tx.order.update({ where: { id: input.orderId }, data: { status: input.status }, select: { id: true, status: true } })
+    if (input.status === "FAILED") await reverseOrderWalletDebitInTransaction(tx, { orderId: input.orderId, organizationId: existing.organizationId, reason: `Provider ${input.source} failed` })
+    await tx.auditLog.create({ data: { action: input.source === "poll" ? "ORDER_PROVIDER_STATUS_SYNC" : "ORDER_PROVIDER_CALLBACK", targetType: "ORDER", targetId: input.orderId, organizationId: existing.organizationId, meta: JSON.stringify({ previousStatus: existing.status, status: input.status, externalRef: input.externalRef || null, message: input.message || null, source: input.source }) } })
+    return { order, changed: existing.status !== order.status }
+  }, { maxWait: 10000, timeout: 20000 })
+  if (result?.changed) await notifyApiOrderStatus(result.order.id, result.order.status)
+  return result?.order ?? null
 }

@@ -28,7 +28,7 @@ let failure: "base" | "shop" | "delete-reference" | null
 
 const priceKey = (org: string, product: string) => `${org}:${product}`
 const newProduct = { name: " 2 GB ", price: 8.5, basePrice: 8, storefrontPrice: 10, provider: "MTN", category: "DATA_BUNDLE", active: true }
-const context = (id = "product-a") => ({ params: { id } })
+const context = (id = "product-a") => ({ params: Promise.resolve({ id }) })
 const request = (method: string, body?: unknown) => new Request("http://localhost/api/products/product-a", {
   method,
   ...(body === undefined ? {} : { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),

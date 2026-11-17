@@ -1,4 +1,5 @@
-import { requireAuthAndOrg, isAuthError } from "@/lib/auth-guard"
+import { claimManualOrders } from "@/lib/manual-order-claim"
+import { requireOrgManager, isAuthError } from "@/lib/auth-guard"
 import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
 import { getOrderSourceLogMap, ORDER_SOURCE_LABELS, resolveOrderSource } from "@/lib/order-source"
@@ -9,7 +10,7 @@ export const dynamic = "force-dynamic"
 
 export async function GET(req: Request) {
   try {
-    const authResult = await requireAuthAndOrg()
+    const authResult = await requireOrgManager()
     if (isAuthError(authResult)) {
       return authResult
     }
@@ -76,34 +77,14 @@ export async function GET(req: Request) {
     if (format === "csv") {
       // Export should be read-only by default. Status transitions only happen when explicitly requested.
       if (claimPending) {
-        const pendingIds = enrichedOrders.filter((o) => o.status === "PENDING").map((o) => o.id)
-        if (pendingIds.length > 0) {
-          await db.order.updateMany({
-            where: { id: { in: pendingIds } },
-            data: { status: "PROCESSING" },
-          })
-
-          orders = await db.order.findMany({
-            where,
-            include: {
-              items: { include: { product: true } },
-              customer: true,
-              agent: true,
-              user: true,
-            },
-            orderBy: { createdAt: "desc" },
-          })
-
-          const refreshedSourceMap = await getOrderSourceLogMap(orders.map((order) => order.id))
-          enrichedOrders = orders.map((order) => ({
-            ...order,
-            source: resolveOrderSource(order, refreshedSourceMap),
-          }))
-
-          if (source && source !== "ALL") {
-            enrichedOrders = enrichedOrders.filter((order) => order.source === source)
-          }
-        }
+        const claimedIds = await claimManualOrders(enrichedOrders.map(order => order.id), authResult.user)
+        orders = await db.order.findMany({
+          where: { id: { in: claimedIds }, organizationId },
+          include: { items: { include: { product: true } }, customer: true, agent: true, user: true },
+          orderBy: { createdAt: "desc" },
+        })
+        const refreshedSourceMap = await getOrderSourceLogMap(orders.map(order => order.id))
+        enrichedOrders = orders.map(order => ({ ...order, source: resolveOrderSource(order, refreshedSourceMap) }))
       }
 
       const header = ["id", "date", "source", "buyer", "email", "phone", "status", "total", "profit", "items"]

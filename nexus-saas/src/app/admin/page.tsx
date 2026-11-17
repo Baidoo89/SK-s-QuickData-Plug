@@ -24,7 +24,7 @@ function slugify(value: string) {
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)+/g, "")
+    .replace(/(^-|-$)+/g, "");
 }
 
 function addMonths(date: Date, months: number) {
@@ -183,11 +183,12 @@ async function createSubscriberTenant(formData: FormData) {
   redirect(`/admin?q=${encodeURIComponent(result.organization.slug)}`)
 }
 
-export default async function SuperAdminPage({
-  searchParams,
-}: {
-  searchParams?: AdminSearchParams
-}) {
+export default async function SuperAdminPage(
+  props: {
+    searchParams?: Promise<AdminSearchParams>
+  }
+) {
+  const searchParams = await props.searchParams;
   await requireSuperAdmin()
 
   const qRaw = typeof searchParams?.q === "string" ? searchParams.q.trim() : ""

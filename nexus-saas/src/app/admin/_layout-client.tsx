@@ -74,6 +74,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <NavLink href="/admin/payments" label="Payments" icon={CreditCard} closeOnClick={mobile} />
         <NavLink href="/admin/wallet" label="Wallets" icon={Wallet} closeOnClick={mobile} />
         <NavLink href="/admin/withdrawals" label="Withdrawals" icon={Wallet} closeOnClick={mobile} />
+        <NavLink href="/admin/credit" label="Credit & debt" icon={Wallet} closeOnClick={mobile} />
+        <NavLink href="/admin/reconciliation" label="Financial review" icon={CreditCard} closeOnClick={mobile} />
       </div>
 
       <div>
