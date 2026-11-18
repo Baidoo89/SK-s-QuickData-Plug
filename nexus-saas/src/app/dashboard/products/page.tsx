@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Input } from "@/components/ui/input"
 import { MetricCard } from "@/components/ui/metric-card"
+import { PageHeader } from "@/components/ui/page-header"
 import { formatGhanaCedis } from "@/lib/currency"
 import { Suspense } from "react"
 import { useSearchParams } from "next/navigation"
@@ -517,22 +518,18 @@ function BundlePricingContent() {
   if (activeTab === "pricing_profiles") {
     return (
       <div className="portal-page flex-1 space-y-6">
-        <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="min-w-0">
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Price Groups</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Reusable prices for agents and resellers.
-            </p>
-          </div>
-          <div className="grid w-full min-w-0 gap-2 sm:grid-cols-2 lg:w-auto">
+        <PageHeader
+          title="Price Groups"
+          description="Reusable prices for agents and resellers."
+          actions={<>
             <Button asChild variant="outline">
               <Link href="/dashboard/products">Products</Link>
             </Button>
             <Button asChild>
               <Link href="/dashboard/products?tab=pricing_profiles">Price groups</Link>
             </Button>
-          </div>
-        </div>
+          </>}
+        />
 
         <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="Profiles" value={profiles.length} description="Reusable price lists." icon={Tags} tone="primary" />
@@ -711,21 +708,18 @@ function BundlePricingContent() {
 
   return (
     <div className="portal-page flex-1 space-y-6">
-      {/* Header */}
-        <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="min-w-0">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Products & Prices</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage bundles, services, and prices.</p>
-          </div>
-          <div className="grid w-full min-w-0 gap-2 sm:grid-cols-2 lg:w-auto">
+      <PageHeader
+        title="Products & Prices"
+        description="Manage bundles, services, and prices."
+        actions={<>
             <Button asChild>
               <Link href="/dashboard/products">Products</Link>
             </Button>
             <Button asChild variant="outline">
               <Link href="/dashboard/products?tab=pricing_profiles">Price groups</Link>
             </Button>
-          </div>
-        </div>
+        </>}
+      />
 
       <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <MetricCard label="Bundles" value={totalActiveBundles} description="Active data bundles" icon={Package} tone="success" />

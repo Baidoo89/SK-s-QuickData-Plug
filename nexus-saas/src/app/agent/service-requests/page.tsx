@@ -4,6 +4,7 @@ import { PortalAccessMessage } from "@/components/access/portal-access-message"
 import { ServiceRequestsWorkspace, type ServiceRequestRow } from "@/components/dashboard/service-requests-workspace"
 import { EmptyState } from "@/components/ui/empty-state"
 import { MetricCard } from "@/components/ui/metric-card"
+import { PageHeader } from "@/components/ui/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { db } from "@/lib/db"
@@ -185,11 +186,9 @@ export default async function AgentServiceRequestsPage(
 
   return (
     <div className="portal-page space-y-6">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Services</h1>
-        </div>
-        <form className="grid w-full min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] lg:w-auto" method="GET">
+      <PageHeader
+        title="Services"
+        actions={<form className="grid w-full min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]" method="GET">
           <select name="status" defaultValue={status || "ALL"} className="h-9 rounded-md border border-input bg-background px-3 text-xs">
             <option value="ALL">All statuses</option>
             <option value="PENDING_PAYMENT">Awaiting payment</option>
@@ -202,8 +201,8 @@ export default async function AgentServiceRequestsPage(
           <button className="h-9 rounded-md bg-primary px-4 text-xs font-semibold text-primary-foreground" type="submit">
             Apply
           </button>
-        </form>
-      </div>
+        </form>}
+      />
 
       <Card className="premium-surface overflow-hidden rounded-lg">
         <CardContent className="space-y-3 p-4">

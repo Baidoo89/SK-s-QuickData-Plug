@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { EmptyState } from "@/components/ui/empty-state"
 import { MetricCard } from "@/components/ui/metric-card"
+import { PageHeader } from "@/components/ui/page-header"
 import { ServiceRequestsWorkspace, type ServiceRequestRow } from "@/components/dashboard/service-requests-workspace"
 import { formatGhanaCedis } from "@/lib/currency"
 import { expireAbandonedStorefrontPayments } from "@/lib/storefront-payment-cleanup"
@@ -165,12 +166,11 @@ export default async function ServiceRequestsPage(
 
   return (
     <div className="portal-page flex-1 space-y-6">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0">
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-1">Services</h2>
-          <p className="text-muted-foreground max-w-xl">Review and process requests.</p>
-        </div>
-        <form className="grid w-full min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] lg:w-auto" method="GET">
+      <PageHeader
+        as="h2"
+        title="Services"
+        description="Review and process requests."
+        actions={<form className="grid w-full min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]" method="GET">
           <select
             name="status"
             defaultValue={status || "ALL"}
@@ -187,8 +187,8 @@ export default async function ServiceRequestsPage(
           <button className="h-9 rounded-md bg-primary px-4 text-xs font-semibold text-primary-foreground" type="submit">
             Apply
           </button>
-        </form>
-      </div>
+        </form>}
+      />
 
       <Card className="premium-surface overflow-hidden rounded-lg">
         <CardContent className="space-y-3 p-4">

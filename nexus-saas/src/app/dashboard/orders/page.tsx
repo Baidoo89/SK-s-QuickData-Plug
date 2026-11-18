@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { EmptyState } from "@/components/ui/empty-state"
 import { MetricCard } from "@/components/ui/metric-card"
+import { PageHeader } from "@/components/ui/page-header"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -180,12 +181,11 @@ export default async function OrdersPage(
 
   return (
     <div className="portal-page flex-1 space-y-6">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0">
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-1">Orders</h2>
-          <p className="text-muted-foreground max-w-xl">Manage orders.</p>
-        </div>
-        <div className="grid w-full min-w-0 gap-2 sm:grid-cols-2 lg:w-auto">
+      <PageHeader
+        as="h2"
+        title="Orders"
+        description="Manage orders."
+        actions={<>
           <a href={downloadUrl}>
             <Button variant="outline" className="w-full justify-center whitespace-nowrap lg:w-auto">
               <Download className="mr-2 h-4 w-4" />
@@ -198,8 +198,8 @@ export default async function OrdersPage(
               Export Work CSV
             </Button>
           </a>
-        </div>
-      </div>
+        </>}
+      />
       <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
         <MetricCard
           label="Visible Orders"

@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { OrderTimelineDialog } from "@/components/orders/order-timeline-dialog";
 import { getStorefrontPaymentMap } from "@/lib/storefront-payment-map";
 import { PortalAccessMessage } from "@/components/access/portal-access-message";
+import { PageHeader } from "@/components/ui/page-header";
 import { formatGhanaCedis } from "@/lib/currency";
 import { resolveOrderRecipientPhone } from "@/lib/order-recipient";
 import { ShoppingCart } from "lucide-react";
@@ -122,16 +123,14 @@ export default async function ResellerOrdersPage(
 
   return (
     <div className="portal-page space-y-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Orders</h1>
-          </div>
-          <a href={downloadUrl}>
+        <PageHeader
+          title="Orders"
+          actions={<a href={downloadUrl}>
             <Button variant="outline" className="w-full sm:w-auto">
               Download CSV
             </Button>
-          </a>
-        </div>
+          </a>}
+        />
         <Card className="premium-surface border-0">
           <CardHeader>
             <div className="flex flex-col gap-4">

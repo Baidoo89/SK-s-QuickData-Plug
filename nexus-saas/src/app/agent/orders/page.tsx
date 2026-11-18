@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { OrderTimelineDialog } from "@/components/orders/order-timeline-dialog"
 import { getStorefrontPaymentMap, type OrderPaymentSummary } from "@/lib/storefront-payment-map"
 import { PortalAccessMessage } from "@/components/access/portal-access-message"
+import { PageHeader } from "@/components/ui/page-header"
 import { formatGhanaCedis } from "@/lib/currency"
 import { resolveOrderRecipientPhone } from "@/lib/order-recipient"
 import { Store } from "lucide-react"
@@ -184,9 +185,7 @@ export default async function AgentOrdersPage(
 
   return (
     <div className="portal-page space-y-6">
-      <div className="mx-auto max-w-2xl space-y-1 text-center">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Orders</h1>
-      </div>
+      <PageHeader title="Orders" />
       <Card className="premium-surface border-0">
         <CardHeader>
           <div className="flex flex-col gap-4">

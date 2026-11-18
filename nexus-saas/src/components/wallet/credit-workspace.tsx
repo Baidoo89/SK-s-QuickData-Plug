@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { formatGhanaCedis } from "@/lib/currency"
+import { PageHeader } from "@/components/ui/page-header"
 
 type Account = { userId: string; name: string | null; email: string | null; role: string; organization: string; enabled: boolean; limit: number; balance: number; owed: number; overdue: boolean; dueAt: string | null; availableToSpend: number; canEdit: boolean; isSelf: boolean }
 const dueDate = (value: string) => new Intl.DateTimeFormat("en-GH", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(new Date(value)) + " GMT"
@@ -50,7 +51,7 @@ export function CreditWorkspace() {
     finally { setSaving(false) }
   }
   return <div className="space-y-6">
-    <div><h1 className="text-2xl font-bold tracking-tight">Credit</h1><p className="mt-1 max-w-3xl text-sm text-muted-foreground">Wallet first. Approved credit covers shortfalls up to each limit. Debt is due at day end.</p></div>
+    <PageHeader title="Credit" description="Wallet first. Approved credit covers shortfalls up to each limit. Debt is due at day end." />
     <Card><CardContent className="flex flex-wrap gap-2 pt-6 text-xs text-muted-foreground"><span className="rounded-md border bg-background px-3 py-1">Wallet first</span><span className="rounded-md border bg-background px-3 py-1">Approved limits</span><span className="rounded-md border bg-background px-3 py-1">Debt due daily</span></CardContent></Card>
     {canManage && <form className="flex flex-col gap-2 sm:flex-row sm:items-end" onSubmit={event => { event.preventDefault(); void load(query) }}><div className="flex-1 space-y-2"><Label htmlFor="credit-search">Find an account</Label><Input id="credit-search" type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Name or email" /></div><Button type="submit" disabled={loading}>Search accounts</Button></form>}
     {error && <div role="alert" className="space-y-2 rounded-lg border p-4"><p>{error}</p><Button variant="outline" onClick={() => void load(query)}>Try again</Button></div>}

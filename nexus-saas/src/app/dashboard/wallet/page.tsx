@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
 import { formatGhanaCedis } from "@/lib/currency";
 import { MetricCard } from "@/components/ui/metric-card";
+import { PageHeader } from "@/components/ui/page-header";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Activity, ArrowRightLeft, Banknote, UserPlus, WalletCards } from "lucide-react";
 
@@ -108,9 +109,7 @@ export default function WalletPage({
   }, []);
   return (
     <div className="portal-page space-y-6">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-1">Wallet</h1>
-      </div>
+      <PageHeader title="Wallet" />
 
       <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard

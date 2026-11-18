@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { MetricCard } from "@/components/ui/metric-card"
+import { PageHeader } from "@/components/ui/page-header"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useToast } from "@/components/ui/use-toast"
 import { formatGhanaCedis } from "@/lib/currency"
@@ -168,9 +169,7 @@ export default function AgentWalletPage() {
 
   return (
     <div className="portal-page space-y-6">
-      <div className="space-y-1 max-w-2xl mx-auto text-center">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Wallet</h1>
-      </div>
+      <PageHeader title="Wallet" />
       <div className="grid min-w-0 gap-4 md:grid-cols-3">
         <MetricCard
           label="Balance"
