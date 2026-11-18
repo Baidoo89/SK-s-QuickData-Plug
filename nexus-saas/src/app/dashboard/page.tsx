@@ -1,11 +1,10 @@
 import Link from "next/link";
 import type { ComponentType } from "react";
-import { ExternalLink, Activity, AlertTriangle, CheckCircle2, CreditCard, FileText, Package, Settings, TrendingUp, UserCheck, Users, WalletCards, Wrench, Zap } from "lucide-react";
+import { ExternalLink, Activity, AlertTriangle, CheckCircle2, CreditCard, Package, Settings, TrendingUp, Users, WalletCards, Wrench } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { MetricCard } from "@/components/ui/metric-card";
 import { Overview } from "@/components/overview";
 import { RecentSales } from "@/components/recent-sales";
@@ -35,7 +34,6 @@ type ChannelMetric = {
   count: number;
   revenue: number;
   profit: number;
-  pending: number;
   href: string;
 }
 
@@ -51,38 +49,12 @@ export default async function DashboardPage() {
   const session = await auth();
   
   let storeUrl = "#";
-  let totalRevenue = 0;
   let revenueToday = 0;
-  let revenueThisWeek = 0;
-  let revenueThisMonth = 0;
   let profitToday = 0;
-  let profitThisWeek = 0;
-  let profitThisMonth = 0;
-  let changeTodayVsYesterday = 0;
-  let changeWeekVsLastWeek = 0;
-  let changeMonthVsLastMonth = 0;
-  let totalOrders = 0;
   let ordersToday = 0;
-  let completedOrders = 0;
-  let successRate = 0;
-  let totalCustomers = 0;
-  let pendingAgentApprovals = 0;
-  let pendingResellerApprovals = 0;
-  let totalApiKeys = 0;
-  let activeApiKeys24h = 0;
-  let staleApiKeys = 0;
   let pendingManualOrders = 0;
   let processingManualOrders = 0;
-  let apiOrdersToday = 0;
-  let apiRevenueToday = 0;
-  let storefrontSalesToday = 0;
-  let dashboardBuysToday = 0;
-  let failedOrdersToday = 0;
-  let walletBackedPurchasesToday = 0;
-  let serviceRequestsToday = 0;
   let pendingServiceRequests = 0;
-  let serviceRevenueToday = 0;
-  let activeServiceProducts = 0;
   let providerConnected = false;
   let walletBalance = 0;
   let creditEnabled = false;
@@ -121,37 +93,11 @@ export default async function DashboardPage() {
 
       if (user?.organizationId) {
         const now = new Date();
-        const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-        // Start of week (Monday) in local time
-        const day = now.getDay(); // 0 (Sun) - 6 (Sat)
-        const diffToMonday = (day + 6) % 7; // 0 -> Mon, 6 -> Sun
-        const startOfWeek = new Date(startOfToday);
-        startOfWeek.setDate(startOfToday.getDate() - diffToMonday);
-
-        // Start of month
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-        const [pendingAgentsCount, pendingResellersCount, apiKeys, todayProfitAgg, weekProfitAgg, monthProfitAgg, productCount, basePriceCount, agentCount, paymentSettings, providerConnection, manualCandidates, todayOrders, walletAgg, todayServiceRows, pendingServiceCount, serviceProductCount] = await Promise.all([
-          db.user.count({
-            where: {
-              organizationId: user.organizationId,
-              role: "AGENT",
-              signupStatus: "PENDING",
-            },
-          }),
-          db.user.count({
-            where: {
-              organizationId: user.organizationId,
-              role: "RESELLER",
-              signupStatus: "PENDING",
-            },
-          }),
-          db.apiKey.findMany({
+        const [apiKeyCount, todayProfitAgg, productCount, basePriceCount, agentCount, paymentSettings, providerConnection, manualCandidates, todayOrders, walletAgg, pendingServiceCount] = await Promise.all([
+          db.apiKey.count({
             where: { organizationId: user.organizationId },
-            select: { id: true, lastUsed: true },
           }),
           db.orderItem.aggregate({
             _sum: { profit: true },
@@ -160,26 +106,6 @@ export default async function DashboardPage() {
                 organizationId: user.organizationId,
                 status: "COMPLETED",
                 createdAt: { gte: startOfToday },
-              },
-            },
-          }),
-          db.orderItem.aggregate({
-            _sum: { profit: true },
-            where: {
-              order: {
-                organizationId: user.organizationId,
-                status: "COMPLETED",
-                createdAt: { gte: startOfWeek },
-              },
-            },
-          }),
-          db.orderItem.aggregate({
-            _sum: { profit: true },
-            where: {
-              order: {
-                organizationId: user.organizationId,
-                status: "COMPLETED",
-                createdAt: { gte: startOfMonth },
               },
             },
           }),
@@ -216,25 +142,11 @@ export default async function DashboardPage() {
             _sum: { amount: true },
             where: { userId: user.id, status: "success" },
           }),
-          db.serviceRequest.findMany({
-            where: {
-              organizationId: user.organizationId,
-              createdAt: { gte: startOfToday },
-            },
-            select: { total: true },
-          }),
           db.serviceRequest.count({
             where: {
               organizationId: user.organizationId,
               status: "PENDING_REVIEW",
               paymentStatus: "PAID",
-            },
-          }),
-          db.product.count({
-            where: {
-              organizationId: user.organizationId,
-              active: true,
-              category: { in: ["REGISTRATION_SERVICE", "AFA_REGISTRATION"] },
             },
           }),
         ]);
@@ -244,7 +156,7 @@ export default async function DashboardPage() {
         providerConnected = Boolean(providerConnection.providerOrderUrl);
         const productsReady = productCount > 0;
         const pricingReady = basePriceCount > 0;
-        const apiReady = apiKeys.length > 0;
+        const apiReady = apiKeyCount > 0;
         const agentsReady = agentCount > 0;
         const storefrontReady = Boolean(user.organization?.slug && subscriptionActive && paystackConnected && productsReady && pricingReady);
         sellingAccess = await getOrganizationSellingAccess(user.organizationId);
@@ -295,7 +207,7 @@ export default async function DashboardPage() {
           },
           {
             label: "Website API",
-            description: apiReady ? `${apiKeys.length} key${apiKeys.length === 1 ? "" : "s"}.` : "Optional.",
+            description: apiReady ? `${apiKeyCount} key${apiKeyCount === 1 ? "" : "s"}.` : "Optional.",
             href: "/dashboard/settings",
             complete: apiReady,
             required: false,
@@ -305,19 +217,9 @@ export default async function DashboardPage() {
         onboardingCompleteCount = onboardingItems.filter((item) => item.required !== false && item.complete).length;
         onboardingIsReady = storefrontReady;
 
-        pendingAgentApprovals = pendingAgentsCount;
-        pendingResellerApprovals = pendingResellersCount;
-        totalApiKeys = apiKeys.length;
-        activeApiKeys24h = apiKeys.filter((key) => key.lastUsed && key.lastUsed >= dayAgo).length;
-        staleApiKeys = apiKeys.filter((key) => !key.lastUsed || key.lastUsed < monthAgo).length;
         profitToday = todayProfitAgg._sum.profit ?? 0;
-        profitThisWeek = weekProfitAgg._sum.profit ?? 0;
-        profitThisMonth = monthProfitAgg._sum.profit ?? 0;
         walletBalance = walletAgg._sum.amount ?? 0;
-        serviceRequestsToday = todayServiceRows.length;
         pendingServiceRequests = pendingServiceCount;
-        serviceRevenueToday = todayServiceRows.reduce((sum, request) => sum + request.total, 0);
-        activeServiceProducts = serviceProductCount;
 
         const creditAccount = await db.creditAccount.findUnique({
           where: { userId: user.id },
@@ -338,7 +240,6 @@ export default async function DashboardPage() {
           count: orders.length,
           revenue: orders.reduce((sum, order) => sum + order.total, 0),
           profit: orders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.profit, 0), 0),
-          pending: orders.filter((order) => ["PENDING", "PROCESSING", "PENDING_PAYMENT"].includes(order.status)).length,
         });
 
         const todayApiOrders = todayOrders.filter((order) => order.source === "API");
@@ -352,12 +253,6 @@ export default async function DashboardPage() {
         const agentSummary = summarizeOrders(todayAgentOrders);
         const resellerSummary = summarizeOrders(todayResellerOrders);
 
-        apiOrdersToday = apiSummary.count;
-        apiRevenueToday = apiSummary.revenue;
-        storefrontSalesToday = storefrontSummary.count;
-        dashboardBuysToday = dashboardBuySummary.count;
-        failedOrdersToday = todayOrders.filter((order) => ["FAILED", "CANCELLED", "REFUNDED", "PAYMENT_FAILED"].includes(order.status)).length;
-        walletBackedPurchasesToday = todayOrders.filter((order) => order.paymentOwner === "WALLET").length;
         channelMetrics = [
           { key: "api", label: "Website sales", ...apiSummary, href: "/dashboard/orders?source=API" },
           { key: "storefront", label: "Shop link sales", ...storefrontSummary, href: "/dashboard/orders?source=STOREFRONT" },
@@ -424,63 +319,27 @@ export default async function DashboardPage() {
           }] : []),
         ];
 
-        // Fetch revenue-related data (completed orders for revenue)
+        // Fetch completed orders for the revenue chart and today's revenue KPI.
         const completedOrdersData = await db.order.findMany({
-          where: { 
+          where: {
             organizationId: user.organizationId,
-            status: "COMPLETED" // Assuming we only count completed orders
+            status: "COMPLETED",
           },
-          select: { total: true, createdAt: true }
+          select: { total: true, createdAt: true },
         });
-        totalRevenue = completedOrdersData.reduce((acc, order) => acc + order.total, 0);
 
-        // Initialize monthly data (for the chart) and compute period revenues
+        // Initialize monthly data for the chart.
         const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         const currentYear = now.getFullYear();
         const monthlyData = months.map(month => ({ name: month, total: 0 }));
 
-        // Previous period boundaries
-        const startOfYesterday = new Date(startOfToday);
-        startOfYesterday.setDate(startOfToday.getDate() - 1);
-        const endOfYesterday = new Date(startOfToday);
-
-        const startOfLastWeek = new Date(startOfWeek);
-        startOfLastWeek.setDate(startOfWeek.getDate() - 7);
-        const endOfLastWeek = new Date(startOfWeek);
-
-        const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-        let revenueYesterday = 0;
-        let revenueLastWeek = 0;
-        let revenueLastMonth = 0;
-
-        completedOrdersData.forEach(order => {
+        completedOrdersData.forEach((order) => {
           const date = new Date(order.createdAt);
 
-          // Per-period revenue
           if (date >= startOfToday) {
             revenueToday += order.total;
           }
-          if (date >= startOfWeek) {
-            revenueThisWeek += order.total;
-          }
-          if (date >= startOfMonth) {
-            revenueThisMonth += order.total;
-          }
 
-           // Previous periods
-           if (date >= startOfYesterday && date < endOfYesterday) {
-            revenueYesterday += order.total;
-           }
-           if (date >= startOfLastWeek && date < endOfLastWeek) {
-            revenueLastWeek += order.total;
-           }
-           if (date >= startOfLastMonth && date < endOfLastMonth) {
-            revenueLastMonth += order.total;
-           }
-
-          // Monthly aggregation for the current year
           if (date.getFullYear() === currentYear) {
             const monthIndex = date.getMonth();
             monthlyData[monthIndex].total += order.total;
@@ -488,40 +347,7 @@ export default async function DashboardPage() {
         });
         monthlySalesData = monthlyData;
 
-        // Compute percentage changes vs previous periods (defensive against division by zero)
-        if (revenueYesterday > 0) {
-          changeTodayVsYesterday = ((revenueToday - revenueYesterday) / revenueYesterday) * 100;
-        }
-        if (revenueLastWeek > 0) {
-          changeWeekVsLastWeek = ((revenueThisWeek - revenueLastWeek) / revenueLastWeek) * 100;
-        }
-        if (revenueLastMonth > 0) {
-          changeMonthVsLastMonth = ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100;
-        }
-
-        // Fetch Total Orders
-        totalOrders = await db.order.count({
-          where: { organizationId: user.organizationId }
-        });
-        ordersToday = await db.order.count({
-          where: {
-            organizationId: user.organizationId,
-            createdAt: { gte: startOfToday },
-          },
-        });
-
-        // Success breakdown
-        completedOrders = await db.order.count({
-          where: { organizationId: user.organizationId, status: "COMPLETED" }
-        });
-        if (totalOrders > 0) {
-          successRate = (completedOrders / totalOrders) * 100;
-        }
-
-        // Fetch Total Customers
-        totalCustomers = await db.customer.count({
-          where: { organizationId: user.organizationId }
-        });
+        ordersToday = todayOrders.length;
 
         // Fetch Recent Sales
         const recentOrders = await db.order.findMany({
@@ -624,7 +450,7 @@ export default async function DashboardPage() {
         </Card>
       ) : null}
 
-      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-5">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4">
         <MetricCard
           label="Revenue"
           value={formatGhanaCedis(revenueToday)}
@@ -645,173 +471,27 @@ export default async function DashboardPage() {
           description={`${pendingManualOrders} pending, ${processingManualOrders} processing`}
           icon={Wrench}
           tone={pendingManualOrders > 0 ? "warning" : "success"}
-        />
-        <MetricCard
-          label="Channels"
-          value={apiOrdersToday + storefrontSalesToday}
-          description={`${apiOrdersToday} website, ${storefrontSalesToday} shop`}
-          icon={Zap}
-          tone="primary"
-        />
-        <MetricCard
-          label="Services"
-          value={pendingServiceRequests}
-          description={`${serviceRequestsToday} today`}
-          icon={FileText}
-          tone={pendingServiceRequests > 0 ? "warning" : activeServiceProducts > 0 ? "primary" : "info"}
+          className="col-span-2 sm:col-span-1"
         />
       </div>
 
       <Card className="premium-surface overflow-hidden rounded-lg">
         <CardHeader className="border-b bg-muted/30 pb-3">
-          <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <CardTitle className="text-sm font-semibold text-foreground">Sales</CardTitle>
-            </div>
-            <Badge variant="outline" className="w-fit text-xs">
-              {dashboardBuysToday} direct
-            </Badge>
-          </div>
+          <CardTitle className="text-sm font-semibold text-foreground">Sales channels</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-2 p-3 sm:gap-3 sm:p-4 md:grid-cols-2 xl:grid-cols-5">
+        <CardContent className="grid grid-cols-2 gap-0 p-0 md:grid-cols-3 xl:grid-cols-5">
           {channelMetrics.map((channel) => (
-            <Link key={channel.key} href={channel.href} className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm transition-colors hover:bg-muted/40">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">{channel.label}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{channel.count} order{channel.count === 1 ? "" : "s"}</p>
-                </div>
-                {channel.pending > 0 ? <Badge variant="secondary">{channel.pending} pending</Badge> : <Badge variant="outline">Clear</Badge>}
+            <Link key={channel.key} href={channel.href} className="flex min-w-0 items-center justify-between gap-2 border-b border-r border-border/60 p-3 transition-colors hover:bg-muted/40">
+              <div className="min-w-0">
+                <p className="truncate text-xs font-semibold text-foreground">{channel.label}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">{channel.count} order{channel.count === 1 ? "" : "s"}</p>
               </div>
-              <div className="mt-3 space-y-1 text-xs">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-muted-foreground">Revenue</span>
-                  <span className="font-semibold text-foreground">{formatGhanaCedis(channel.revenue)}</span>
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-muted-foreground">Profit</span>
-                  <span className={channel.profit > 0 ? "font-semibold text-primary" : "font-medium text-muted-foreground"}>{formatGhanaCedis(channel.profit)}</span>
-                </div>
+              <div className="shrink-0 text-right">
+                <p className="text-xs font-semibold text-foreground">{formatGhanaCedis(channel.revenue)}</p>
+                <p className={channel.profit > 0 ? "text-[10px] font-medium text-primary" : "text-[10px] text-muted-foreground"}>{formatGhanaCedis(channel.profit)} profit</p>
               </div>
             </Link>
           ))}
-        </CardContent>
-      </Card>
-
-      <Card className="hidden premium-surface overflow-hidden rounded-lg">
-        <CardHeader className="border-b bg-muted/30 pb-3">
-          <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <CardTitle className="text-sm font-semibold text-foreground">Summary</CardTitle>
-            </div>
-            <Badge variant="outline" className="w-fit text-xs">
-              Today {changeTodayVsYesterday >= 0 ? "+" : ""}{changeTodayVsYesterday.toFixed(1)}%
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3">
-            <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
-              <p className="text-xs font-medium text-muted-foreground">Today</p>
-              <div className="mt-2 space-y-1 text-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-muted-foreground">Revenue</span>
-                  <span className="font-semibold text-foreground">{formatGhanaCedis(revenueToday)}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-muted-foreground">Profit</span>
-                  <span className="font-semibold text-foreground">{formatGhanaCedis(profitToday)}</span>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
-              <p className="text-xs font-medium text-muted-foreground">This week</p>
-              <div className="mt-2 space-y-1 text-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-muted-foreground">Revenue</span>
-                  <span className="font-semibold text-foreground">{formatGhanaCedis(revenueThisWeek)}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-muted-foreground">Profit</span>
-                  <span className="font-semibold text-foreground">{formatGhanaCedis(profitThisWeek)}</span>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
-              <p className="text-xs font-medium text-muted-foreground">This month</p>
-              <div className="mt-2 space-y-1 text-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-muted-foreground">Revenue</span>
-                  <span className="font-semibold text-foreground">{formatGhanaCedis(revenueThisMonth)}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-muted-foreground">Profit</span>
-                  <span className="font-semibold text-foreground">{formatGhanaCedis(profitThisMonth)}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <p className="mt-3 text-xs text-muted-foreground">
-            Trend: {changeTodayVsYesterday >= 0 ? "+" : ""}{changeTodayVsYesterday.toFixed(1)}% today, {changeWeekVsLastWeek >= 0 ? "+" : ""}{changeWeekVsLastWeek.toFixed(1)}% week, {changeMonthVsLastMonth >= 0 ? "+" : ""}{changeMonthVsLastMonth.toFixed(1)}% month.
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card className="hidden premium-surface overflow-hidden rounded-lg">
-        <CardHeader className="border-b bg-muted/30 pb-3">
-          <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <CardTitle className="text-sm font-semibold text-foreground">Health</CardTitle>
-            </div>
-            <Badge variant={successRate >= 90 || totalOrders === 0 ? "secondary" : "outline"} className="w-fit text-xs">
-              {successRate.toFixed(1)}% success
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-2 p-3 sm:gap-3 sm:p-4 xl:grid-cols-4">
-          <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
-            <p className="text-xs text-muted-foreground">All-time revenue</p>
-            <p className="mt-1 text-lg font-semibold">{formatGhanaCedis(totalRevenue)}</p>
-          </div>
-          <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
-            <p className="text-xs text-muted-foreground">Orders / customers</p>
-            <p className="mt-1 text-lg font-semibold">{totalOrders} / {totalCustomers}</p>
-          </div>
-          <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
-            <p className="text-xs text-muted-foreground">Failed today</p>
-            <p className={failedOrdersToday > 0 ? "mt-1 text-lg font-semibold text-amber-700" : "mt-1 text-lg font-semibold text-primary"}>{failedOrdersToday}</p>
-          </div>
-          <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
-            <p className="text-xs text-muted-foreground">Wallet buys today</p>
-            <p className="mt-1 text-lg font-semibold">{walletBackedPurchasesToday}</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Balance {formatGhanaCedis(walletBalance)}</p>
-          </div>
-          {(pendingAgentApprovals + pendingResellerApprovals > 0 || totalApiKeys > 0 || apiOrdersToday > 0) ? (
-            <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm sm:col-span-2 xl:col-span-4">
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <div>
-                  <p className="text-xs text-muted-foreground">Approvals</p>
-                  <p className="mt-1 text-sm font-semibold">{pendingAgentApprovals} agents, {pendingResellerApprovals} resellers</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Website today</p>
-                  <p className="mt-1 text-sm font-semibold">{apiOrdersToday} orders, {formatGhanaCedis(apiRevenueToday)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Website keys</p>
-                  <p className="mt-1 text-sm font-semibold">{activeApiKeys24h} active, {staleApiKeys} stale</p>
-                </div>
-                <div className="grid gap-2 sm:grid-cols-2 xl:flex xl:items-end">
-                  <Button asChild variant="outline" size="sm" className="w-full">
-                    <Link href="/dashboard/approvals">Approvals</Link>
-                  </Button>
-                  <Button asChild variant="outline" size="sm" className="w-full">
-                    <Link href="/dashboard/settings">Website keys</Link>
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ) : null}
         </CardContent>
       </Card>
 
