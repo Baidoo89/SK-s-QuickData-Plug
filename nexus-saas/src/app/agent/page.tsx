@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Activity, AlertTriangle, CheckCircle2, FileText, LineChart, Megaphone, Percent, ShoppingBag, Store, TrendingUp, Users, Wallet } from "lucide-react"
 import { formatGhanaCedis } from "@/lib/currency"
 import { auth } from "@/auth"
@@ -324,9 +324,6 @@ export default async function AgentOverviewPage(props: { searchParams?: Promise<
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
           {orgName ? `${orgName} agent` : "Agent dashboard"}
         </h1>
-        <p className="text-sm text-muted-foreground">
-          Buy data, track sales, and manage resellers.
-        </p>
         <div className="flex flex-wrap gap-2 pt-2">
           {([
             { key: "daily", label: "Daily" },
@@ -382,7 +379,6 @@ export default async function AgentOverviewPage(props: { searchParams?: Promise<
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
             <p className="font-semibold">Everything looks good</p>
-            <p>No urgent alerts.</p>
           </div>
         </div>
       )}
@@ -393,7 +389,7 @@ export default async function AgentOverviewPage(props: { searchParams?: Promise<
         <MetricCard
           label="Wallet"
           value={formatGhanaCedis(walletBalance)}
-          description="Available for data buys"
+          description="Available"
           icon={Wallet}
           tone="success"
         />
@@ -421,12 +417,12 @@ export default async function AgentOverviewPage(props: { searchParams?: Promise<
         <MetricCard
           label="Active Resellers"
           value={activeResellersCount}
-          description="Under your account"
+          description="Active"
           icon={Users}
           tone={pendingResellerApprovals > 0 ? "warning" : "primary"}
         />
         <MetricCard
-          label="Commission Rate"
+          label="Commission"
           value={`${commissionPercent.toFixed(1)}%`}
           description={`${formatGhanaCedis(estimatedCommission)} estimate`}
           icon={Percent}
@@ -495,7 +491,7 @@ export default async function AgentOverviewPage(props: { searchParams?: Promise<
         <CardHeader className="border-b bg-muted/30 pb-3">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <CardTitle className="text-sm font-semibold">Today's Sales</CardTitle>
+              <CardTitle className="text-sm font-semibold">Sales</CardTitle>
             </div>
             <Badge variant="outline" className="w-fit">{manualWorkCount} manual</Badge>
           </div>
@@ -527,7 +523,7 @@ export default async function AgentOverviewPage(props: { searchParams?: Promise<
 
       <Card className="premium-surface border-0">
         <CardHeader>
-          <CardTitle className="text-sm font-semibold">Quick actions</CardTitle>
+          <CardTitle className="text-sm font-semibold">Actions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-6">
@@ -538,7 +534,7 @@ export default async function AgentOverviewPage(props: { searchParams?: Promise<
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-xs font-semibold">Buy single</p>
-                  <p className="truncate text-[11px] text-muted-foreground">One number.</p>
+                  <p className="truncate text-[11px] text-muted-foreground">Single</p>
                 </div>
               </div>
             </Link>
@@ -549,7 +545,7 @@ export default async function AgentOverviewPage(props: { searchParams?: Promise<
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-xs font-semibold">Buy bulk</p>
-                  <p className="truncate text-[11px] text-muted-foreground">Many numbers.</p>
+                  <p className="truncate text-[11px] text-muted-foreground">Bulk</p>
                 </div>
               </div>
             </Link>
@@ -560,7 +556,7 @@ export default async function AgentOverviewPage(props: { searchParams?: Promise<
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-xs font-semibold">Wallet</p>
-                  <p className="truncate text-[11px] text-muted-foreground">Balance and payouts.</p>
+                  <p className="truncate text-[11px] text-muted-foreground">Balance</p>
                 </div>
               </div>
             </Link>
@@ -571,7 +567,7 @@ export default async function AgentOverviewPage(props: { searchParams?: Promise<
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-xs font-semibold">Orders</p>
-                  <p className="truncate text-[11px] text-muted-foreground">Track status.</p>
+                  <p className="truncate text-[11px] text-muted-foreground">Status</p>
                 </div>
               </div>
             </Link>
@@ -581,8 +577,8 @@ export default async function AgentOverviewPage(props: { searchParams?: Promise<
                   <FileText className="h-4 w-4" />
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold">Service requests</p>
-                  <p className="truncate text-[11px] text-muted-foreground">Track services.</p>
+                  <p className="truncate text-xs font-semibold">Services</p>
+                  <p className="truncate text-[11px] text-muted-foreground">Requests</p>
                 </div>
               </div>
             </Link>
@@ -604,10 +600,7 @@ export default async function AgentOverviewPage(props: { searchParams?: Promise<
       {agentStorePath && (
         <Card className="premium-surface border-0">
           <CardHeader>
-            <CardTitle className="text-sm font-semibold">Your shop link</CardTitle>
-            <CardDescription className="text-xs">
-              Share this with customers.
-            </CardDescription>
+            <CardTitle className="text-sm font-semibold">Shop link</CardTitle>
           </CardHeader>
           <CardContent>
             <CopyLinkButton path={agentStorePath} />

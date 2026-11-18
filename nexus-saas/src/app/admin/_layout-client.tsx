@@ -74,8 +74,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <NavLink href="/admin/payments" label="Payments" icon={CreditCard} closeOnClick={mobile} />
         <NavLink href="/admin/wallet" label="Wallets" icon={Wallet} closeOnClick={mobile} />
         <NavLink href="/admin/withdrawals" label="Withdrawals" icon={Wallet} closeOnClick={mobile} />
-        <NavLink href="/admin/credit" label="Credit & debt" icon={Wallet} closeOnClick={mobile} />
-        <NavLink href="/admin/reconciliation" label="Financial review" icon={CreditCard} closeOnClick={mobile} />
+        <NavLink href="/admin/credit" label="Credit" icon={Wallet} closeOnClick={mobile} />
+        <NavLink href="/admin/reconciliation" label="Review" icon={CreditCard} closeOnClick={mobile} />
       </div>
 
       <div>
@@ -159,7 +159,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </Sheet>
             <div className="min-w-0">
             <h1 className="text-lg font-extrabold tracking-normal">Owner</h1>
-              <p className="hidden truncate text-xs text-muted-foreground sm:block">Businesses, plans, money, and health.</p>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">

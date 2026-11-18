@@ -293,9 +293,6 @@ export default async function ResellerDashboardPage(props: { searchParams?: Prom
       <div>
         <p className="text-sm font-medium text-primary">{`${greeting}, ${displayName}.`}</p>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-muted-foreground max-w-xl">
-          Buy data, track sales, and withdraw profit.
-        </p>
         <div className="flex flex-wrap gap-2 pt-2">
           {([
             { key: "daily", label: "Daily" },
@@ -356,7 +353,6 @@ export default async function ResellerDashboardPage(props: { searchParams?: Prom
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
             <p className="font-semibold">Everything looks good</p>
-            <p>No urgent alerts.</p>
           </div>
         </div>
       )}
@@ -374,7 +370,7 @@ export default async function ResellerDashboardPage(props: { searchParams?: Prom
         <MetricCard
           label="Wallet"
           value={formatGhanaCedis(walletBalance)}
-          description="Available for data buys"
+          description="Available"
           icon={Wallet}
           tone="success"
         />
@@ -401,7 +397,7 @@ export default async function ResellerDashboardPage(props: { searchParams?: Prom
         />
         <Card className="md:col-span-2 lg:col-span-3">
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Revenue snapshot</CardTitle>
+            <CardTitle className="text-sm font-medium">Revenue</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="flex items-center justify-between text-sm">
@@ -417,14 +413,14 @@ export default async function ResellerDashboardPage(props: { searchParams?: Prom
               <span className="font-semibold">{formatGhanaCedis(monthCompletedTotal)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Selected range ({selectedSalesRangeLabel})</span>
+              <span className="text-muted-foreground">{selectedSalesRangeLabel}</span>
               <span className="font-semibold">{formatGhanaCedis(filteredSales)}</span>
             </div>
           </CardContent>
         </Card>
         <Card className="md:col-span-2 lg:col-span-3">
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Profit snapshot</CardTitle>
+            <CardTitle className="text-sm font-medium">Profit</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="flex items-center justify-between text-sm">
@@ -447,7 +443,7 @@ export default async function ResellerDashboardPage(props: { searchParams?: Prom
         <CardHeader className="border-b bg-muted/30 pb-3">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <CardTitle className="text-sm font-semibold">Today's Sales</CardTitle>
+              <CardTitle className="text-sm font-semibold">Sales</CardTitle>
             </div>
             <Badge variant="outline" className="w-fit">{manualWorkCount} manual</Badge>
           </div>
@@ -479,17 +475,17 @@ export default async function ResellerDashboardPage(props: { searchParams?: Prom
 
       <Card className="premium-surface border-0">
         <CardHeader>
-          <CardTitle className="text-sm font-semibold">Quick actions</CardTitle>
+          <CardTitle className="text-sm font-semibold">Actions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-6">
             {[
-              { href: "/reseller/buy/single", label: "Buy single", description: "Send one bundle.", icon: ShoppingBag },
-              { href: "/reseller/buy/bulk", label: "Buy bulk", description: "Upload many numbers.", icon: ShoppingBag },
-              { href: "/reseller/storefront-pricing", label: "Prices", description: "Set shop margins.", icon: Megaphone },
-              { href: "/reseller/orders", label: "Orders", description: "Review order status.", icon: FileText },
-              { href: "/reseller/service-requests", label: "Service requests", description: "Track registration sales.", icon: FileText },
-              { href: "/reseller/wallet", label: "Wallet", description: "Top up and inspect logs.", icon: Wallet },
+              { href: "/reseller/buy/single", label: "Buy single", description: "Single", icon: ShoppingBag },
+              { href: "/reseller/buy/bulk", label: "Buy bulk", description: "Bulk", icon: ShoppingBag },
+              { href: "/reseller/storefront-pricing", label: "Prices", description: "Margins", icon: Megaphone },
+              { href: "/reseller/orders", label: "Orders", description: "Status", icon: FileText },
+              { href: "/reseller/service-requests", label: "Services", description: "Requests", icon: FileText },
+              { href: "/reseller/wallet", label: "Wallet", description: "Balance", icon: Wallet },
             ].map((action) => {
               const Icon = action.icon;
               return (
@@ -513,7 +509,7 @@ export default async function ResellerDashboardPage(props: { searchParams?: Prom
       {resellerStorePath ? (
         <Card className="premium-surface border-0">
           <CardHeader>
-            <CardTitle className="text-sm font-semibold">Your shop link</CardTitle>
+            <CardTitle className="text-sm font-semibold">Shop link</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="min-w-0 truncate rounded-lg border border-border/70 bg-background/80 px-3 py-2 font-mono text-xs shadow-sm">{resellerStorePath}</p>
