@@ -3,12 +3,13 @@ import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Overview } from "@/components/overview";
 import { Button } from "@/components/ui/button";
-import { DollarSign, Percent, Users, Activity, BarChart2 } from "lucide-react";
+import { DollarSign, Percent, Users, Activity } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdvancedAnalyticsTables } from "@/components/dashboard/advanced-analytics-tables";
 import { formatGhanaCedis } from "@/lib/currency";
 import { MetricCard } from "@/components/ui/metric-card";
+import { PageHeader } from "@/components/ui/page-header";
 import { summarizeFinancialOrders } from "@/lib/financial-report";
 
 function getRangeDates(range: string) {
@@ -176,17 +177,10 @@ export default async function AnalyticsPage(props: { searchParams: Promise<{ ran
 
   return (
     <div className="portal-page flex-1 space-y-4">
-      <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
-            Advanced Analytics
-            <BarChart2 className="h-5 w-5 text-muted-foreground" />
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Deep dive into revenue, profit, reliability, and agent performance for your VTU business.
-          </p>
-        </div>
-        <div className="flex w-full min-w-0 flex-wrap gap-2 sm:w-auto">
+      <PageHeader
+        title="Analytics"
+        description="Revenue, profit, reliability, and performance."
+        actions={<div className="flex w-full min-w-0 flex-wrap gap-2 sm:w-auto">
           {[
             { label: "Today", value: "today" },
             { label: "Last 7 days", value: "7d" },
@@ -208,8 +202,8 @@ export default async function AnalyticsPage(props: { searchParams: Promise<{ ran
               </Button>
             </Link>
           ))}
-        </div>
-      </div>
+        </div>}
+      />
 
       <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="Gross sales" value={formatGhanaCedis(revenue)} description="Completed customer sales" icon={DollarSign} tone="success" />

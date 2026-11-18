@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { SignupApprovalActions } from "@/components/admin/signup-approval-actions"
+import { PageHeader } from "@/components/ui/page-header"
 import { ApiAccessApprovalActions } from "@/components/api-access/api-access-approval-actions"
 import { AlertTriangle, CheckCircle2, Clock, KeyRound, Mail, Phone, ShieldCheck, UserRound } from "lucide-react"
 
@@ -80,14 +81,10 @@ export default async function DashboardApprovalsPage() {
 
   return (
     <div className="portal-page space-y-6">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight">Approvals</h1>
-          <p className="text-sm text-muted-foreground">
-            Review agent signup requests, check contact verification, then approve or reject access.
-          </p>
-        </div>
-        <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[420px]">
+      <PageHeader
+        title="Approvals"
+        description="Review and approve access."
+        actions={<div className="grid gap-2 sm:grid-cols-3 lg:min-w-[420px]">
           <div className="rounded-lg border border-border/70 bg-background/80 px-3 py-2 text-sm shadow-sm">
             <p className="text-xs text-muted-foreground">Pending</p>
             <p className="font-semibold">{pendingAgents.length}</p>
@@ -100,8 +97,8 @@ export default async function DashboardApprovalsPage() {
             <p className="text-xs text-muted-foreground">Phone verified</p>
             <p className="font-semibold">{pendingAgents.filter((user) => user.phoneVerified).length}</p>
           </div>
-        </div>
-      </div>
+        </div>}
+      />
 
       <Card className="premium-surface overflow-hidden rounded-lg">
         <CardHeader className="border-b border-border/70 bg-muted/20">

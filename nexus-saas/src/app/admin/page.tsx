@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { MetricCard } from "@/components/ui/metric-card"
+import { PageHeader } from "@/components/ui/page-header"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 export const dynamic = "force-dynamic"
@@ -303,15 +304,11 @@ export default async function SuperAdminPage(
 
   return (
     <div className="portal-page space-y-6">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-3xl">
-          <p className="text-xs font-semibold uppercase tracking-wide text-primary">Owner console</p>
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Super Admin</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage businesses, plans, approvals, and platform health.
-          </p>
-        </div>
-        <div className="grid w-full gap-2 sm:grid-cols-3 lg:w-auto">
+      <PageHeader
+        eyebrow="Owner console"
+        title="Super Admin"
+        description="Businesses, plans, approvals, and platform health."
+        actions={<div className="grid w-full gap-2 sm:grid-cols-3 lg:w-auto">
           <Button asChild variant="outline" size="sm">
             <Link href="/admin/subscriptions">Subscriptions</Link>
           </Button>
@@ -321,8 +318,8 @@ export default async function SuperAdminPage(
           <Button asChild size="sm">
             <Link href="/admin/system">Health</Link>
           </Button>
-        </div>
-      </div>
+        </div>}
+      />
 
       <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="Businesses" value={totalOrganizations} description={`${activeOrganizations} active, ${inactiveOrganizations} inactive`} icon={Building2} tone="primary" />

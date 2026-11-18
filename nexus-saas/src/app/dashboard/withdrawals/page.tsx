@@ -1,16 +1,12 @@
 import { WithdrawalReviewPanel } from "@/components/admin/withdrawal-review-panel"
 import { Card, CardContent } from "@/components/ui/card"
+import { PageHeader } from "@/components/ui/page-header"
 import { Banknote, CheckCircle2, WalletCards } from "lucide-react"
 
 export default function DashboardWithdrawalsPage() {
   return (
     <div className="portal-page space-y-6">
-      <div className="space-y-1 max-w-2xl">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Withdrawals</h1>
-        <p className="text-sm text-muted-foreground">
-          Review profit payout requests from sellers under your organization.
-        </p>
-      </div>
+      <PageHeader title="Withdrawals" description="Review seller profit payouts." />
       <Card className="overflow-hidden border border-border bg-card/95 shadow-sm">
         <CardContent className="grid min-w-0 gap-3 p-4 md:grid-cols-3">
           <div className="flex gap-3">

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/components/ui/use-toast"
+import { PageHeader } from "@/components/ui/page-header"
 import { Mail } from "lucide-react"
 
 type SubscriptionStatus = {
@@ -111,12 +112,7 @@ export default function SubscriptionPage() {
 
   return (
     <div className="portal-page space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Subscription</h1>
-        <p className="text-sm text-muted-foreground max-w-2xl">
-          Your SaaS subscription controls storefront checkout, API ordering, agent sales, and reseller sales.
-        </p>
-      </div>
+      <PageHeader title="Subscription" description="Manage your plan and access." />
 
       {welcomeMode ? (
         <div className="status-info rounded-md border px-4 py-3 text-sm">

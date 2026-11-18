@@ -12,6 +12,7 @@ import { DispatchHealthCard } from "@/components/admin/dispatch-health-card";
 import { ProviderProductMappingCard } from "@/components/dashboard/provider-product-mapping-card";
 import { PhoneVerificationCard } from "@/components/auth/phone-verification-card";
 import { MetricCard } from "@/components/ui/metric-card";
+import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { getStoredOrganizationPaymentSettings } from "@/lib/organization-payment-settings";
 import { isSubscriptionActive } from "@/lib/subscription-access";
@@ -74,12 +75,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="portal-page flex min-w-0 flex-col gap-5 overflow-x-hidden sm:gap-6">
-      <div className="flex min-w-0 flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div className="min-w-0">
-          <h1 className="mb-1 break-words text-2xl font-bold md:text-3xl">Settings</h1>
-          <p className="max-w-2xl break-words text-sm text-muted-foreground sm:text-base">Control the business setup that powers customer checkout, website orders, automatic delivery, and shop links.</p>
-        </div>
-      </div>
+      <PageHeader title="Settings" description="Business, payments, delivery, and integrations." />
 
       <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard

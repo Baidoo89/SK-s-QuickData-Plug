@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { auth } from "@/auth"
 import { db } from "@/lib/db"
 import { SignupApprovalActions } from "@/components/admin/signup-approval-actions"
+import { PageHeader } from "@/components/ui/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertTriangle, CheckCircle2 } from "lucide-react"
@@ -46,13 +47,7 @@ export default async function AdminApprovalsPage() {
 
   return (
     <div className="portal-page space-y-6">
-      <div className="space-y-1">
-        <p className="text-xs font-semibold uppercase tracking-wide text-primary">Access governance</p>
-        <h1 className="text-2xl font-bold tracking-tight">Signup Approvals</h1>
-        <p className="text-sm text-muted-foreground">
-          Review pending agent signup requests across all tenants. Reseller approval remains under agent/subscriber operations.
-        </p>
-      </div>
+      <PageHeader eyebrow="Access governance" title="Approvals" description="Review pending agent signups across tenants." />
 
       <Card className="premium-surface overflow-hidden rounded-lg">
         <CardHeader className="border-b border-border/70 bg-muted/20">

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { formatGhanaCedis } from "@/lib/currency"
 import { MetricCard } from "@/components/ui/metric-card"
+import { PageHeader } from "@/components/ui/page-header"
 
 interface WalletTransaction {
   id: string
@@ -74,12 +75,7 @@ export default function AdminWalletPage() {
 
   return (
     <div className="portal-page space-y-6">
-      <div className="max-w-3xl space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Wallet Activity</h1>
-        <p className="text-sm text-muted-foreground">
-          Read-only oversight of wallet credits and Paystack top-ups across the platform. Superadmin does not operate tenant customer funds here.
-        </p>
-      </div>
+      <PageHeader title="Wallet activity" description="Read-only wallet oversight across the platform." />
 
       <div className="grid min-w-0 gap-4 md:grid-cols-3">
         <MetricCard

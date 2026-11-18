@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { MetricCard } from "@/components/ui/metric-card"
+import { PageHeader } from "@/components/ui/page-header"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 
@@ -266,13 +267,7 @@ export default async function AdminSubscriptionsPage(
 
   return (
     <div className="portal-page space-y-6">
-      <div className="space-y-1">
-        <p className="text-xs font-semibold uppercase tracking-wide text-primary">SaaS billing</p>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Plans & Billing</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Control SaaS plans, subscription records, and tenant access to paid platform features.
-        </p>
-      </div>
+      <PageHeader eyebrow="SaaS billing" title="Plans & billing" description="Plans, subscriptions, and tenant access." />
 
       {searchParams?.notice ? (
         <div className="status-success rounded-md border px-4 py-3 text-sm">
