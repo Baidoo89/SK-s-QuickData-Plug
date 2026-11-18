@@ -19,21 +19,21 @@ const link = (label: string, href: string, icon: NavLink["icon"] = FileText): Na
 function navigation(role: Role): { home: string; title: string; primary: NavLink[]; groups: NavGroup[] } {
   if (role === "owner") return {
     home: "/dashboard", title: "Store owner",
-    primary: [link("Overview", "/dashboard", Home), link("Set up my shop", "/dashboard/setup", Rocket), link("Orders", "/dashboard/orders", ShoppingBag), link("Products & prices", "/dashboard/products", Package), link("My shop link", "/dashboard#shop-link", Store), link("Wallet", "/dashboard/wallet", Wallet)],
+    primary: [link("Overview", "/dashboard", Home), link("Setup", "/dashboard/setup", Rocket), link("Orders", "/dashboard/orders", ShoppingBag), link("Products", "/dashboard/products", Package), link("Shop link", "/dashboard#shop-link", Store), link("Wallet", "/dashboard/wallet", Wallet)],
     groups: [
-      { label: "Team & customers", links: [link("Agents", "/dashboard/agents", Users), link("Resellers", "/dashboard/users/resellers", Users), link("Signup approvals", "/dashboard/approvals"), link("All users", "/dashboard/users"), link("Customers", "/dashboard/customers")] },
-      { label: "More sales tools", links: [link("Reports", "/dashboard/analytics"), link("Service forms", "/dashboard/service-requests"), link("Payments", "/dashboard/payments"), link("Price groups", "/dashboard/products?tab=pricing_profiles"), link("Withdrawals", "/dashboard/withdrawals"), link("Credit & debt", "/dashboard/credit", Wallet), link("Financial review", "/dashboard/reconciliation", FileText), link("Add funds", "/dashboard/wallet?tab=manual_credit"), link("Subscription", "/dashboard/subscription")] },
-      { label: "Settings & integrations", links: [link("Business settings", "/dashboard/settings#business", Settings), link("Payment settings", "/dashboard/settings#payments"), link("Automatic delivery", "/dashboard/settings#delivery"), link("Website API keys", "/dashboard/settings#website-api"), link("Activity log", "/dashboard/system/logs"), link("Support", "/dashboard/support")] },
+      { label: "Team", links: [link("Agents", "/dashboard/agents", Users), link("Resellers", "/dashboard/users/resellers", Users), link("Approvals", "/dashboard/approvals"), link("Users", "/dashboard/users"), link("Customers", "/dashboard/customers")] },
+      { label: "Sales", links: [link("Reports", "/dashboard/analytics"), link("Services", "/dashboard/service-requests"), link("Payments", "/dashboard/payments"), link("Pricing", "/dashboard/products?tab=pricing_profiles"), link("Withdrawals", "/dashboard/withdrawals"), link("Credit", "/dashboard/credit", Wallet), link("Review", "/dashboard/reconciliation", FileText), link("Add funds", "/dashboard/wallet?tab=manual_credit"), link("Subscription", "/dashboard/subscription")] },
+      { label: "Settings", links: [link("Business", "/dashboard/settings#business", Settings), link("Payments", "/dashboard/settings#payments"), link("Delivery", "/dashboard/settings#delivery"), link("API", "/dashboard/settings#website-api"), link("Activity", "/dashboard/system/logs"), link("Support", "/dashboard/support")] },
     ],
   }
   const base = `/${role}`
   return {
     home: base, title: role === "agent" ? "Agent" : "Reseller",
-    primary: [link("Overview", base, Home), link("Buy data", `${base}/buy/single`, ShoppingBag), link("Orders", `${base}/orders`, FileText), link("Wallet", `${base}/wallet`, Wallet), link("My shop link", `${base}/storefronts`, Store)],
+    primary: [link("Overview", base, Home), link("Buy", `${base}/buy/single`, ShoppingBag), link("Orders", `${base}/orders`, FileText), link("Wallet", `${base}/wallet`, Wallet), link("Shop link", `${base}/storefronts`, Store)],
     groups: [
-      ...(role === "agent" ? [{ label: "My team", links: [link("Resellers", "/agent/resellers", Users), link("Signup approvals", "/agent/approvals"), link("Customers", "/agent/customers")] }] : []),
-      { label: "More sales tools", links: [...(role === "agent" ? [link("Buy for many numbers", "/agent/buy/bulk")] : []), link("Shop prices", `${base}/storefront-pricing`), link("Service forms", `${base}/service-requests`), link("Withdrawals", `${base}/withdrawals`), link("Credit & debt", `${base}/credit`, Wallet), link("Website API", `${base}/api-docs`)] },
-      { label: "Account", links: [link("My profile", `${base}/account`, CircleUser)] },
+      ...(role === "agent" ? [{ label: "Team", links: [link("Resellers", "/agent/resellers", Users), link("Approvals", "/agent/approvals"), link("Customers", "/agent/customers")] }] : []),
+      { label: "Sales", links: [...(role === "agent" ? [link("Bulk buy", "/agent/buy/bulk")] : []), link("Prices", `${base}/storefront-pricing`), link("Services", `${base}/service-requests`), link("Withdrawals", `${base}/withdrawals`), link("Credit", `${base}/credit`, Wallet), link("API", `${base}/api-docs`)] },
+      { label: "Account", links: [link("Profile", `${base}/account`, CircleUser)] },
     ],
   }
 }
@@ -56,7 +56,7 @@ function PortalShellInner({ role, children }: { role: Role; children: ReactNode 
     const active = isActive(item)
     const body = (
       <Link key={item.href} href={item.href} title={item.label} aria-current={active ? "page" : undefined}
-        className={`flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${active ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"} ${collapsed && !mobile ? "justify-center" : ""}`}>
+        className={`flex min-h-9 items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${active ? "bg-primary/12 text-primary" : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"} ${collapsed && !mobile ? "justify-center" : ""}`}>
         <Icon className="h-4 w-4 shrink-0" />
         <span className={collapsed && !mobile ? "sr-only" : "min-w-0 break-words"}>{item.label}</span>
       </Link>
@@ -66,15 +66,15 @@ function PortalShellInner({ role, children }: { role: Role; children: ReactNode 
 
   function nav(mobile = false) {
     return (
-      <nav aria-label={`${config.title} navigation`} className="space-y-4 px-3 py-4">
-        <div className="space-y-1">{config.primary.map(item => renderLink(item, mobile))}</div>
+      <nav aria-label={`${config.title} navigation`} className="space-y-3 px-3 py-4">
+        <div className="space-y-0.5">{config.primary.map(item => renderLink(item, mobile))}</div>
         {config.groups.map(group => (
-          <details key={`${group.label}-${pathname}-${searchParams.toString()}`} open={group.links.some(isActive) || undefined} className="group border-t border-border/60 pt-3">
-            <summary title={group.label} className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-3 text-xs font-semibold text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+          <details key={`${group.label}-${pathname}-${searchParams.toString()}`} open={group.links.some(isActive) || undefined} className="group pt-2">
+            <summary title={group.label} className="flex min-h-9 cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
               <span className={collapsed && !mobile ? "sr-only" : ""}>{group.label}</span>
               <ChevronDown className="h-4 w-4 shrink-0 group-open:rotate-180" />
             </summary>
-            <div className="mt-1 space-y-1">{group.links.map(item => renderLink(item, mobile))}</div>
+            <div className="mt-0.5 space-y-0.5">{group.links.map(item => renderLink(item, mobile))}</div>
           </details>
         ))}
       </nav>
@@ -94,7 +94,7 @@ function PortalShellInner({ role, children }: { role: Role; children: ReactNode 
         <div className="flex-1 overflow-y-auto">{nav()}</div>
       </aside>
       <div className={collapsed ? "md:pl-[72px]" : "md:pl-[240px]"}>
-        <header className="app-topbar sticky top-0 z-20 flex min-h-16 items-center gap-3 border-b border-border/70 px-4 backdrop-blur-xl">
+        <header className="app-topbar sticky top-0 z-20 flex min-h-14 items-center gap-3 border-b border-border/60 px-4 backdrop-blur-xl">
           <Sheet>
             <SheetTrigger asChild><Button variant="outline" size="icon" className="md:hidden" aria-label="Open navigation"><Menu className="h-5 w-5" /></Button></SheetTrigger>
             <SheetContent side="left" aria-describedby={undefined} className="app-sidebar w-[280px] overflow-y-auto p-0">
@@ -118,7 +118,7 @@ function PortalShellInner({ role, children }: { role: Role; children: ReactNode 
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
-        <main id="main-content" tabIndex={-1} className="content-sheen flex min-w-0 flex-col gap-5 p-4 outline-none lg:p-6">{children}</main>
+        <main id="main-content" tabIndex={-1} className="content-sheen flex min-w-0 flex-col gap-6 p-4 outline-none lg:p-6">{children}</main>
       </div>
     </div>
   )
