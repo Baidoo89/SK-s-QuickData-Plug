@@ -167,10 +167,8 @@ export default async function ServiceRequestsPage(
     <div className="portal-page flex-1 space-y-6">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-1">Service Requests</h2>
-          <p className="text-muted-foreground max-w-xl">
-            Review and process registration and service requests separately from VTU/data orders.
-          </p>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-1">Services</h2>
+          <p className="text-muted-foreground max-w-xl">Review and process requests.</p>
         </div>
         <form className="grid w-full min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] lg:w-auto" method="GET">
           <select
@@ -196,8 +194,7 @@ export default async function ServiceRequestsPage(
         <CardContent className="space-y-3 p-4">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-semibold text-foreground">Service tables</p>
-              <p className="text-xs text-muted-foreground">Each service can be reviewed separately while still using one operations workflow.</p>
+              <p className="text-sm font-semibold text-foreground">Services</p>
             </div>
             {serviceId && serviceId !== "ALL" ? <Badge variant="outline">Filtered service</Badge> : null}
           </div>

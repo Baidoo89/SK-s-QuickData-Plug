@@ -1,7 +1,7 @@
 import { auth } from "@/auth"
 import { db } from "@/lib/db"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Input } from "@/components/ui/input"
@@ -186,18 +186,12 @@ export default async function AgentOrdersPage(
     <div className="portal-page space-y-6">
       <div className="mx-auto max-w-2xl space-y-1 text-center">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Orders</h1>
-        <p className="text-sm text-muted-foreground">
-          View your buys, shop sales, and reseller orders.
-        </p>
       </div>
       <Card className="premium-surface border-0">
         <CardHeader>
           <div className="flex flex-col gap-4">
             <div>
-              <CardTitle className="text-sm font-semibold">Order history</CardTitle>
-              <CardDescription className="text-xs">
-                Search, filter, and check status.
-              </CardDescription>
+              <CardTitle className="text-sm font-semibold">Orders</CardTitle>
             </div>
             <form className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-[auto_auto_auto_minmax(12rem,1fr)_auto_auto] lg:items-end" method="GET">
               <div className="flex flex-col">

@@ -187,10 +187,7 @@ export default async function AgentServiceRequestsPage(
     <div className="portal-page space-y-6">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Service Requests</h1>
-          <p className="max-w-xl text-sm text-muted-foreground">
-            View service forms submitted through your shop and reseller links.
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Services</h1>
         </div>
         <form className="grid w-full min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] lg:w-auto" method="GET">
           <select name="status" defaultValue={status || "ALL"} className="h-9 rounded-md border border-input bg-background px-3 text-xs">
@@ -212,8 +209,7 @@ export default async function AgentServiceRequestsPage(
         <CardContent className="space-y-3 p-4">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-semibold text-foreground">Service tables</p>
-              <p className="text-xs text-muted-foreground">View each service separately across your shop and reseller links.</p>
+              <p className="text-sm font-semibold text-foreground">Services</p>
             </div>
             {serviceId && serviceId !== "ALL" ? <Badge variant="outline">Filtered service</Badge> : null}
           </div>

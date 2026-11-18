@@ -183,9 +183,7 @@ export default async function OrdersPage(
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-1">Orders</h2>
-          <p className="text-muted-foreground max-w-xl">
-            View, copy, claim, and update orders.
-          </p>
+          <p className="text-muted-foreground max-w-xl">Manage orders.</p>
         </div>
         <div className="grid w-full min-w-0 gap-2 sm:grid-cols-2 lg:w-auto">
           <a href={downloadUrl}>

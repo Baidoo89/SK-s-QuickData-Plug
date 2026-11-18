@@ -125,9 +125,6 @@ export default async function ResellerOrdersPage(
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Orders</h1>
-            <p className="text-sm text-muted-foreground max-w-xl">
-              View your buys and shop sales.
-            </p>
           </div>
           <a href={downloadUrl}>
             <Button variant="outline" className="w-full sm:w-auto">

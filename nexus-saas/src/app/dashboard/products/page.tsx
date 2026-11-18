@@ -521,7 +521,7 @@ function BundlePricingContent() {
           <div className="min-w-0">
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Price Groups</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Create named pricing tags for agents and resellers, then assign them from user detail pages.
+              Reusable prices for agents and resellers.
             </p>
           </div>
           <div className="grid w-full min-w-0 gap-2 sm:grid-cols-2 lg:w-auto">
@@ -543,8 +543,8 @@ function BundlePricingContent() {
 
         <Card className="premium-surface rounded-lg">
           <CardHeader className="border-b border-border/70 bg-muted/20">
-            <CardTitle>Create Pricing Profile</CardTitle>
-            <CardDescription>Save a reusable pricing setup with a name and tag.</CardDescription>
+            <CardTitle>Create profile</CardTitle>
+            <CardDescription>Reusable prices for your team.</CardDescription>
           </CardHeader>
           <CardContent className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-4">
             <Input
@@ -566,14 +566,14 @@ function BundlePricingContent() {
               <option value="AGENT">Agents</option>
               <option value="RESELLER">Resellers</option>
             </select>
-            <Button onClick={createPricingProfile}>Create Profile</Button>
+            <Button onClick={createPricingProfile}>Create</Button>
           </CardContent>
         </Card>
 
         <Card className="premium-surface rounded-lg">
           <CardHeader className="border-b border-border/70 bg-muted/20">
-            <CardTitle>Saved Profiles</CardTitle>
-            <CardDescription>Select a profile and edit prices by network.</CardDescription>
+            <CardTitle>Profiles</CardTitle>
+            <CardDescription>Select a profile to edit.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {profilesLoading ? (
@@ -584,7 +584,7 @@ function BundlePricingContent() {
               <EmptyState
                 icon={Plus}
                 title="No pricing profiles yet"
-                description="Create a reusable price list for agents and resellers, then assign it from their detail pages."
+                description="Create a profile for agents and resellers."
                 className="py-6"
               />
             ) : (
@@ -634,8 +634,8 @@ function BundlePricingContent() {
 
         <Card className="premium-surface rounded-lg">
           <CardHeader className="border-b border-border/70 bg-muted/20">
-            <CardTitle>{currentNetwork?.name} Profile Prices</CardTitle>
-            <CardDescription>These values are what assigned users will be charged.</CardDescription>
+            <CardTitle>{currentNetwork?.name} prices</CardTitle>
+            <CardDescription>Prices charged to assigned users.</CardDescription>
           </CardHeader>
           <CardContent>
             {profileRowsLoading ? (
@@ -715,7 +715,7 @@ function BundlePricingContent() {
         <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Products & Prices</h1>
-          <p className="text-sm text-muted-foreground mt-1">Add bundles, services, and prices.</p>
+          <p className="text-sm text-muted-foreground mt-1">Manage bundles, services, and prices.</p>
           </div>
           <div className="grid w-full min-w-0 gap-2 sm:grid-cols-2 lg:w-auto">
             <Button asChild>
@@ -761,8 +761,8 @@ function BundlePricingContent() {
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
             <div>
-              <CardTitle>Service Forms</CardTitle>
-              <CardDescription>Create forms customers can pay for.</CardDescription>
+          <CardTitle>Services</CardTitle>
+              <CardDescription>Paid forms for customers.</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -818,7 +818,7 @@ function BundlePricingContent() {
               </Button>
             </div>
               <p className="text-xs text-muted-foreground">
-              Customers fill the form, pay, then the request appears under Services.
+              Customers fill, pay, and submit.
             </p>
             <div className="space-y-3 rounded-lg border border-border/75 bg-background/55 p-3 shadow-sm">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -961,7 +961,7 @@ function BundlePricingContent() {
             {NetworkLogo && <NetworkLogo className="w-6 h-6" />}
             <div>
               <CardTitle>{currentNetwork?.name} Bundles</CardTitle>
-              <CardDescription>Set cost, dashboard price, and shop price.</CardDescription>
+              <CardDescription>Cost, buy, and shop prices.</CardDescription>
             </div>
           </div>
         </CardHeader>
