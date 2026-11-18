@@ -77,7 +77,7 @@ export default async function SettingsPage() {
     <div className="portal-page flex min-w-0 flex-col gap-5 overflow-x-hidden sm:gap-6">
       <PageHeader title="Settings" description="Business, payments, delivery, and integrations." />
 
-      <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-4">
         <MetricCard
           label="Setup Guide"
           value={`${setupReadyCount}/5`}

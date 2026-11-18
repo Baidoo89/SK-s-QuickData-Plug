@@ -200,7 +200,7 @@ export default async function OrdersPage(
           </a>
         </>}
       />
-      <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3 2xl:grid-cols-5">
         <MetricCard
           label="Visible Orders"
           value={orders.length}

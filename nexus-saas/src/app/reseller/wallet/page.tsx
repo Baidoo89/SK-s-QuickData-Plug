@@ -110,7 +110,7 @@ export default function ResellerWalletPage() {
     <div className="portal-page space-y-4">
         <PageHeader title="Wallet" />
 
-        <div className="grid min-w-0 gap-4 md:grid-cols-3">
+        <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3">
           <MetricCard
             label="Balance"
             value={formatGhanaCedis(balance)}

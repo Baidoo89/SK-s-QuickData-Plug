@@ -232,7 +232,7 @@ export default async function AgentServiceRequestsPage(
         </CardContent>
       </Card>
 
-      <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
         <MetricCard label="Visible Requests" value={rows.length} description={hasFilters ? "Matching active filters" : "All service requests"} icon={ListFilter} tone="primary" />
         <MetricCard label="Pending Review" value={pending} description="Paid requests awaiting review" icon={Clock} tone={pending > 0 ? "warning" : "success"} />
         <MetricCard label="Completed" value={completed} description="Fulfilled service requests" icon={CheckCircle2} tone="success" />

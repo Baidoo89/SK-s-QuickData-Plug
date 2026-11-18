@@ -205,7 +205,7 @@ export default async function AnalyticsPage(props: { searchParams: Promise<{ ran
         </div>}
       />
 
-      <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-4 grid min-w-0 grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
         <MetricCard label="Gross sales" value={formatGhanaCedis(revenue)} description="Completed customer sales" icon={DollarSign} tone="success" />
         <MetricCard label="Gross margin" value={formatGhanaCedis(profit)} description="Item margin across all channels" icon={DollarSign} tone="primary" />
         <MetricCard label="Orders" value={orders.length} description="All statuses in selected period" icon={Activity} tone="info" />

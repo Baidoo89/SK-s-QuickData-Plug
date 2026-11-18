@@ -84,7 +84,7 @@ export default async function DashboardApprovalsPage() {
       <PageHeader
         title="Approvals"
         description="Review and approve access."
-        actions={<div className="grid gap-2 sm:grid-cols-3 lg:min-w-[420px]">
+        actions={<div className="grid grid-cols-3 gap-2 lg:min-w-[420px]">
           <div className="rounded-lg border border-border/70 bg-background/80 px-3 py-2 text-sm shadow-sm">
             <p className="text-xs text-muted-foreground">Pending</p>
             <p className="font-semibold">{pendingAgents.length}</p>

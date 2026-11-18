@@ -77,7 +77,7 @@ export default function AdminWalletPage() {
     <div className="portal-page space-y-6">
       <PageHeader title="Wallet activity" description="Read-only wallet oversight across the platform." />
 
-      <div className="grid min-w-0 gap-4 md:grid-cols-3">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3">
         <MetricCard
           label="Recorded Wallet Credits"
           value={formatGhanaCedis(balance)}

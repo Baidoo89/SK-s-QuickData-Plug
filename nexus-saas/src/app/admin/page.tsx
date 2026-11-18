@@ -321,7 +321,7 @@ export default async function SuperAdminPage(
         </div>}
       />
 
-      <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-4">
         <MetricCard label="Businesses" value={totalOrganizations} description={`${activeOrganizations} active, ${inactiveOrganizations} inactive`} icon={Building2} tone="primary" />
         <MetricCard label="Revenue" value={formatGhanaCedis(platformRevenue._sum.amount ?? 0)} description={`${formatGhanaCedis(monthPlatformRevenue._sum.amount ?? 0)} this month`} icon={CreditCard} tone="success" />
         <MetricCard label="Seller Sales" value={formatGhanaCedis(storefrontVolume._sum.amount ?? 0)} description="Seller Paystack volume" icon={ShoppingCart} tone="info" />

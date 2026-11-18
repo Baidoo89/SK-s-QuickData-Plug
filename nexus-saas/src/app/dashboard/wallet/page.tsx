@@ -111,7 +111,7 @@ export default function WalletPage({
     <div className="portal-page space-y-6">
       <PageHeader title="Wallet" />
 
-      <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-4">
         <MetricCard
           label="Balance"
           value={formatGhanaCedis(balance)}
