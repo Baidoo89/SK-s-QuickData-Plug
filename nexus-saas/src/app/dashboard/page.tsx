@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ComponentType } from "react";
-import { ExternalLink, Activity, AlertTriangle, CheckCircle2, Circle, CreditCard, FileText, Package, Settings, TrendingUp, UserCheck, Users, WalletCards, Wrench, Zap } from "lucide-react";
+import { ExternalLink, Activity, AlertTriangle, CheckCircle2, CreditCard, FileText, Package, Settings, TrendingUp, UserCheck, Users, WalletCards, Wrench, Zap } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { MetricCard } from "@/components/ui/metric-card";
 import { Overview } from "@/components/overview";
 import { RecentSales } from "@/components/recent-sales";
-import { StoreLinkCard } from "@/components/dashboard/store-link-card";
 import { SellingAccessAlert } from "@/components/access/selling-access-alert";
 import { formatGhanaCedis } from "@/lib/currency";
 import { getStoredOrganizationPaymentSettings } from "@/lib/organization-payment-settings";
@@ -546,35 +545,6 @@ export default async function DashboardPage() {
   }
 
   const requiredOnboardingItems = onboardingItems.filter((item) => item.required !== false);
-  const optionalOnboardingItems = onboardingItems.filter((item) => item.required === false);
-  const renderOnboardingItem = (item: OnboardingItem) => {
-    const Icon = item.icon;
-    const content = (
-      <div className="flex h-full gap-3 rounded-md border border-border bg-background p-3 transition-colors hover:bg-muted/40">
-        <div className={item.complete ? "mt-0.5 text-primary" : "mt-0.5 text-muted-foreground"}>
-          {item.complete ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 items-center gap-2">
-            <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <p className="truncate text-sm font-semibold text-foreground">{item.label}</p>
-          </div>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">{item.description}</p>
-        </div>
-      </div>
-    );
-
-    return item.href.startsWith("/store/") || item.href.startsWith("/shop/") ? (
-      <Link key={item.label} href={item.href} target="_blank">
-        {content}
-      </Link>
-    ) : (
-      <Link key={item.label} href={item.href}>
-        {content}
-      </Link>
-    );
-  };
-
   return (
     <div className="portal-page space-y-4 sm:space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -595,8 +565,6 @@ export default async function DashboardPage() {
           )}
         </div>
       </div>
-      <div id="shop-link" className="scroll-mt-24"><StoreLinkCard storePath={storeUrl !== "#" ? storeUrl : null} /></div>
-
       {sellingAccess ? (
         <div>
           <SellingAccessAlert
@@ -644,58 +612,17 @@ export default async function DashboardPage() {
 
       <CreditStatusCard href="/dashboard/credit" enabled={creditEnabled} limit={creditLimit} balance={walletBalance} dueAt={creditDueAt} />
 
-      <Card className="premium-surface overflow-hidden rounded-lg">
-        <CardHeader className="pb-3">
-          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <CheckCircle2 className={onboardingIsReady ? "h-5 w-5 text-primary" : "h-5 w-5 text-muted-foreground"} />
-                Setup
-              </CardTitle>
-              <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                Finish the basics, then share your shop.
-              </p>
+      {!onboardingIsReady ? (
+        <Card className="premium-surface overflow-hidden rounded-lg">
+          <CardContent className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+            <div className="flex min-w-0 items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <p className="truncate text-sm font-semibold">Setup {onboardingCompleteCount}/{requiredOnboardingItems.length || 5}</p>
             </div>
-            <Badge variant={onboardingIsReady ? "secondary" : "outline"} className={onboardingIsReady ? "bg-primary/10 text-primary" : ""}>
-              {onboardingCompleteCount}/{requiredOnboardingItems.length || 5} required
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {requiredOnboardingItems.map(renderOnboardingItem)}
-          </div>
-          {optionalOnboardingItems.length > 0 ? (
-            <div className="mt-4 border-t pt-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Optional</p>
-                <Badge variant="outline" className="text-xs">
-                  Optional
-                </Badge>
-              </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                {optionalOnboardingItems.map(renderOnboardingItem)}
-              </div>
-            </div>
-          ) : null}
-          {!onboardingIsReady ? (
-            <div className="status-warning mt-4 rounded-md border px-4 py-3 text-sm">
-              Finish the required steps to start selling.
-            </div>
-          ) : (
-            <div className="status-success mt-4 rounded-md border px-4 py-3 text-sm">
-              Your shop is ready.
-            </div>
-          )}
-          <div className="mt-4">
-            <Button asChild variant={onboardingIsReady ? "outline" : "default"} size="sm">
-              <Link href="/dashboard/setup">
-                {onboardingIsReady ? "Review setup" : "Continue setup"}
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            <Button asChild size="sm"><Link href="/dashboard/setup">Continue</Link></Button>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-5">
         <MetricCard
@@ -771,7 +698,7 @@ export default async function DashboardPage() {
         </CardContent>
       </Card>
 
-      <Card className="premium-surface overflow-hidden rounded-lg">
+      <Card className="hidden premium-surface overflow-hidden rounded-lg">
         <CardHeader className="border-b bg-muted/30 pb-3">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -830,7 +757,7 @@ export default async function DashboardPage() {
         </CardContent>
       </Card>
 
-      <Card className="premium-surface overflow-hidden rounded-lg">
+      <Card className="hidden premium-surface overflow-hidden rounded-lg">
         <CardHeader className="border-b bg-muted/30 pb-3">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <div>

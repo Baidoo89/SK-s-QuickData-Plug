@@ -473,7 +473,7 @@ export default async function ResellerDashboardPage(props: { searchParams?: Prom
         </CardContent>
       </Card>
 
-      <Card className="premium-surface border-0">
+      <Card className="hidden premium-surface border-0">
         <CardHeader>
           <CardTitle className="text-sm font-semibold">Actions</CardTitle>
         </CardHeader>
@@ -507,7 +507,7 @@ export default async function ResellerDashboardPage(props: { searchParams?: Prom
       </Card>
 
       {resellerStorePath ? (
-        <Card className="premium-surface border-0">
+        <Card className="hidden premium-surface border-0">
           <CardHeader>
             <CardTitle className="text-sm font-semibold">Shop link</CardTitle>
           </CardHeader>

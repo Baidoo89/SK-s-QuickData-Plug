@@ -521,7 +521,7 @@ export default async function AgentOverviewPage(props: { searchParams?: Promise<
         </CardContent>
       </Card>
 
-      <Card className="premium-surface border-0">
+      <Card className="hidden premium-surface border-0">
         <CardHeader>
           <CardTitle className="text-sm font-semibold">Actions</CardTitle>
         </CardHeader>
@@ -598,7 +598,7 @@ export default async function AgentOverviewPage(props: { searchParams?: Promise<
       </Card>
 
       {agentStorePath && (
-        <Card className="premium-surface border-0">
+        <Card className="hidden premium-surface border-0">
           <CardHeader>
             <CardTitle className="text-sm font-semibold">Shop link</CardTitle>
           </CardHeader>
