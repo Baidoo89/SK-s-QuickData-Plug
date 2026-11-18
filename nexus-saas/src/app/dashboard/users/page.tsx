@@ -253,7 +253,7 @@ export default async function DashboardUsersPage(
         </p>
       </div>
 
-      <div className="grid min-w-0 gap-4 md:grid-cols-3">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3">
         <MetricCard label="Admins" value={countByRole.SUBSCRIBER ?? 0} description="Subscriber owner accounts in this organization" icon={ShieldCheck} tone="primary" />
         <MetricCard label="Agents" value={countByRole.AGENT ?? 0} description="Approved and pending agent accounts" icon={Users} tone="warning" />
         <MetricCard label="Resellers" value={countByRole.RESELLER ?? 0} description="Reseller accounts connected to agents" icon={UserCheck} tone="success" />

@@ -95,7 +95,7 @@ export default async function ResellersPage() {
         </div>
       </div>
 
-      <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-4">
         <MetricCard label="Resellers" value={resellers.length} description={`${activeResellers} active accounts`} icon={Users} tone="primary" />
         <MetricCard label="Pending Approval" value={pendingResellers} description="Reseller signups waiting for approval" icon={UserCheck} tone={pendingResellers > 0 ? "warning" : "muted"} />
         <MetricCard label="Wallet Balance" value={formatGhanaCedis(totalWalletBalance)} description="Combined successful wallet balance" icon={Wallet} tone="success" />

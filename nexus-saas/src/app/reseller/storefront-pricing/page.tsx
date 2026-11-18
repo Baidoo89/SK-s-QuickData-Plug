@@ -78,7 +78,7 @@ export default function ResellerStorefrontPricingPage() {
         <p className="text-sm text-muted-foreground">Set the prices customers see on your shop link. Your dashboard buy price stays separate.</p>
       </div>
 
-      <div className="grid min-w-0 gap-4 md:grid-cols-3">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3">
         <Card className="premium-surface overflow-hidden rounded-lg border-primary/20 bg-primary/5">
           <CardHeader className="border-b border-primary/10 bg-primary/5 pb-2">
             <CardTitle className="flex items-center gap-2 text-sm"><Store className="h-4 w-4" /> Pricing rule</CardTitle>

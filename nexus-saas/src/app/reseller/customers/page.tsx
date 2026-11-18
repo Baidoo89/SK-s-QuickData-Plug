@@ -103,7 +103,7 @@ export default async function ResellerCustomersPage(
       </div>
 
       {/* Stats Cards */}
-      <div className="grid min-w-0 gap-4 md:grid-cols-3">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3">
         <Card className="premium-surface overflow-hidden rounded-lg">
           <CardHeader className="border-b border-border/70 bg-muted/20 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Customers</CardTitle>

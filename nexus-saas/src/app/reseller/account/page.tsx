@@ -93,7 +93,7 @@ export default async function ResellerAccountPage() {
         </Button>
       </div>
 
-      <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-4">
         <MetricCard label="Wallet Balance" value={formatGhanaCedis(walletBalance)} description="Successful wallet transactions" icon={Wallet} tone="success" />
         <MetricCard label="Orders" value={orderCount} description={`${completedOrderCount} completed orders`} icon={ShoppingCart} tone="info" />
         <MetricCard label="Access" value={isActive ? "Active" : "Restricted"} description={`Signup status: ${user.signupStatus}`} icon={ShieldCheck} tone={isActive ? "success" : "warning"} />

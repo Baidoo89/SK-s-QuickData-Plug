@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { OrderStatusSelect } from "@/components/admin/order-status-select"
 import { OrderTimelineDialog } from "@/components/orders/order-timeline-dialog"
+import { MobileOrderCard } from "@/components/orders/mobile-order-card"
 import { useToast } from "@/components/ui/use-toast"
 import { formatGhanaCedis } from "@/lib/currency"
 
@@ -445,7 +446,35 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
         </div>
       ) : null}
 
-      <div className="ops-table-surface min-w-0 max-w-full overflow-hidden rounded-lg">
+      <div className="space-y-2 lg:hidden">
+        {rows.map((order) => {
+          const editableStatus = canEditStatus(order)
+          return (
+            <MobileOrderCard
+              key={order.id}
+              orderId={order.id}
+              code={order.publicOrderCode}
+              date={formatDate(order.createdAt)}
+              customer={order.buyerName}
+              phone={order.phoneNumber || "N/A"}
+              bundle={`${order.bundle || "Bundle N/A"}${order.network ? ` · ${order.network}` : ""}`}
+              amount={order.total}
+              profit={order.profit}
+              status={getDisplayStatus(order)}
+              source={order.sourceLabel}
+              seller={`${order.sellerRole} · ${order.sellerName}`}
+              payment={`${order.paymentStatus} · ${order.paymentOwner}`}
+              selectable
+              selected={selected.has(order.id)}
+              disabled={!order.actionable}
+              onSelect={() => toggleOrder(order)}
+              action={editableStatus ? <OrderStatusSelect orderId={order.id} initialStatus={order.status} endpointBase="/api/dashboard/orders" /> : undefined}
+            />
+          )
+        })}
+      </div>
+
+      <div className="hidden ops-table-surface min-w-0 max-w-full overflow-hidden rounded-lg lg:block">
         <div className="table-scroll">
         <Table className="min-w-[1440px] table-fixed text-xs">
           <TableHeader className="bg-muted/40">

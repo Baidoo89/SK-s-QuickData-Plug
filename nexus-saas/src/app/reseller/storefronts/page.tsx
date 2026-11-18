@@ -62,7 +62,7 @@ export default async function ResellerStorefrontsPage() {
         </p>
       </div>
 
-      <div className="grid min-w-0 gap-4 md:grid-cols-3">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3">
         <Card className="premium-surface border-0">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Business</CardTitle>

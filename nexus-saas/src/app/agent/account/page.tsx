@@ -78,7 +78,7 @@ export default async function AgentAccountPage() {
         </Button>
       </div>
 
-      <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-4">
         <MetricCard label="Wallet Balance" value={formatGhanaCedis(walletBalance)} description="Successful wallet transactions" icon={Wallet} tone="success" />
         <MetricCard label="Orders" value={orderCount} description="Orders attributed to your agent link" icon={ShoppingCart} tone="info" />
         <MetricCard label="Resellers" value={resellerCount} description={`${pendingResellers} pending approval`} icon={Users} tone={pendingResellers > 0 ? "warning" : "primary"} />

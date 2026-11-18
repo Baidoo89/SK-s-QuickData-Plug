@@ -93,7 +93,7 @@ export default async function AgentApprovalsPage() {
             Review reseller signup requests, check verification status, then approve or reject access.
           </p>
         </div>
-        <div className="grid min-w-0 gap-2 sm:grid-cols-3 lg:min-w-[420px]">
+        <div className="grid min-w-0 grid-cols-3 gap-2 lg:min-w-[420px]">
           <div className="rounded-lg border border-border/70 bg-background/80 px-3 py-2 text-sm shadow-sm">
             <p className="text-xs text-muted-foreground">Pending</p>
             <p className="font-semibold">{pendingResellers.length}</p>

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { OrderTimelineDialog } from "@/components/orders/order-timeline-dialog"
+import { MobileOrderCard } from "@/components/orders/mobile-order-card"
 import { getStorefrontPaymentMap, type OrderPaymentSummary } from "@/lib/storefront-payment-map"
 import { PortalAccessMessage } from "@/components/access/portal-access-message"
 import { PageHeader } from "@/components/ui/page-header"
@@ -253,7 +254,33 @@ export default async function AgentOrdersPage(
               <div className="px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                 Orders table
               </div>
-              <div className="ops-table-surface table-scroll rounded-lg">
+              <div className="space-y-2 lg:hidden">
+                {orders.map((order: AgentOrderRow) => {
+                  const date = new Date(order.createdAt)
+                  const customerName = order.customer?.name || "Walk-in customer"
+                  const phone = resolveOrderRecipientPhone(order) || "-"
+                  const itemsLabel = order.items.map((item: AgentOrderItemRow) => formatItemName(item.product.name)).join(" | ")
+                  const profit = order.items.reduce((sum, item) => sum + item.profit, 0)
+                  return (
+                    <MobileOrderCard
+                      key={order.id}
+                      orderId={order.id}
+                      code={order.publicOrderCode || order.id.slice(-8)}
+                      date={date.toLocaleString()}
+                      customer={customerName}
+                      phone={phone}
+                      bundle={itemsLabel}
+                      amount={order.total}
+                      profit={profit}
+                      status={order.status}
+                      payment={`${order.payment?.owner === "STOREFRONT" ? order.payment.status : "WALLET"}`}
+                      paymentReference={order.payment?.reference}
+                      endpointBase="/api/agent/orders"
+                    />
+                  )
+                })}
+              </div>
+              <div className="hidden ops-table-surface table-scroll rounded-lg lg:block">
                 <Table className="min-w-[720px] text-xs">
                   <TableHeader className="bg-muted/40">
                     <TableRow>

@@ -299,7 +299,7 @@ export default function AgentsPage() {
       </div>
 
       {/* High-level agent overview */}
-      <div className="grid min-w-0 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
         <MetricCard label="Total Agents" value={aggregateStats.totalAgents} description="Across your VTU business." icon={Users} tone="primary" />
         <MetricCard label="Active Agents" value={aggregateStats.activeAgents} description="Currently allowed to sell." icon={UserCheck} tone="success" />
         <MetricCard label="Total Orders" value={aggregateStats.totalOrders} description="Orders from all agents." icon={Activity} tone="info" />
