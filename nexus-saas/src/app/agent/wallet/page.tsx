@@ -169,30 +169,27 @@ export default function AgentWalletPage() {
   return (
     <div className="portal-page space-y-6">
       <div className="space-y-1 max-w-2xl mx-auto text-center">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Wallet & Activity</h1>
-        <p className="text-sm text-muted-foreground">
-          Track your order wallet, reseller credits, and wallet activity.
-        </p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Wallet</h1>
       </div>
       <div className="grid min-w-0 gap-4 md:grid-cols-3">
         <MetricCard
-          label="Wallet Balance"
+          label="Balance"
           value={formatGhanaCedis(balance)}
-          description="Available balance for your own dashboard orders."
+          description="Available"
           icon={WalletCards}
           tone="success"
         />
         <MetricCard
-          label="Estimated Commissions"
+          label="Commissions"
           value={formatGhanaCedis(estimatedCommission)}
-          description="Estimated from successful fulfilled numbers."
+          description="Estimated"
           icon={Activity}
           tone="primary"
         />
         <MetricCard
           label="Processing"
           value={`${summary?.processing ?? 0}/${summary?.completed ?? 0}`}
-          description="Processing vs completed orders."
+          description="Processing / completed"
           icon={Clock3}
           tone={(summary?.processing ?? 0) > 0 ? "warning" : "info"}
         />
@@ -200,7 +197,7 @@ export default function AgentWalletPage() {
       <div className="grid min-w-0 gap-4 md:grid-cols-1 lg:grid-cols-2">
         <Card id="paystack-top-up" className="premium-surface overflow-hidden rounded-lg">
           <CardHeader className="border-b border-border/70 bg-muted/20">
-            <CardTitle className="text-sm font-semibold">Top Up Your Wallet</CardTitle>
+            <CardTitle className="text-sm font-semibold">Add funds</CardTitle>
             <CardDescription className="text-xs">
               Paystack fees are added at checkout. Your wallet receives the amount you enter.
             </CardDescription>
@@ -268,7 +265,7 @@ export default function AgentWalletPage() {
         </Card>
         <Card id="top-up" className="premium-surface overflow-hidden rounded-lg">
           <CardHeader className="border-b border-border/70 bg-muted/20">
-            <CardTitle className="text-sm font-semibold">Credit Reseller Wallet</CardTitle>
+            <CardTitle className="text-sm font-semibold">Credit reseller</CardTitle>
             <CardDescription className="text-xs">
               Credit only resellers linked to your agent account.
             </CardDescription>
@@ -467,7 +464,7 @@ export default function AgentWalletPage() {
       </div>
       <Card id="transactions" className="premium-surface overflow-hidden rounded-lg">
         <CardHeader className="border-b border-border/70 bg-muted/20">
-          <CardTitle className="text-sm font-semibold">Transactions & activity</CardTitle>
+          <CardTitle className="text-sm font-semibold">Transactions</CardTitle>
           <CardDescription className="text-xs">
               This appears directly under top up so the flow stays simple and readable.
           </CardDescription>

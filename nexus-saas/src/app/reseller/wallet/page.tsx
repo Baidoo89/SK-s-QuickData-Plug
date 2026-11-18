@@ -109,30 +109,27 @@ export default function ResellerWalletPage() {
     <div className="portal-page space-y-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Wallet</h1>
-          <p className="text-sm text-muted-foreground max-w-xl">
-            View your reseller wallet balance and recent activity. Use Paystack for instant top-up, or ask your agent for manual top-up.
-          </p>
         </div>
 
         <div className="grid min-w-0 gap-4 md:grid-cols-3">
           <MetricCard
-            label="Wallet Balance"
+            label="Balance"
             value={formatGhanaCedis(balance)}
-            description="Available balance for reseller VTU orders."
+            description="Available"
             icon={WalletCards}
             tone="success"
           />
           <MetricCard
-            label="Top Ups"
+            label="Top-ups"
             value={topups.length}
-            description="Recent funding records."
+            description="Funding records"
             icon={CreditCard}
             tone="primary"
           />
           <MetricCard
             label="Activity"
             value={activities.length}
-            description="Wallet credits, debits, and adjustments."
+            description="Credits and debits"
             icon={Activity}
             tone="info"
           />
@@ -140,7 +137,7 @@ export default function ResellerWalletPage() {
 
         <Card id="top-up" className="premium-surface overflow-hidden rounded-lg">
           <CardHeader className="border-b border-border/70 bg-muted/20">
-            <CardTitle>Wallet Top Up</CardTitle>
+            <CardTitle>Add funds</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm text-muted-foreground">
           <div>

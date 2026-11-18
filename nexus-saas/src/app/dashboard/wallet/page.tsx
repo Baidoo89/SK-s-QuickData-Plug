@@ -110,37 +110,34 @@ export default function WalletPage({
     <div className="portal-page space-y-6">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-1">Wallet</h1>
-        <p className="text-sm text-muted-foreground max-w-2xl">
-          Fund operational wallets for agents and resellers, then review wallet movements across your organization.
-        </p>
       </div>
 
       <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          label="Operational Wallet"
+          label="Balance"
           value={formatGhanaCedis(balance)}
-          description="Balance for wallet-backed VTU operations."
+          description="For wallet-backed orders"
           icon={WalletCards}
           tone="success"
         />
         <MetricCard
-          label="Manual Credits"
+          label="Credits"
           value={topups.length}
-          description="Recent successful funding records loaded."
+          description="Manual funding records"
           icon={UserPlus}
           tone="primary"
         />
         <MetricCard
           label="Activity"
           value={activities.length}
-          description="Recent wallet movements in this organization."
+          description="Recent movements"
           icon={Activity}
           tone="info"
         />
         <MetricCard
           label="Withdrawals"
           value="Profit only"
-          description="Payout requests come from earned profit, not wallet top-ups."
+          description="Profit only"
           icon={Banknote}
           tone="primary"
         />
@@ -149,10 +146,7 @@ export default function WalletPage({
       <Card className="premium-surface overflow-hidden rounded-lg">
         <CardContent className="grid min-w-0 gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground">Wallet vs withdrawals</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Wallet balance is used to pay for VTU/order operations. Withdrawals are based on seller profit earned from completed orders.
-            </p>
+            <p className="text-sm font-semibold text-foreground">Funds</p>
           </div>
           <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap">
             <span className="rounded-md border bg-background px-3 py-1 text-center text-xs text-muted-foreground">Wallet funds orders</span>
@@ -165,12 +159,12 @@ export default function WalletPage({
         <CardHeader className="border-b border-border/70 bg-muted/20 pb-3">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <ArrowRightLeft className="h-4 w-4 text-primary" />
-            Manual Wallet Top Up
+            Add funds
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 p-4 text-xs">
           <p className="text-sm text-muted-foreground">
-            Credit an agent or reseller wallet under your organization by email.
+            Add funds to an agent or reseller wallet.
           </p>
           <form
             onSubmit={async (e: FormEvent) => {

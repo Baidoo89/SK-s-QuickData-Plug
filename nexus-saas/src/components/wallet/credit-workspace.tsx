@@ -50,18 +50,18 @@ export function CreditWorkspace() {
     finally { setSaving(false) }
   }
   return <div className="space-y-6">
-    <div><h1 className="text-2xl font-bold tracking-tight">Credit &amp; debt</h1><p className="mt-2 max-w-3xl text-sm text-muted-foreground">Purchases use wallet funds first. Approved credit covers a shortfall up to the limit. Borrowed funds are due by the end of that day, at midnight GMT; overdue debt blocks further borrowing.</p></div>
-    <Card><CardContent className="space-y-2 pt-6 text-sm"><p>Top-ups and refunds reduce the amount owed. Turning off credit prevents new borrowing and keeps existing debt on record.</p><p className="text-muted-foreground">Store owners approve agents and resellers in their business. Platform admins approve store-owner credit.</p></CardContent></Card>
+    <div><h1 className="text-2xl font-bold tracking-tight">Credit</h1><p className="mt-1 max-w-3xl text-sm text-muted-foreground">Wallet first. Approved credit covers shortfalls up to each limit. Debt is due at day end.</p></div>
+    <Card><CardContent className="flex flex-wrap gap-2 pt-6 text-xs text-muted-foreground"><span className="rounded-md border bg-background px-3 py-1">Wallet first</span><span className="rounded-md border bg-background px-3 py-1">Approved limits</span><span className="rounded-md border bg-background px-3 py-1">Debt due daily</span></CardContent></Card>
     {canManage && <form className="flex flex-col gap-2 sm:flex-row sm:items-end" onSubmit={event => { event.preventDefault(); void load(query) }}><div className="flex-1 space-y-2"><Label htmlFor="credit-search">Find an account</Label><Input id="credit-search" type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Name or email" /></div><Button type="submit" disabled={loading}>Search accounts</Button></form>}
     {error && <div role="alert" className="space-y-2 rounded-lg border p-4"><p>{error}</p><Button variant="outline" onClick={() => void load(query)}>Try again</Button></div>}
     {loading ? <p role="status">Loading credit accounts...</p> : !error && <>
-      <p className="text-sm text-muted-foreground">{rows.length} account{rows.length === 1 ? "" : "s"} shown. {canManage ? "Search to narrow the list; up to 100 accounts are shown." : "Your balance and credit details."}</p>
+      <p className="text-sm text-muted-foreground">{rows.length} account{rows.length === 1 ? "" : "s"} shown{canManage ? ". Search to narrow the list." : "."}</p>
       <div className="grid gap-4 xl:grid-cols-2">{rows.map(row => <Card key={row.userId} data-testid={`credit-account-${row.userId}`}>
         <CardHeader className="space-y-2"><CardTitle className="break-words text-base">{row.name || row.email || "Account"}</CardTitle><p className="break-all text-sm text-muted-foreground">{row.email}</p><p className="text-xs text-muted-foreground">{row.role.toLowerCase()} | {row.organization}</p></CardHeader>
         <CardContent className="space-y-4"><div className="grid grid-cols-2 gap-4 text-sm"><div><p className="text-muted-foreground">Amount owed</p><p className={row.overdue ? "text-lg font-semibold text-destructive" : "text-lg font-semibold"}>{formatGhanaCedis(row.owed)}</p></div><div><p className="text-muted-foreground">Available for purchases</p><p className="text-lg font-semibold">{formatGhanaCedis(row.availableToSpend)}</p></div><div><p className="text-muted-foreground">Wallet balance</p><p>{formatGhanaCedis(row.balance)}</p></div><div><p className="text-muted-foreground">Credit limit</p><p>{formatGhanaCedis(row.limit)}</p></div></div>
           <div className="rounded-md bg-muted/50 p-3 text-sm"><p className="font-medium">{row.overdue ? "Overdue: clear debt before borrowing again" : row.enabled ? "Credit approved" : "Prepaid only"}</p>{row.dueAt && <p className="mt-1 text-muted-foreground">Due: {dueDate(row.dueAt)}</p>}</div>
-          {row.isSelf && <Button asChild><Link href={row.role === "AGENT" ? "/agent/wallet" : row.role === "RESELLER" ? "/reseller/wallet" : "/dashboard/wallet"}>Top up wallet / repay</Link></Button>}
-          {row.canEdit && <Button variant="outline" onClick={() => edit(row)}>Set credit for {row.name || row.email || "account"}</Button>}
+          {row.isSelf && <Button asChild><Link href={row.role === "AGENT" ? "/agent/wallet" : row.role === "RESELLER" ? "/reseller/wallet" : "/dashboard/wallet"}>Top up / repay</Link></Button>}
+          {row.canEdit && <Button variant="outline" onClick={() => edit(row)}>Set limit</Button>}
         </CardContent></Card>)}</div>
       {rows.length === 0 && <p>No matching accounts found.</p>}
     </>}
