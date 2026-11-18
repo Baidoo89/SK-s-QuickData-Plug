@@ -118,7 +118,7 @@ function PortalShellInner({ role, children }: { role: Role; children: ReactNode 
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
-        <main id="main-content" tabIndex={-1} className="content-sheen flex min-w-0 flex-col gap-6 p-4 outline-none lg:p-6">{children}</main>
+        <main id="main-content" tabIndex={-1} className="content-sheen flex min-w-0 flex-col gap-4 p-3 outline-none sm:gap-6 sm:p-4 lg:p-6">{children}</main>
       </div>
     </div>
   )

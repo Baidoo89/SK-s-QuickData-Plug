@@ -318,7 +318,7 @@ export default async function AgentOverviewPage(props: { searchParams?: Promise<
   ]
 
   return (
-    <div className="portal-page space-y-6">
+    <div className="portal-page space-y-4 sm:space-y-6">
       <div className="space-y-1">
         <p className="text-sm font-medium text-primary">{`${greeting}, ${displayName}.`}</p>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
@@ -385,7 +385,7 @@ export default async function AgentOverviewPage(props: { searchParams?: Promise<
 
       <CreditStatusCard href="/agent/credit" enabled={creditAccount?.enabled ?? false} limit={creditLimit} balance={walletBalance} dueAt={creditAccount?.dueAt ?? null} />
 
-      <div className="grid min-w-0 gap-4 md:grid-cols-2 lg:grid-cols-6">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 md:grid-cols-2 lg:grid-cols-6">
         <MetricCard
           label="Wallet"
           value={formatGhanaCedis(walletBalance)}
@@ -496,7 +496,7 @@ export default async function AgentOverviewPage(props: { searchParams?: Promise<
             <Badge variant="outline" className="w-fit">{manualWorkCount} manual</Badge>
           </div>
         </CardHeader>
-        <CardContent className="grid gap-3 p-4 md:grid-cols-3">
+        <CardContent className="grid grid-cols-2 gap-2 p-3 sm:gap-3 sm:p-4 md:grid-cols-3">
           {channelMetrics.map((channel) => (
             <Link key={channel.key} href={channel.href} className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm transition-colors hover:bg-muted/40">
               <div className="flex items-start justify-between gap-3">
@@ -526,7 +526,7 @@ export default async function AgentOverviewPage(props: { searchParams?: Promise<
           <CardTitle className="text-sm font-semibold">Actions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-6">
+          <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-6">
             <Link href="/agent/buy/single" className="group">
               <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-background/80 px-3 py-2 shadow-sm transition-colors group-hover:border-primary">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">

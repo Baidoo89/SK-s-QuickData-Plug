@@ -576,7 +576,7 @@ export default async function DashboardPage() {
   };
 
   return (
-    <div className="portal-page space-y-6">
+    <div className="portal-page space-y-4 sm:space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-primary">Store</p>
@@ -697,7 +697,7 @@ export default async function DashboardPage() {
         </CardContent>
       </Card>
 
-      <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-5">
         <MetricCard
           label="Revenue"
           value={formatGhanaCedis(revenueToday)}
@@ -746,7 +746,7 @@ export default async function DashboardPage() {
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-5">
+        <CardContent className="grid grid-cols-2 gap-2 p-3 sm:gap-3 sm:p-4 md:grid-cols-2 xl:grid-cols-5">
           {channelMetrics.map((channel) => (
             <Link key={channel.key} href={channel.href} className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm transition-colors hover:bg-muted/40">
               <div className="flex items-start justify-between gap-3">
@@ -783,7 +783,7 @@ export default async function DashboardPage() {
           </div>
         </CardHeader>
         <CardContent className="p-4">
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3">
             <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
               <p className="text-xs font-medium text-muted-foreground">Today</p>
               <div className="mt-2 space-y-1 text-sm">
@@ -841,7 +841,7 @@ export default async function DashboardPage() {
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
+        <CardContent className="grid grid-cols-2 gap-2 p-3 sm:gap-3 sm:p-4 xl:grid-cols-4">
           <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
             <p className="text-xs text-muted-foreground">All-time revenue</p>
             <p className="mt-1 text-lg font-semibold">{formatGhanaCedis(totalRevenue)}</p>
