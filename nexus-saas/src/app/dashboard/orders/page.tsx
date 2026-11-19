@@ -174,20 +174,14 @@ export default async function OrdersPage(
         as="h2"
         title="Orders"
         description="Review and fulfill sales."
-        actions={<>
+        actions={
           <a href={downloadUrl}>
             <Button variant="outline" className="w-full justify-center whitespace-nowrap lg:w-auto">
               <Download className="mr-2 h-4 w-4" />
-              CSV
+              Export CSV
             </Button>
           </a>
-          <a href="/api/dashboard/orders/manual/export">
-            <Button variant="outline" className="w-full justify-center whitespace-nowrap lg:w-auto">
-              <Download className="mr-2 h-4 w-4" />
-              Work CSV
-            </Button>
-          </a>
-        </>}
+        }
       />
       <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4">
         <MetricCard
