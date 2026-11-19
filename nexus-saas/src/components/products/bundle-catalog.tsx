@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { BundleEditor, CATALOG_NETWORKS } from "@/components/products/bundle-editor"
 import { bundleDifference, bundleIssues, type CatalogBundle } from "@/lib/catalog-pricing"
+import { PageHeader } from "@/components/ui/page-header"
 
 const money = (value: number) => Number.isFinite(value) ? `GHS ${value.toFixed(2)}` : "Not set"
 
@@ -57,11 +58,16 @@ export function BundleCatalog() {
 
   return (
     <div className="portal-page mx-auto w-full max-w-6xl space-y-5">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start"><div className="space-y-2"><h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Products & prices</h1><p className="max-w-2xl text-sm leading-6 text-muted-foreground">Add the bundles you sell, check their prices, and choose what appears in your shop.</p></div><Button onClick={() => openEditor(null)} disabled={loading || Boolean(error)} className="min-h-11 shrink-0"><Plus className="mr-2 h-4 w-4" />Add a bundle</Button></div>
+      <PageHeader
+        eyebrow="Catalog"
+        title="Products & prices"
+        description="Manage bundles and shop prices."
+        actions={<Button onClick={() => openEditor(null)} disabled={loading || Boolean(error)} className="min-h-11 shrink-0"><Plus className="mr-2 h-4 w-4" />Add a bundle</Button>}
+      />
       <div role="status" className={notice ? "rounded-lg border border-success/30 bg-success/10 p-3 text-sm" : "sr-only"}>{notice}</div>
       {loading ? <p role="status" className="rounded-lg border border-border p-6 text-sm text-muted-foreground">Loading your bundles...</p> : error ? <div role="alert" className="space-y-3 rounded-lg border border-destructive/40 p-5 text-sm"><p>{error}</p><Button variant="outline" onClick={() => setReload(value => value + 1)}>Try loading again</Button></div> : <>
-        <section aria-label="Catalog overview" className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-lg border border-border bg-card p-4"><p className="text-2xl font-bold">{bundles.length}</p><p className="text-sm text-muted-foreground">Total bundles</p></div><div className="rounded-lg border border-border bg-card p-4"><p className="text-2xl font-bold">{bundles.filter(bundle => bundle.active).length}</p><p className="text-sm text-muted-foreground">Active bundles</p></div><button type="button" aria-pressed={attentionOnly} onClick={() => setAttentionOnly(!attentionOnly)} className={`rounded-lg border p-4 text-left ${attentionOnly ? "border-primary bg-primary/10" : "border-border bg-card"}`}><p className="text-2xl font-bold">{needsAttention}</p><p className="text-sm text-muted-foreground">Need a price review{attentionOnly ? " · showing these" : " · view bundles"}</p></button>
+        <section aria-label="Catalog overview" className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
+          <div className="rounded-lg border border-border bg-card p-3 sm:p-4"><p className="text-xl font-bold sm:text-2xl">{bundles.length}</p><p className="text-xs text-muted-foreground sm:text-sm">Total bundles</p></div><div className="rounded-lg border border-border bg-card p-3 sm:p-4"><p className="text-xl font-bold sm:text-2xl">{bundles.filter(bundle => bundle.active).length}</p><p className="text-xs text-muted-foreground sm:text-sm">Active bundles</p></div><button type="button" aria-pressed={attentionOnly} onClick={() => setAttentionOnly(!attentionOnly)} className={`rounded-lg border p-3 text-left sm:p-4 ${attentionOnly ? "border-primary bg-primary/10" : "border-border bg-card"}`}><p className="text-xl font-bold sm:text-2xl">{needsAttention}</p><p className="text-xs text-muted-foreground sm:text-sm">Need a price review{attentionOnly ? " · showing these" : " · view bundles"}</p></button>
         </section>
         <section className="space-y-4 rounded-lg border border-border bg-card p-4 sm:p-5" aria-label="Your bundles">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
@@ -69,7 +75,7 @@ export function BundleCatalog() {
             <div className="space-y-2"><label htmlFor="catalog-filter-network" className="block text-sm font-medium">Network</label><select id="catalog-filter-network" value={network} onChange={event => setNetwork(event.target.value)} className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm lg:w-44"><option value="ALL">All networks</option>{CATALOG_NETWORKS.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
             <Button variant="outline" className="h-11" onClick={() => { setNotice(""); setReload(value => value + 1) }}><RefreshCw className="mr-2 h-4 w-4" />Refresh list</Button>
           </div>
-          <p className="text-xs leading-5 text-muted-foreground">Base price starts team purchases unless overridden. Shop price is what your customers pay. The difference shown is before fees.</p>
+          <p className="text-xs leading-5 text-muted-foreground">Base = team cost · Shop = customer price. Difference is before fees.</p>
           {visible.length ? <ul className="space-y-3">{visible.map(bundle => {
             const issues = bundleIssues(bundle)
             const difference = bundleDifference(bundle)
@@ -77,7 +83,7 @@ export function BundleCatalog() {
           })}</ul> : <div className="space-y-3 py-8 text-center"><h2 className="text-lg font-semibold">{bundles.length ? "No bundles match these filters" : "Add your first bundle"}</h2><p className="text-sm text-muted-foreground">{bundles.length ? "Try another network or clear your search and price-review filter." : "Choose a network, give the bundle a name, and set its base and shop prices."}</p>{bundles.length ? <Button variant="outline" onClick={() => { setNetwork("ALL"); setQuery(""); setAttentionOnly(false) }}>Clear filters</Button> : <Button onClick={() => openEditor(null)}>Add your first bundle</Button>}</div>}
         </section>
       </>}
-      <details className="rounded-lg border border-border bg-card p-4 text-sm"><summary className="cursor-pointer font-semibold">Services, team pricing & advanced tools</summary><p className="mt-3 text-xs leading-6 text-muted-foreground">Use price groups for agent and reseller prices. Registration services and the existing catalog controls are available below.</p><div className="mt-3 flex flex-wrap gap-3"><Button asChild variant="outline"><Link href="/dashboard/products?tab=pricing_profiles">Manage price groups</Link></Button><Button asChild variant="outline"><Link href="/dashboard/products?tab=advanced#service-forms">Services & advanced catalog</Link></Button></div></details>
+      <details className="rounded-lg border border-border bg-card p-4 text-sm"><summary className="cursor-pointer font-semibold">Advanced tools</summary><p className="mt-3 text-xs leading-6 text-muted-foreground">Price groups, services, and advanced catalog controls.</p><div className="mt-3 flex flex-wrap gap-3"><Button asChild variant="outline"><Link href="/dashboard/products?tab=pricing_profiles">Price groups</Link></Button><Button asChild variant="outline"><Link href="/dashboard/products?tab=advanced#service-forms">Services &amp; advanced</Link></Button></div></details>
       {editorOpen && <BundleEditor key={editing?.id ?? `new-${network}`} bundle={editing} initialNetwork={network === "ALL" ? "MTN" : network} onClose={() => setEditorOpen(false)} onSaved={saved} />}
     </div>
   )
