@@ -29,6 +29,23 @@ test("owner can identify missing prices and filter across networks", async ({ pa
   await expect(page.getByRole("heading", { name: "1 GB", exact: true })).toHaveCount(0)
 })
 
+test("owner can update bundle prices inline without opening the full editor", async ({ page }) => {
+  await openCatalog(page)
+  const requests: Record<string, unknown>[] = []
+  await page.route("**/api/products/mtn-1", route => {
+    requests.push(route.request().postDataJSON())
+    return route.fulfill({ json: { id: "mtn-1", ...route.request().postDataJSON() } })
+  })
+  await page.getByRole("button", { name: "Edit prices for MTN 1 GB", exact: true }).click()
+  await expect(page.getByRole("dialog")).toHaveCount(0)
+  await page.getByLabel("Base price for MTN 1 GB", { exact: true }).fill("4.00")
+  await page.getByLabel("Shop price for MTN 1 GB", { exact: true }).fill("5.75")
+  await page.getByRole("button", { name: "Save prices", exact: true }).click()
+  await expect(page.getByText("GHS 1.75", { exact: true })).toBeVisible()
+  expect(requests).toHaveLength(1)
+  expect(requests[0]).toMatchObject({ basePrice: 4, storefrontPrice: 5.75, price: 4.5, active: true })
+})
+
 test("adding a bundle explains the difference and submits only when explicitly saved", async ({ page }) => {
   await openCatalog(page, [])
   const requests: unknown[] = []
