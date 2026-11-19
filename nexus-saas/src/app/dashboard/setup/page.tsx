@@ -85,43 +85,43 @@ export default async function DashboardSetupPage() {
 
   const requiredItems: SetupItem[] = [
     {
-      label: "Activate your business account",
+      label: "Business account",
       description: organizationActive
         ? "Active."
-        : "Your business account is inactive. Contact the platform owner to reactivate it.",
+        : "Ask the platform owner to reactivate it.",
       href: "/dashboard/settings",
       complete: organizationActive,
       required: true,
       icon: Store,
-      action: "Review business settings",
+      action: "Review",
     },
     {
-      label: "Choose your selling plan",
+      label: "Selling plan",
       description: subscriptionActive
         ? "Active."
-        : "Choose and activate a plan so your shop can accept orders.",
+        : "Choose a plan to accept orders.",
       href: "/dashboard/subscription",
       complete: subscriptionActive,
       required: true,
       icon: CreditCard,
-      action: "Manage plan",
+      action: "Choose plan",
     },
     {
-      label: "Connect customer payments",
+      label: "Customer payments",
       description: paystackConnected
         ? "Connected."
-        : "Connect your Paystack account so customers can pay with Mobile Money or a card.",
+        : "Connect Paystack to accept payments.",
       href: "/dashboard/settings#payments",
       complete: paystackConnected,
       required: true,
       icon: WalletCards,
-      action: "Connect Paystack",
+      action: "Connect",
     },
     {
-      label: "Add the bundles you want to sell",
+      label: "Bundles",
       description: productsReady
         ? `${productCount} active.`
-        : "Add at least one bundle and choose its network. Only active products appear in your shop.",
+        : "Add at least one active bundle.",
       href: "/dashboard/products",
       complete: productsReady,
       required: true,
@@ -129,10 +129,10 @@ export default async function DashboardSetupPage() {
       action: "Add bundles",
     },
     {
-      label: "Set your selling prices",
+      label: "Selling prices",
       description: pricingReady
         ? `${basePriceCount} set.`
-        : "Set the customer price for each bundle you plan to sell, then review your shop.",
+        : "Set customer prices for your bundles.",
       href: "/dashboard/products",
       complete: pricingReady,
       required: true,
@@ -143,10 +143,10 @@ export default async function DashboardSetupPage() {
 
   const recommendedItems: SetupItem[] = [
     {
-      label: "Wallet funded",
+      label: "Wallet",
       description: walletFunded
         ? `${formatGhanaCedis(walletBalance)} available.`
-        : "Fund wallet when needed.",
+        : "For API and direct buys.",
       href: "/dashboard/wallet",
       complete: walletFunded,
       required: false,
@@ -154,10 +154,10 @@ export default async function DashboardSetupPage() {
       action: "Review wallet",
     },
     {
-      label: "Agents onboarded",
+      label: "Agents",
       description: agentsReady
         ? `${agentCount} active.`
-        : "Add agents when ready.",
+        : "Add when ready.",
       href: "/dashboard/agents",
       complete: agentsReady,
       required: false,
@@ -165,26 +165,26 @@ export default async function DashboardSetupPage() {
       action: "Manage agents",
     },
     {
-      label: "Website keys",
+      label: "Website API",
       description: apiReady
-        ? `${user.organization.apiKeys.length} available.`
+        ? `${user.organization.apiKeys.length} key${user.organization.apiKeys.length === 1 ? "" : "s"}.`
         : "Optional.",
       href: "/dashboard/settings#website-api",
       complete: apiReady,
       required: false,
       icon: Activity,
-      action: "Website keys",
+      action: "Manage keys",
     },
     {
-      label: "Shop reviewed",
+      label: "Shop preview",
       description: storePath
-        ? "Open your shop and confirm it looks right."
+        ? "Open and review."
         : "Set your business name first.",
       href: storePath ?? "/dashboard/settings",
       complete: Boolean(storePath && organizationActive && subscriptionActive && paystackConnected && productsReady && pricingReady),
       required: false,
       icon: ExternalLink,
-      action: "Open shop",
+      action: "Preview shop",
       external: Boolean(storePath),
     },
   ]

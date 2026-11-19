@@ -107,11 +107,11 @@ test("owner setup points to the first incomplete step and hides optional tools",
   await expect(page.getByRole("link", { name: "Connect Paystack", exact: true }).first()).toHaveAttribute("href", "/dashboard/settings#payments")
   await expect(page.getByRole("progressbar", { name: "Shop setup progress" })).toHaveAttribute("value", "2")
   await expect(page.getByRole("link", { name: "Manage API keys", exact: true })).toBeHidden()
-  await page.getByText("Optional tools — add these when you need them", { exact: true }).click()
+  await page.getByText("Optional tools", { exact: true }).click()
   await expect(page.getByRole("link", { name: "Manage API keys", exact: true })).toBeVisible()
   await page.goto("/?view=setup&done=5")
-  await expect(page.getByRole("heading", { name: "Setup complete", exact: true })).toBeVisible()
-  await expect(page.getByRole("link", { name: "Preview my shop", exact: true })).toHaveAttribute("href", "/store/test-shop")
+  await expect(page.getByRole("heading", { name: "Ready to sell", exact: true })).toBeVisible()
+  await expect(page.getByRole("link", { name: "Preview shop", exact: true })).toHaveAttribute("href", "/store/test-shop")
 })
 
 test("mobile navigation exposes daily tasks and keeps advanced tools reachable", async ({ page }) => {
