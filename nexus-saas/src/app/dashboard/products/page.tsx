@@ -5,7 +5,7 @@ import { useEffect, useState, useMemo } from "react"
 import { AddEditProductDialog } from "@/components/products/add-edit-product-dialog"
 import { BundleCatalog } from "@/components/products/bundle-catalog"
 import Link from "next/link"
-import { BarChart3, FileText, Layers3, Pencil, Trash2, Plus, Loader2, Package, Percent, Tags } from "lucide-react"
+import { BarChart3, FileText, Layers3, Pencil, Trash2, Plus, Loader2, Package, Tags } from "lucide-react"
 import { MtnLogo, AirtelTigoLogo, TelecelLogo } from "@/components/products/network-logos"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -709,8 +709,9 @@ function BundlePricingContent() {
   return (
     <div className="portal-page flex-1 space-y-6">
       <PageHeader
-        title="Products & Prices"
-        description="Manage bundles, services, and prices."
+        eyebrow="Advanced"
+        title="Product tools"
+        description="Price groups, services, and bundle controls."
         actions={<>
             <Button asChild>
               <Link href="/dashboard/products">Products</Link>
@@ -721,13 +722,13 @@ function BundlePricingContent() {
         </>}
       />
 
-      <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <MetricCard label="Bundles" value={totalActiveBundles} description="Active data bundles" icon={Package} tone="success" />
-        <MetricCard label="Services" value={totalActiveServices} description="Registration forms" icon={FileText} tone="info" />
-        <MetricCard label="Network Coverage" value={`${networksWithBundles}/${NETWORKS.length}`} description={missingNetworks.length ? `Missing ${missingNetworks.join(", ")}` : "All networks have bundles."} icon={BarChart3} tone={missingNetworks.length ? "warning" : "success"} />
-        <MetricCard label="Average Margin" value={formatPercent(averageMarginPercent)} description="Shop price vs cost" icon={Percent} tone={averageMarginPercent > 0 ? "primary" : "warning"} />
-        <MetricCard label="Price Groups" value={profiles.length} description="Reusable team prices" icon={Tags} tone="primary" />
-      </div>
+      <section aria-label="Catalog status" className="flex flex-wrap gap-2 rounded-lg border border-border bg-card p-3 text-xs">
+        <span className="rounded-md bg-muted px-3 py-1.5"><strong className="mr-1 text-foreground">{totalActiveBundles}</strong> bundles</span>
+        <span className="rounded-md bg-muted px-3 py-1.5"><strong className="mr-1 text-foreground">{totalActiveServices}</strong> services</span>
+        <span className="rounded-md bg-muted px-3 py-1.5"><strong className="mr-1 text-foreground">{networksWithBundles}/{NETWORKS.length}</strong> networks covered</span>
+        <span className="rounded-md bg-muted px-3 py-1.5"><strong className="mr-1 text-foreground">{profiles.length}</strong> price groups</span>
+        <span className={`rounded-md px-3 py-1.5 ${averageMarginPercent > 0 ? "bg-success/10 text-success" : "bg-warning/10 text-warning-foreground"}`}><strong className="mr-1">{formatPercent(averageMarginPercent)}</strong> average margin</span>
+      </section>
 
       <Card className="premium-surface overflow-hidden rounded-lg">
         <CardContent className="grid min-w-0 gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
@@ -761,11 +762,13 @@ function BundlePricingContent() {
           </div>
         </CardHeader>
         <CardContent className="space-y-5">
-          <div className="space-y-4 rounded-lg border border-border/75 bg-muted/20 p-4 shadow-sm">
-            <h3 className="font-semibold flex items-center gap-2">
-              <Plus className="w-4 h-4" /> Add Service
-            </h3>
-            <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
+          <details className="rounded-lg border border-border/75 bg-muted/20 shadow-sm">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 p-4 font-semibold">
+              <span className="flex items-center gap-2"><Plus className="h-4 w-4" /> Add service</span>
+              <span className="text-xs font-normal text-muted-foreground">Optional</span>
+            </summary>
+            <div className="space-y-4 px-4 pb-4">
+              <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
               <Input
                 placeholder="Service name (e.g. customer registration)"
                 value={newServiceName}
@@ -807,14 +810,12 @@ function BundlePricingContent() {
                 value={newServiceStorefrontPrice}
                 onChange={(e) => setNewServiceStorefrontPrice(e.target.value)}
               />
-              <Button onClick={handleAddRegistrationService} className="w-full">
-                Add Service
-              </Button>
-            </div>
-              <p className="text-xs text-muted-foreground">
-              Customers fill, pay, and submit.
-            </p>
-            <div className="space-y-3 rounded-lg border border-border/75 bg-background/55 p-3 shadow-sm">
+                <Button onClick={handleAddRegistrationService} className="w-full">
+                  Add service
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">Customers fill, pay, and submit.</p>
+              <div className="space-y-3 rounded-lg border border-border/75 bg-background/55 p-3 shadow-sm">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-foreground">Form fields</p>
@@ -874,8 +875,9 @@ function BundlePricingContent() {
                   </p>
                 ) : null}
               </div>
+              </div>
             </div>
-          </div>
+          </details>
 
           {registrationServices.length === 0 ? (
             <EmptyState
@@ -926,22 +928,22 @@ function BundlePricingContent() {
       </Card>
 
       {/* Network Selector */}
-      <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="grid min-w-0 grid-cols-3 gap-2">
         {NETWORKS.map(network => (
           <button
             key={network.id}
             onClick={() => setSelectedNetwork(network.id)}
-          className={`rounded-lg border p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 ${
+          className={`rounded-lg border p-2 text-left shadow-sm transition-all hover:-translate-y-0.5 sm:p-3 ${
             selectedNetwork === network.id
               ? "border-primary/40 bg-primary/10 shadow-md shadow-primary/10"
               : "border-border/75 bg-card/95 hover:border-primary/30 hover:bg-muted/40"
           }`}
         >
             <div className="flex items-center gap-3">
-              <network.logo className={`w-8 h-8 ${selectedNetwork === network.id ? "" : "opacity-50"}`} />
+              <network.logo className={`h-6 w-6 shrink-0 ${selectedNetwork === network.id ? "" : "opacity-50"}`} />
               <div className="text-left">
-                <div className="font-bold text-lg">{network.name}</div>
-                <div className="text-xs text-muted-foreground">{products.filter(b => b.provider?.toUpperCase() === network.id && b.category === "DATA_BUNDLE").length} bundles</div>
+                <div className="truncate text-sm font-semibold sm:text-base">{network.name}</div>
+                <div className="text-[11px] text-muted-foreground">{products.filter(b => b.provider?.toUpperCase() === network.id && b.category === "DATA_BUNDLE").length} bundles</div>
               </div>
             </div>
           </button>
@@ -961,11 +963,13 @@ function BundlePricingContent() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Add New Bundle Form */}
-          <div className="space-y-4 rounded-lg border border-border/75 bg-muted/20 p-4 shadow-sm">
-            <h3 className="font-semibold flex items-center gap-2">
-              <Plus className="w-4 h-4" /> Add Bundle
-            </h3>
-            <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+          <details className="rounded-lg border border-border/75 bg-muted/20 shadow-sm">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 p-4 font-semibold">
+              <span className="flex items-center gap-2"><Plus className="h-4 w-4" /> Add bundle</span>
+              <span className="text-xs font-normal text-muted-foreground">Optional</span>
+            </summary>
+            <div className="space-y-4 px-4 pb-4">
+              <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
               <Input
                 placeholder="Bundle name (e.g., 1GB Data)"
                 value={newBundleName}
@@ -999,15 +1003,14 @@ function BundlePricingContent() {
                 onChange={(e) => setNewBundleStorefrontPrice(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleAddBundle()}
               />
-              <Button onClick={handleAddBundle} className="w-full">
-                Add Bundle
-              </Button>
+                <Button onClick={handleAddBundle} className="w-full">
+                  Add bundle
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">Cost = provider price · Buy = your price · Shop = customer price.</p>
+              <div className="rounded-lg border border-border/75 bg-background/55 px-3 py-2 text-xs text-muted-foreground">Tip: match bundle sizes across networks.</div>
             </div>
-            <p className="text-xs text-muted-foreground">Cost is your provider price. Dashboard price is your own buy price. Shop price is what customers pay.</p>
-            <div className="rounded-lg border border-border/75 bg-background/55 px-3 py-2 text-xs text-muted-foreground">
-              Tip: create matching bundle sizes for MTN, Telecel, and AirtelTigo.
-            </div>
-          </div>
+          </details>
 
           {/* Bundles List */}
           {loading ? (
