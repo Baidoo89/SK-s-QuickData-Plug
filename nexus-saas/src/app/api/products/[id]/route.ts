@@ -3,7 +3,7 @@ import { db } from "@/lib/db"
 import { requireOrgManager, isAuthError } from "@/lib/auth-guard"
 import { ApiErrors, logApiError } from "@/lib/api-response"
 import { upsertSubscriberStorefrontPrice } from "@/lib/storefront-pricing"
-import { updateProductSchema } from "@/lib/product-input"
+import { updateProductSchema, pricingValidationError } from "@/lib/product-input"
 
 export async function PUT(req: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -18,12 +18,30 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
     if (!validation.success) return ApiErrors.VALIDATION_ERROR(validation.error.flatten().fieldErrors)
     const { basePrice, storefrontPrice, ...productFields } = validation.data
 
-    const updated = await db.$transaction(async tx => {
+    const outcome = await db.$transaction(async tx => {
       const existing = await tx.product.findFirst({
         where: { id: params.id, organizationId },
-        select: { id: true },
+        select: { id: true, price: true },
       })
-      if (!existing) return null
+      if (!existing) return { kind: "not_found" as const }
+
+      const baseRows = await tx.$queryRaw<Array<{ price: number }>>`
+        SELECT "price"
+        FROM "BasePrice"
+        WHERE "productId" = ${existing.id} AND "organizationId" = ${organizationId}
+        LIMIT 1
+      `
+      const storefrontRows = await tx.$queryRaw<Array<{ price: number }>>`
+        SELECT "price"
+        FROM "SubscriberStorefrontPrice"
+        WHERE "productId" = ${existing.id} AND "organizationId" = ${organizationId}
+        LIMIT 1
+      `
+      const pricingError = pricingValidationError({
+        basePrice: basePrice ?? baseRows[0]?.price ?? existing.price,
+        storefrontPrice: storefrontPrice ?? storefrontRows[0]?.price ?? existing.price,
+      })
+      if (pricingError) return { kind: "pricing_error" as const, message: pricingError }
 
       const product = await tx.product.update({
         where: { id: existing.id, organizationId },
@@ -42,12 +60,13 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
       if (storefrontPrice !== undefined) {
         await upsertSubscriberStorefrontPrice({ productId: product.id, organizationId, price: storefrontPrice }, tx)
       }
-      return product
+      return { kind: "updated" as const, product }
     })
 
-    if (!updated) return ApiErrors.NOT_FOUND("Product")
+    if (outcome.kind === "not_found") return ApiErrors.NOT_FOUND("Product")
+    if (outcome.kind === "pricing_error") return ApiErrors.BAD_REQUEST(outcome.message)
     // Keep the existing successful PUT response shape for current clients.
-    return NextResponse.json(updated)
+    return NextResponse.json(outcome.product)
   } catch (error) {
     logApiError("[PRODUCT_UPDATE]", error)
     return ApiErrors.INTERNAL_ERROR()

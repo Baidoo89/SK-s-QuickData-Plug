@@ -36,3 +36,14 @@ export const updateProductSchema = z.object(productFields).partial().refine(
   values => Object.keys(values).length > 0,
   { message: "Provide at least one product field to update" },
 )
+
+export function pricingValidationError(input: { basePrice?: number; storefrontPrice?: number }) {
+  if (
+    input.basePrice !== undefined &&
+    input.storefrontPrice !== undefined &&
+    input.storefrontPrice < input.basePrice
+  ) {
+    return "Shop price cannot be below the base price."
+  }
+  return null
+}

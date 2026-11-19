@@ -5,7 +5,7 @@ import { useEffect, useState, useMemo } from "react"
 import { AddEditProductDialog } from "@/components/products/add-edit-product-dialog"
 import { BundleCatalog } from "@/components/products/bundle-catalog"
 import Link from "next/link"
-import { BarChart3, FileText, Layers3, Pencil, Trash2, Plus, Loader2, Package, Tags } from "lucide-react"
+import { FileText, Pencil, Trash2, Plus, Loader2 } from "lucide-react"
 import { MtnLogo, AirtelTigoLogo, TelecelLogo } from "@/components/products/network-logos"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -13,7 +13,6 @@ import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Input } from "@/components/ui/input"
-import { MetricCard } from "@/components/ui/metric-card"
 import { PageHeader } from "@/components/ui/page-header"
 import { formatGhanaCedis } from "@/lib/currency"
 import { Suspense } from "react"
@@ -224,7 +223,9 @@ function BundlePricingContent() {
 
   async function saveProfilePrice(productId: string, price: number) {
     if (!selectedProfileId) return
-    if (Number.isNaN(price) || price < 0) {
+    const row = profileRows.find((item) => item.productId === productId)
+    if (!row || Number.isNaN(price) || price < row.basePrice) {
+      alert(`Profile price cannot be below the base price (${formatGhanaCedis(row?.basePrice ?? 0)}).`)
       return
     }
 
@@ -531,19 +532,19 @@ function BundlePricingContent() {
           </>}
         />
 
-        <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="Profiles" value={profiles.length} description="Reusable price lists." icon={Tags} tone="primary" />
-          <MetricCard label="Profile Rows" value={profileRows.length} description="Bundle prices in the selected profile." icon={Package} tone="info" />
-          <MetricCard label="Active Bundles" value={totalActiveBundles} description="Available products for assignment." icon={Layers3} tone="success" />
-          <MetricCard label="Network Coverage" value={`${networksWithBundles}/${NETWORKS.length}`} description={missingNetworks.length ? `Missing ${missingNetworks.join(", ")}` : "All networks have bundles."} icon={BarChart3} tone={missingNetworks.length ? "warning" : "success"} />
-        </div>
+        <section aria-label="Price group status" className="flex flex-wrap gap-2 rounded-lg border border-border bg-card p-3 text-xs">
+          <span className="rounded-md bg-muted px-3 py-1.5"><strong className="mr-1 text-foreground">{profiles.length}</strong> groups</span>
+          <span className="rounded-md bg-muted px-3 py-1.5"><strong className="mr-1 text-foreground">{profileRows.length}</strong> bundle prices</span>
+          <span className="rounded-md bg-muted px-3 py-1.5"><strong className="mr-1 text-foreground">{totalActiveBundles}</strong> active bundles</span>
+          <span className="rounded-md bg-muted px-3 py-1.5"><strong className="mr-1 text-foreground">{networksWithBundles}/{NETWORKS.length}</strong> networks covered</span>
+        </section>
 
-        <Card className="premium-surface rounded-lg">
-          <CardHeader className="border-b border-border/70 bg-muted/20">
-            <CardTitle>Create profile</CardTitle>
-            <CardDescription>Reusable prices for your team.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-4">
+        <details className="rounded-lg border border-border bg-card">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 p-4 text-sm font-semibold">
+            <span>Create price group</span>
+            <span className="text-xs font-normal text-muted-foreground">Optional</span>
+          </summary>
+          <div className="grid min-w-0 grid-cols-1 gap-3 border-t border-border p-4 md:grid-cols-4">
             <Input
               placeholder="Profile name (e.g. Small Agent)"
               value={newProfileName}
@@ -564,13 +565,13 @@ function BundlePricingContent() {
               <option value="RESELLER">Resellers</option>
             </select>
             <Button onClick={createPricingProfile}>Create</Button>
-          </CardContent>
-        </Card>
+          </div>
+        </details>
 
         <Card className="premium-surface rounded-lg">
           <CardHeader className="border-b border-border/70 bg-muted/20">
             <CardTitle>Profiles</CardTitle>
-            <CardDescription>Select a profile to edit.</CardDescription>
+            <CardDescription>Choose a group to set bundle prices.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {profilesLoading ? (
@@ -605,22 +606,22 @@ function BundlePricingContent() {
           </CardContent>
         </Card>
 
-        <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid min-w-0 grid-cols-3 gap-2">
           {NETWORKS.map(network => (
             <button
               key={network.id}
               onClick={() => setSelectedNetwork(network.id)}
-              className={`rounded-lg border p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 ${
+              className={`rounded-lg border p-2 text-left shadow-sm transition-all hover:-translate-y-0.5 sm:p-3 ${
                 selectedNetwork === network.id
                   ? "border-primary/40 bg-primary/10 shadow-md shadow-primary/10"
                   : "border-border/75 bg-card/95 hover:border-primary/30 hover:bg-muted/40"
               }`}
             >
               <div className="flex items-center gap-3">
-                <network.logo className="w-8 h-8" />
+                <network.logo className="h-6 w-6 shrink-0" />
                 <div className="text-left">
-                <div className="font-bold text-lg">{network.name}</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="truncate text-sm font-semibold sm:text-base">{network.name}</div>
+                <div className="text-[11px] text-muted-foreground">
                     {profileRows.filter((r) => r.network?.toUpperCase() === network.id).length} bundles
                   </div>
                 </div>
@@ -663,7 +664,7 @@ function BundlePricingContent() {
                   </TableHeader>
                   <TableBody>
                     {networkProfileRows.map((row) => {
-                      const margin = Math.max(Number(row.profilePrice) - Number(row.basePrice), 0)
+                      const margin = Number(row.profilePrice) - Number(row.basePrice)
                       return (
                         <TableRow key={row.productId}>
                           <TableCell className="font-medium">{row.productName}</TableCell>
@@ -689,7 +690,7 @@ function BundlePricingContent() {
                               }}
                             />
                           </TableCell>
-                          <TableCell className="text-right text-primary">{formatGhanaCedis(margin)}</TableCell>
+                          <TableCell className={`text-right ${margin < 0 ? "text-destructive" : "text-primary"}`}>{formatGhanaCedis(margin)}</TableCell>
                           <TableCell className="text-right text-[11px] text-muted-foreground">
                             {savingProfileProductId === row.productId ? "Saving..." : "Auto"}
                           </TableCell>

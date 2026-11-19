@@ -3,7 +3,7 @@ import { apiSuccess, ApiErrors, logApiError } from "@/lib/api-response"
 import { db } from "@/lib/db"
 import { requireActiveSubscription } from "@/lib/subscription-access"
 import { getSubscriberStorefrontPrices, mapStorefrontPrices, upsertSubscriberStorefrontPrice } from "@/lib/storefront-pricing"
-import { createProductSchema } from "@/lib/product-input"
+import { createProductSchema, pricingValidationError } from "@/lib/product-input"
 
 export async function POST(req: Request) {
   try {
@@ -22,6 +22,11 @@ export async function POST(req: Request) {
     }
 
     const { name, description, price, basePrice, storefrontPrice, stock, imageUrl, provider, bundleType, category, serviceForm, active } = validation.data
+    const pricingError = pricingValidationError({
+      basePrice: basePrice ?? price,
+      storefrontPrice: storefrontPrice ?? price,
+    })
+    if (pricingError) return ApiErrors.BAD_REQUEST(pricingError)
     const organizationId = authResult.user.organizationId!
     const subscriptionError = await requireActiveSubscription(organizationId)
     if (subscriptionError) return subscriptionError

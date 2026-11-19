@@ -64,7 +64,7 @@ export async function POST(req: Request) {
     }
 
     const products = await db.product.findMany({
-      where: { organizationId, active: true },
+      where: { organizationId, active: true, category: "DATA_BUNDLE" },
       select: {
         id: true,
         price: true,

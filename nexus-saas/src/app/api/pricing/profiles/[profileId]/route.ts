@@ -2,6 +2,7 @@ import { z } from "zod"
 import { db } from "@/lib/db"
 import { apiSuccess, ApiErrors } from "@/lib/api-response"
 import { requireOrgManager, isAuthError } from "@/lib/auth-guard"
+import { pricingValidationError } from "@/lib/product-input"
 
 const updateProfileSchema = z.object({
   name: z.string().min(2).max(80).optional(),
@@ -50,7 +51,7 @@ export async function GET(_: Request, props: { params: Promise<{ profileId: stri
     if (!profile) return ApiErrors.NOT_FOUND("Pricing profile")
 
     const rows = profile.items
-      .filter((item) => item.product.active)
+      .filter((item) => item.product.active && item.product.category === "DATA_BUNDLE")
       .map((item) => ({
         productId: item.productId,
         productName: item.product.name,
@@ -99,9 +100,24 @@ export async function PATCH(req: Request, props: { params: Promise<{ profileId: 
     if (data.productId && typeof data.price === "number") {
       const product = await db.product.findFirst({
         where: { id: data.productId, organizationId },
-        select: { id: true },
+        select: {
+          id: true,
+          category: true,
+          price: true,
+          basePrices: {
+            where: { organizationId },
+            select: { price: true },
+            take: 1,
+          },
+        },
       })
       if (!product) return ApiErrors.NOT_FOUND("Product")
+      if (product.category !== "DATA_BUNDLE") return ApiErrors.BAD_REQUEST("Price groups can only contain data bundles")
+      const pricingError = pricingValidationError({
+        basePrice: product.basePrices[0]?.price ?? product.price,
+        storefrontPrice: data.price,
+      })
+      if (pricingError) return ApiErrors.BAD_REQUEST("Profile price cannot be below the base price")
 
       const item = await db.pricingProfileItem.upsert({
         where: {

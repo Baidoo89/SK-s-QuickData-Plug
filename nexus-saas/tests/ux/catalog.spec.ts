@@ -29,6 +29,12 @@ test("owner can identify missing prices and filter across networks", async ({ pa
   await expect(page.getByRole("heading", { name: "1 GB", exact: true })).toHaveCount(0)
 })
 
+test("catalog distinguishes a missing shop price from a missing base price", async ({ page }) => {
+  await openCatalog(page, [{ ...products[0], hasStorefrontPrice: false }])
+  await expect(page.getByText("Using default price", { exact: true })).toBeVisible()
+  await expect(page.getByText("Set the shop price first", { exact: true })).toBeVisible()
+})
+
 test("owner can update bundle prices inline without opening the full editor", async ({ page }) => {
   await openCatalog(page)
   const requests: Record<string, unknown>[] = []

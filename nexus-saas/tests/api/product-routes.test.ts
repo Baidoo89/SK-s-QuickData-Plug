@@ -82,7 +82,19 @@ function transactionClient(pending: State) {
     agentPrice: { deleteMany: vi.fn(async () => ({ count: 0 })) },
     customPrice: { deleteMany: vi.fn(async () => ({ count: 0 })) },
     orderItem: { deleteMany: vi.fn(async () => { throw new Error("Order history must never be deleted") }) },
-    $queryRaw: vi.fn(async (_sql: TemplateStringsArray, id: unknown, amount: unknown, productId: unknown, organizationId: unknown) => {
+    $queryRaw: vi.fn(async (sql: TemplateStringsArray, ...values: unknown[]) => {
+      const statement = sql.join("")
+      if (statement.includes('FROM "BasePrice"')) {
+        const [productId, organizationId] = values
+        const price = pending.base[priceKey(String(organizationId), String(productId))]
+        return price === undefined ? [] : [{ price }]
+      }
+      if (statement.includes('FROM "SubscriberStorefrontPrice"')) {
+        const [productId, organizationId] = values
+        const price = pending.shop[priceKey(String(organizationId), String(productId))]
+        return price === undefined ? [] : [{ price }]
+      }
+      const [id, amount, productId, organizationId] = values
       if (failure === "shop") throw new Error("Injected shop-price write failure")
       pending.shop[priceKey(String(organizationId), String(productId))] = Number(amount)
       return [{ id, price: amount, productId, organizationId }]
@@ -256,6 +268,20 @@ describe.each([
     expect(response.status).toBe(400)
     expect(dependencies.db.$transaction).not.toHaveBeenCalled()
   })
+})
+
+it("rejects a shop price below cost on create and update", async () => {
+  const before = structuredClone(state)
+  expect((await POST(request("POST", { ...newProduct, basePrice: 10, storefrontPrice: 9 }))).status).toBe(400)
+  expect(state).toEqual(before)
+  expect((await PUT(request("PUT", { basePrice: 10, storefrontPrice: 9 }), context())).status).toBe(400)
+  expect(state).toEqual(before)
+})
+
+it("rejects a cost increase that would put the existing shop price below cost", async () => {
+  const before = structuredClone(state)
+  expect((await PUT(request("PUT", { basePrice: 6 }), context())).status).toBe(400)
+  expect(state).toEqual(before)
 })
 
 it.each(["POST", "PUT"])("%s rejects malformed JSON and non-finite prices", async method => {

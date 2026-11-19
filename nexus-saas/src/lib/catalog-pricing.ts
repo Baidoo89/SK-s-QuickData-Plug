@@ -37,6 +37,6 @@ export function bundleIssues(bundle: CatalogBundle): string[] {
 export function bundleDifference(bundle: CatalogBundle): number | null {
   const base = bundle.basePrice ?? bundle.price
   const shop = bundle.storefrontPrice ?? bundle.price
-  if (bundle.hasBasePrice === false || !Number.isFinite(base) || !Number.isFinite(shop)) return null
+  if (bundle.hasBasePrice === false || bundle.hasStorefrontPrice === false || !Number.isFinite(base) || !Number.isFinite(shop)) return null
   return (Math.round(shop * 100) - Math.round(base * 100)) / 100
 }
