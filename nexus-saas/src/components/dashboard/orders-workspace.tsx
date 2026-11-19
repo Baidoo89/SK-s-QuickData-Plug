@@ -355,40 +355,45 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
 
   return (
     <div className="portal-page max-w-full space-y-3 pb-24 md:pb-0">
-      <div className="premium-surface flex min-w-0 flex-col gap-3 rounded-lg p-3 xl:flex-row xl:items-center xl:justify-between">
-        <label className="flex items-center gap-2 text-sm font-medium">
-          <input
-            type="checkbox"
-          checked={allPendingSelected}
-          onChange={toggleAllPending}
-          className="h-4 w-4 rounded border-border"
-        />
-          Select pending as new set
-          <Badge variant="outline" className="ml-1">{pendingRows.length}</Badge>
-        </label>
-        <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
-          <Badge variant="outline" className="rounded-md">Pending to pick: {pendingRows.length}</Badge>
-          <Badge variant="outline" className="rounded-md">Processing: {processingRows.length}</Badge>
-          <Badge variant="outline" className="rounded-md">Selected: {selectedRows.length}</Badge>
+      <div className="premium-surface min-w-0 rounded-lg p-3">
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={allPendingSelected}
+              onChange={toggleAllPending}
+              className="h-4 w-4 rounded border-border"
+            />
+            Select pending
+            <Badge variant="outline" className="ml-1">{pendingRows.length}</Badge>
+          </label>
+          <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+            <Badge variant="outline" className="rounded-md">Pending {pendingRows.length}</Badge>
+            <Badge variant="outline" className="rounded-md">Processing {processingRows.length}</Badge>
+            {selectedRows.length > 0 ? <Badge variant="secondary" className="rounded-md">Selected {selectedRows.length}</Badge> : null}
+          </div>
         </div>
-        <div className="grid w-full min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:w-auto xl:flex xl:flex-wrap xl:justify-end">
-          <Button type="button" variant="outline" size="sm" className="border-slate-300 bg-background text-xs hover:bg-slate-100" onClick={() => setPreviewOpen((open) => !open)}>
-            <Eye className="mr-2 h-4 w-4" />
-            Preview Copy
-          </Button>
-          <Button type="button" variant="outline" size="sm" className="border-sky-300 bg-sky-50 text-xs text-sky-800 hover:bg-sky-100" onClick={() => copyOrders("pending")}>
-            <ClipboardCopy className="mr-2 h-4 w-4" />
-            Copy Pending
-          </Button>
-          <Button type="button" variant="outline" size="sm" className="border-blue-300 bg-blue-50 text-xs text-blue-800 hover:bg-blue-100" onClick={() => copyOrders("selected")} disabled={selectedRows.length === 0}>
-            <ClipboardCopy className="mr-2 h-4 w-4" />
-            Copy Selected
-          </Button>
-          <Button type="button" variant="outline" size="sm" className="border-violet-300 bg-violet-50 text-xs text-violet-800 hover:bg-violet-100" onClick={sendSelectedToApi} disabled={dispatchingApi || selectedRows.length === 0}>
-            {dispatchingApi ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-            Send Auto
-          </Button>
-        </div>
+        <details className="mt-3 rounded-md border border-border/70 bg-background/50 px-3 py-2">
+          <summary className="cursor-pointer text-xs font-semibold text-muted-foreground">Batch tools</summary>
+          <div className="mt-2 grid min-w-0 grid-cols-2 gap-2 lg:grid-cols-4">
+            <Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => setPreviewOpen((open) => !open)}>
+              <Eye className="mr-2 h-4 w-4" />
+              Preview
+            </Button>
+            <Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => copyOrders("pending")}>
+              <ClipboardCopy className="mr-2 h-4 w-4" />
+              Copy pending
+            </Button>
+            <Button type="button" variant="outline" size="sm" className="text-xs" onClick={() => copyOrders("selected")} disabled={selectedRows.length === 0}>
+              <ClipboardCopy className="mr-2 h-4 w-4" />
+              Copy selected
+            </Button>
+            <Button type="button" variant="outline" size="sm" className="text-xs" onClick={sendSelectedToApi} disabled={dispatchingApi || selectedRows.length === 0}>
+              {dispatchingApi ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+              Auto deliver
+            </Button>
+          </div>
+        </details>
       </div>
 
       {previewOpen ? (
@@ -413,7 +418,7 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
           <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-semibold text-blue-950">Processing sets</p>
-              <p className="text-xs text-blue-800">Claimed batches stay here so you can deliver the exact set later.</p>
+              <p className="text-xs text-blue-800">Saved batches ready to finish.</p>
             </div>
             <Badge variant="outline" className="w-fit border-blue-300 bg-white text-blue-800">{claimedSetSummaries.length} active</Badge>
           </div>

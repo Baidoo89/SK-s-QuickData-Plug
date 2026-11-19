@@ -6,14 +6,13 @@ import { MetricCard } from "@/components/ui/metric-card"
 import { PageHeader } from "@/components/ui/page-header"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { OrdersStatusTabs } from "@/components/dashboard/orders-status-tabs"
 import { DashboardOrdersWorkspace, type DashboardOrderRow } from "@/components/dashboard/orders-workspace"
 import { formatGhanaCedis } from "@/lib/currency"
 import { getDispatchMetaByOrderIds } from "@/lib/admin-order-dispatch"
-import { getOrderSourceLogMap, ORDER_SOURCE_LABELS, resolveOrderSource, type OrderSource } from "@/lib/order-source"
+import { getOrderSourceLogMap, ORDER_SOURCE_LABELS, resolveOrderSource } from "@/lib/order-source"
 import { resolveOrderRecipientPhone } from "@/lib/order-recipient"
-import { Activity, CheckCircle2, Clock, Download, ListFilter, ShoppingCart } from "lucide-react"
+import { Clock, Download, ShoppingCart } from "lucide-react"
 
 type OrderFilters = {
   status?: string
@@ -134,20 +133,10 @@ export default async function OrdersPage(
   query.set("format", "csv")
   const downloadUrl = `/api/orders?${query.toString()}`
   const hasFilters = Boolean(status || from || to || q || source)
-  const apiOrders = orders.filter((order) => order.source === "API")
-  const sourceCounts = orders.reduce<Record<OrderSource, number>>(
-    (acc, order) => {
-      acc[order.source] += 1
-      return acc
-    },
-    { API: 0, STOREFRONT: 0, AGENT: 0, RESELLER: 0, DASHBOARD: 0 },
-  )
-  const apiRevenue = apiOrders.reduce((sum, order) => sum + order.total, 0)
-  const apiPending = apiOrders.filter((order) => ["PENDING", "PROCESSING"].includes(order.status)).length
   const filteredRevenue = orders.reduce((sum, order) => sum + order.total, 0)
-  const filteredProfit = orders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.profit, 0), 0)
-  const pendingWork = orders.filter((order) => ["PENDING", "PROCESSING"].includes(order.status)).length
-  const completedVisible = orders.filter((order) => order.status === "COMPLETED").length
+  const pendingOrders = orders.filter((order) => order.status === "PENDING").length
+  const processingOrders = orders.filter((order) => order.status === "PROCESSING").length
+  const pendingWork = pendingOrders + processingOrders
   const workspaceRows: DashboardOrderRow[] = orders.map((order) => {
     const bundle = order.items
       .map((item) => item.product.name.match(/\b\d+(?:\.\d+)?\s?(?:GB|MB|KB|TB)\b/i)?.[0].replace(/\s+/g, "").toUpperCase() ?? item.product.name)
@@ -184,79 +173,47 @@ export default async function OrdersPage(
       <PageHeader
         as="h2"
         title="Orders"
-        description="Manage orders."
+        description="Review and fulfill sales."
         actions={<>
           <a href={downloadUrl}>
             <Button variant="outline" className="w-full justify-center whitespace-nowrap lg:w-auto">
               <Download className="mr-2 h-4 w-4" />
-              Download CSV
+              CSV
             </Button>
           </a>
           <a href="/api/dashboard/orders/manual/export">
             <Button variant="outline" className="w-full justify-center whitespace-nowrap lg:w-auto">
               <Download className="mr-2 h-4 w-4" />
-              Export Work CSV
+              Work CSV
             </Button>
           </a>
         </>}
       />
-      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3 2xl:grid-cols-5">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4">
         <MetricCard
-          label="Visible Orders"
+          label="Orders"
           value={orders.length}
           description={hasFilters ? "Filtered view" : "All orders"}
-          icon={ListFilter}
+          icon={ShoppingCart}
           tone="primary"
         />
         <MetricCard
-          label="Visible Revenue"
+          label="Revenue"
           value={formatGhanaCedis(filteredRevenue)}
           description="Current view"
           icon={ShoppingCart}
           tone="success"
         />
         <MetricCard
-          label="Visible Profit"
-          value={formatGhanaCedis(filteredProfit)}
-          description="Current view"
-          icon={Activity}
-          tone={filteredProfit > 0 ? "primary" : "info"}
-        />
-        <MetricCard
-          label="Pending Work"
+          label="To process"
           value={pendingWork}
-          description="Pending + processing"
+          description={`${pendingOrders} pending, ${processingOrders} processing`}
           icon={Clock}
           tone={pendingWork > 0 ? "warning" : "success"}
-        />
-        <MetricCard
-          label="Completed"
-          value={completedVisible}
-          description="Delivered orders in this view"
-          icon={CheckCircle2}
-          tone="info"
+          className="col-span-2 sm:col-span-1"
         />
       </div>
 
-      <Card className="premium-surface min-w-0 max-w-full overflow-hidden rounded-lg">
-        <CardContent className="grid min-w-0 gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-          <div>
-            <p className="text-sm font-semibold text-foreground">Sales channels</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Website {sourceCounts.API} / Shop {sourceCounts.STOREFRONT} / Agent {sourceCounts.AGENT} / Reseller {sourceCounts.RESELLER} / Direct {sourceCounts.DASHBOARD}
-            </p>
-          </div>
-          <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap lg:justify-end">
-            <Badge variant="outline" className="min-w-0 justify-center px-3 py-1">
-              <Activity className="mr-1.5 h-3.5 w-3.5" />
-              Website: {apiOrders.length} ({formatGhanaCedis(apiRevenue)})
-            </Badge>
-            <Badge variant={apiPending > 0 ? "secondary" : "outline"} className="justify-center px-3 py-1">
-              Website pending: {apiPending}
-            </Badge>
-          </div>
-        </CardContent>
-      </Card>
       <Card className="premium-surface min-w-0 max-w-full overflow-hidden rounded-lg">
         <CardHeader className="min-w-0 max-w-full overflow-hidden">
           <div className="flex min-w-0 flex-col gap-4">
@@ -264,10 +221,12 @@ export default async function OrdersPage(
               <div className="min-w-0">
                 <CardTitle>Orders</CardTitle>
                 <p className="text-muted-foreground text-sm">
-                  Filter, copy, claim, deliver, or fail orders.
+                  Select an order to review or fulfill.
                 </p>
               </div>
-              <form className="grid w-full min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[auto_auto_auto_minmax(14rem,1fr)_auto_auto] 2xl:items-end" method="GET">
+              <details className="w-full min-w-0 md:max-w-3xl" open={hasFilters}>
+              <summary className="cursor-pointer text-xs font-semibold text-muted-foreground">Filters{hasFilters ? " · active" : ""}</summary>
+              <form className="mt-3 grid w-full min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[auto_auto_auto_minmax(14rem,1fr)_auto_auto] 2xl:items-end" method="GET">
               {status ? <input type="hidden" name="status" value={status} /> : null}
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground mb-1">From</span>
@@ -309,6 +268,7 @@ export default async function OrdersPage(
                 <a href="/dashboard/orders">Reset</a>
               </Button>
               </form>
+              </details>
             </div>
             <OrdersStatusTabs currentStatus={status} />
           </div>
