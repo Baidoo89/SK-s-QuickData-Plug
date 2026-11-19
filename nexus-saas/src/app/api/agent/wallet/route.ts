@@ -32,7 +32,7 @@ export async function GET() {
     const [sum, recent] = await Promise.all([
       getWalletBalance(db, user.id),
       db.walletTransaction.findMany({
-        where: { userId: user.id, status: "success" },
+        where: { userId: user.id, status: "success", amount: { gt: 0 } },
         orderBy: { createdAt: "desc" },
         take: 10,
       }),
