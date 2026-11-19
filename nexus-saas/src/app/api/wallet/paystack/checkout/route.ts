@@ -123,13 +123,14 @@ export async function POST(req: Request) {
     });
 
     if (!paystackResponse.ok) {
-      logApiError("PAYSTACK_WALLET_INIT_ERROR", await paystackResponse.text());
-      return ApiErrors.INTERNAL_ERROR();
+      const providerBody = await paystackResponse.json().catch(() => null) as { message?: string } | null;
+      logApiError("PAYSTACK_WALLET_INIT_ERROR", providerBody?.message || `Paystack responded with ${paystackResponse.status}`);
+      return ApiErrors.BAD_REQUEST(providerBody?.message || "Paystack could not start this wallet top-up. Check the platform wallet key and try again.");
     }
 
     const paystackData = await paystackResponse.json().catch(() => null);
     if (!paystackData?.status || !paystackData.data?.authorization_url) {
-      return ApiErrors.INTERNAL_ERROR();
+      return ApiErrors.BAD_REQUEST(paystackData?.message || "Paystack did not return a checkout link. Check the platform wallet configuration and try again.");
     }
 
     return apiSuccess({

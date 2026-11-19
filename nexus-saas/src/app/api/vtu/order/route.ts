@@ -31,8 +31,8 @@ export async function POST(req: Request) {
     if (isAuthError(authResult)) return authResult
     const user = authResult.user
 
-    // Only AGENT and RESELLER can place VTU orders
-    if (!hasRole(user, "AGENT") && !hasRole(user, "RESELLER")) {
+    // Store owners, agents and resellers can place direct wallet-backed orders.
+    if (!hasRole(user, "SUBSCRIBER") && !hasRole(user, "AGENT") && !hasRole(user, "RESELLER")) {
       return ApiErrors.FORBIDDEN()
     }
 
@@ -112,7 +112,7 @@ export async function POST(req: Request) {
       resolvedAgentId = fullUser.parentAgentId ?? null
     }
 
-    if (!resolvedAgentId) {
+    if (fullUser.role !== "SUBSCRIBER" && !resolvedAgentId) {
       return ApiErrors.BAD_REQUEST(
         fullUser.role === "RESELLER"
           ? "Reseller account is not linked to an agent."
@@ -120,10 +120,12 @@ export async function POST(req: Request) {
       )
     }
 
-    const assignedProfile = await db.userPricingProfileAssignment.findFirst({
-      where: { organizationId, userId: user.id },
-      select: { pricingProfileId: true, strictPricing: true },
-    })
+    const assignedProfile = fullUser.role === "SUBSCRIBER"
+      ? null
+      : await db.userPricingProfileAssignment.findFirst({
+          where: { organizationId, userId: user.id },
+          select: { pricingProfileId: true, strictPricing: true },
+        })
 
     const profileItem = assignedProfile
       ? await db.pricingProfileItem.findUnique({
@@ -284,6 +286,10 @@ export async function POST(req: Request) {
         dispatchMode: dispatch.dispatchMode,
         dispatchProvider: dispatch.dispatchProvider,
         dispatchReason: dispatch.dispatchReason,
+        phone: normalizedPhone,
+        bundle: product.name,
+        quantity,
+        pricePerUnit: unitPrice,
         network: product.provider,
       },
       undefined,
@@ -294,7 +300,7 @@ export async function POST(req: Request) {
     if (error instanceof Error && error.message === "CREDIT_OVERDUE") return ApiErrors.BAD_REQUEST("Your credit is overdue. Clear the outstanding debt before borrowing again.")
     if (error instanceof Error && error.message === "INVALID_MONEY") return ApiErrors.BAD_REQUEST("A price or balance needs review. Contact your store owner.")
     if (error instanceof Error && error.message === "INSUFFICIENT_FUNDS") {
-      return ApiErrors.BAD_REQUEST("Insufficient wallet balance. Please top up before placing this order.")
+      return ApiErrors.BAD_REQUEST("Your wallet balance is too low. Add funds or use an approved credit limit before buying.")
     }
 
     console.error("[VTU_ORDER]", error)

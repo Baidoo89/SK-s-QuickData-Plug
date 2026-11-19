@@ -11,6 +11,7 @@ import { SellingAccessAlert } from "@/components/access/selling-access-alert"
 type Network = { id: string; name: string }
 type Bundle = { id: string; name: string; effectivePrice: number }
 type SellingAccess = { canSell: boolean; reason?: string | null }
+type PurchaseRole = "owner" | "agent" | "reseller"
 type Order = { orderId: string; phone: string; bundle: string; total: number; status: string }
 const money = (amount: number) => `GHS ${amount.toFixed(2)}`
 
@@ -34,7 +35,7 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   return body?.data ?? body
 }
 
-export function SingleDataPurchase({ role }: { role: "agent" | "reseller" }) {
+export function SingleDataPurchase({ role }: { role: PurchaseRole }) {
   const [networks, setNetworks] = useState<Network[]>([])
   const [networkId, setNetworkId] = useState("")
   const [bundles, setBundles] = useState<Bundle[]>([])
@@ -57,12 +58,13 @@ export function SingleDataPurchase({ role }: { role: "agent" | "reseller" }) {
   const resultHeading = useRef<HTMLHeadingElement>(null)
 
   useEffect(() => {
+    if (role === "owner") return
     let active = true
     request<SellingAccess>("/api/selling-access/status")
       .then(data => { if (active) setSellingAccess(data) })
       .catch(() => { /* Purchase endpoints enforce selling access independently. */ })
     return () => { active = false }
-  }, [])
+  }, [role])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -99,7 +101,8 @@ export function SingleDataPurchase({ role }: { role: "agent" | "reseller" }) {
   const network = networks.find(item => item.id === networkId)
   const bundle = bundles.find(item => item.id === bundleId)
   const normalizedPhone = normalizePhone(phone)
-  const blocked = sellingAccess?.canSell === false
+  const blocked = role !== "owner" && sellingAccess?.canSell === false
+  const portalBase = role === "owner" ? "/dashboard" : `/${role}`
 
   function review(event: FormEvent) {
     event.preventDefault()
@@ -116,12 +119,20 @@ export function SingleDataPurchase({ role }: { role: "agent" | "reseller" }) {
     setBuying(true)
     setPurchaseError("")
     try {
-      const result = await request<Order>(`/api/${role}/buy-data`, {
+      const result = await request<Order & { phoneNumber?: string }>(role === "owner" ? "/api/vtu/order" : `/api/${role}/buy-data`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: normalizedPhone, bundleId: bundle.id, quantity: 1 }),
+        body: JSON.stringify(role === "owner"
+          ? { productId: bundle.id, phoneNumber: normalizedPhone, quantity: 1 }
+          : { phone: normalizedPhone, bundleId: bundle.id, quantity: 1 }),
       })
       if (!result?.orderId) throw new Error("We could not confirm the order. Check your orders before trying again.")
-      setOrder(result)
+      setOrder({
+        orderId: result.orderId,
+        phone: result.phone || result.phoneNumber || normalizedPhone,
+        bundle: result.bundle || bundle.name,
+        total: typeof result.total === "number" ? result.total : bundle.effectivePrice,
+        status: result.status,
+      })
     } catch (error) {
       setPurchaseError(error instanceof Error ? error.message : "We could not confirm the order.")
     } finally {
@@ -143,7 +154,7 @@ export function SingleDataPurchase({ role }: { role: "agent" | "reseller" }) {
               <dl className="space-y-3 rounded-lg bg-muted/40 p-4 text-sm">
                 {[["Order reference", order.orderId], ["Recipient", order.phone], ["Bundle", order.bundle], ["Total", money(order.total)], ["Status", order.status === "COMPLETED" ? "Delivered" : order.status === "PROCESSING" ? "Delivery in progress" : order.status === "FAILED" ? "Delivery failed — check Orders for details" : order.status === "PENDING" ? "Waiting for processing" : order.status]].map(([label, value]) => <div key={label} className="flex flex-wrap justify-between gap-2"><dt className="text-muted-foreground">{label}</dt><dd className="break-all font-medium">{value}</dd></div>)}
               </dl>
-              <Button asChild className="w-full"><Link href={`/${role}/orders`}>Track in Orders</Link></Button>
+              <Button asChild className="w-full"><Link href={`${portalBase}/orders`}>Track in Orders</Link></Button>
               <Button variant="outline" className="w-full" onClick={() => { setOrder(null); setReviewing(false); setPhone(""); setPurchaseError("") }}>Buy another bundle</Button>
             </div>
           ) : reviewing && bundle ? (
@@ -151,7 +162,7 @@ export function SingleDataPurchase({ role }: { role: "agent" | "reseller" }) {
               <h2 ref={reviewHeading} tabIndex={-1} className="text-xl font-semibold outline-none">Check the recipient and total</h2>
               <dl className="space-y-3 rounded-lg bg-muted/40 p-4 text-sm">{[["Network", network?.name], ["Bundle", bundle.name], ["Recipient", normalizedPhone], ["Wallet payment", money(bundle.effectivePrice)]].map(([label, value]) => <div key={label} className="flex flex-wrap justify-between gap-2"><dt className="text-muted-foreground">{label}</dt><dd className="font-semibold">{value}</dd></div>)}</dl>
               <p className="text-sm leading-6 text-muted-foreground">Confirming will charge your wallet. Double-check the recipient number. Delivery status will appear in Orders.</p>
-              {purchaseError && <div role="alert" className="space-y-2 rounded-lg border border-destructive/40 p-4 text-sm"><p>{purchaseError}</p><Link href={`/${role}/orders`} className="font-medium text-primary underline">Check Orders before trying again</Link><p className="text-muted-foreground">If your balance is too low, <Link href={`/${role}/wallet`} className="text-primary underline">add funds to your wallet</Link>.</p></div>}
+              {purchaseError && <div role="alert" className="space-y-2 rounded-lg border border-destructive/40 p-4 text-sm"><p>{purchaseError}</p><Link href={`${portalBase}/orders`} className="font-medium text-primary underline">Check Orders before trying again</Link><p className="text-muted-foreground">If your balance is too low, <Link href={`${portalBase}/wallet`} className="text-primary underline">add funds to your wallet</Link>.</p></div>}
               <Button className="h-12 w-full" disabled={buying || blocked} onClick={buy}>{buying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{buying ? "Placing your order..." : `Confirm & pay ${money(bundle.effectivePrice)}`}</Button>
               <Button variant="outline" className="w-full" disabled={buying} onClick={() => { setReviewing(false); setPurchaseError("") }}>Edit details</Button>
             </div>
