@@ -17,7 +17,6 @@ import { getDispatchMetaByOrderIds } from "@/lib/admin-order-dispatch";
 import { getEffectiveProviderConnection } from "@/lib/provider-connection";
 import { getOrCreateSubscriberStorefrontLink } from "@/lib/storefront-links";
 import { minorToMoney } from "@/lib/money";
-import { CreditStatusCard } from "@/components/wallet/credit-status-card";
 
 type OnboardingItem = {
   label: string;
@@ -371,6 +370,7 @@ export default async function DashboardPage() {
   }
 
   const requiredOnboardingItems = onboardingItems.filter((item) => item.required !== false);
+  const showFundingStatus = walletBalance !== 0 || creditEnabled || creditOwed > 0;
   return (
     <div className="portal-page space-y-4 sm:space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -436,7 +436,38 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <CreditStatusCard href="/dashboard/credit" enabled={creditEnabled} limit={creditLimit} balance={walletBalance} dueAt={creditDueAt} />
+      {showFundingStatus ? (
+        <Card className="premium-surface overflow-hidden rounded-lg" data-testid="dashboard-funding-status">
+          <CardContent className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/25 bg-primary/10 text-primary">
+                <WalletCards className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground">Funding</p>
+                <p className={creditOverdue ? "text-xs font-medium text-destructive" : "text-xs text-muted-foreground"}>
+                  {creditOverdue ? "Credit overdue" : creditOwed > 0 ? "Credit balance due" : creditEnabled ? "Credit enabled" : "Operational wallet"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-3 sm:justify-end">
+              <div className="text-left sm:text-right">
+                <p className={creditOwed > 0 ? "text-base font-semibold text-destructive" : "text-base font-semibold text-foreground"}>
+                  {formatGhanaCedis(creditOwed > 0 ? creditOwed : walletBalance)}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  {creditOwed > 0 ? "Amount owed" : creditEnabled ? `Wallet · ${formatGhanaCedis(creditLimit)} limit` : "Wallet balance"}
+                </p>
+              </div>
+              <Button asChild size="sm" variant="outline">
+                <Link href={creditOwed > 0 || creditEnabled ? "/dashboard/credit" : "/dashboard/wallet"}>
+                  {creditOwed > 0 ? "Repay" : creditEnabled ? "View credit" : "Open wallet"}
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {!onboardingIsReady ? (
         <Card className="premium-surface overflow-hidden rounded-lg">

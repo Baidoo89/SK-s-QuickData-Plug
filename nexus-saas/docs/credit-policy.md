@@ -30,7 +30,7 @@ Authorized owner/admin manual credits represent recorded external payments and a
 
 ## Screens and verification
 
-Credit & debt is available at /dashboard/credit, /admin/credit, /agent/credit and /reseller/credit. Managers see scoped accounts and audited limit controls; borrowers see only their own balance, debt, deadline and repayment link. The borrower’s home dashboard also shows amount owed, approved limit, available spending capacity, wallet balance and the due date, with a direct link to the full credit page. The list shows up to 100 accounts with name/email search. No existing account is automatically enrolled in credit.
+Credit & debt is available at /dashboard/credit, /admin/credit, /agent/credit and /reseller/credit. Managers see scoped accounts and audited limit controls; borrowers see only their own balance, debt, deadline and repayment link. Agent and reseller home dashboards show the detailed funding state because it directly controls their purchases. The store-owner home shows only a compact funding status when it has an operational balance, active credit or debt; full wallet and credit details remain on the dedicated pages. The list shows up to 100 accounts with name/email search. No existing account is automatically enrolled in credit.
 
 Run node scripts/smoke-credit.mjs for a local-only browser check. It creates and cleans up a temporary agent and synthetic debt display fixture in quickdata_dev, verifies owner approval persistence, borrower dashboard and credit-page visibility, self-approval denial, repayment navigation and phone layout, and saves sample screenshots under docs/previews. It makes no real payment or delivery request.
 
