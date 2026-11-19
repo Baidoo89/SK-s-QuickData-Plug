@@ -19,7 +19,7 @@ const link = (label: string, href: string, icon: NavLink["icon"] = FileText): Na
 function navigation(role: Role): { home: string; title: string; primary: NavLink[]; groups: NavGroup[] } {
   if (role === "owner") return {
     home: "/dashboard", title: "Store owner",
-    primary: [link("Overview", "/dashboard", Home), link("Setup", "/dashboard/setup", Rocket), link("Orders", "/dashboard/orders", ShoppingBag), link("Products", "/dashboard/products", Package), link("Shop link", "/dashboard#shop-link", Store), link("Wallet", "/dashboard/wallet", Wallet)],
+    primary: [link("Overview", "/dashboard", Home), link("Setup", "/dashboard/setup", Rocket), link("Orders", "/dashboard/orders", ShoppingBag), link("Products", "/dashboard/products", Package), link("Wallet", "/dashboard/wallet", Wallet)],
     groups: [
       { label: "Team", links: [link("Agents", "/dashboard/agents", Users), link("Resellers", "/dashboard/users/resellers", Users), link("Approvals", "/dashboard/approvals"), link("Users", "/dashboard/users"), link("Customers", "/dashboard/customers")] },
       { label: "Sales", links: [link("Reports", "/dashboard/analytics"), link("Services", "/dashboard/service-requests"), link("Payments", "/dashboard/payments"), link("Pricing", "/dashboard/products?tab=pricing_profiles"), link("Withdrawals", "/dashboard/withdrawals"), link("Credit", "/dashboard/credit", Wallet), link("Review", "/dashboard/reconciliation", FileText), link("Add funds", "/dashboard/wallet?tab=manual_credit"), link("Subscription", "/dashboard/subscription")] },
