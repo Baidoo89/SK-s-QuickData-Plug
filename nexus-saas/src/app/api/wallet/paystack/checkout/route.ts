@@ -80,9 +80,23 @@ export async function POST(req: Request) {
     // account they configured for customer checkout. Platform billing remains
     // separate and is handled by the SUPERADMIN platform credentials.
     const fundingOwner = user.role === "SUPERADMIN" ? "PLATFORM" : "SUBSCRIBER"
-    const paymentSettings = fundingOwner === "SUBSCRIBER" ? await getOrganizationPaymentSettings(user.organizationId) : null
+    let paymentSettings = null
+    try {
+      paymentSettings = fundingOwner === "SUBSCRIBER" ? await getOrganizationPaymentSettings(user.organizationId) : null
+    } catch (error) {
+      logApiError("PAYSTACK_WALLET_SETTINGS_ERROR", error)
+      return ApiErrors.BAD_REQUEST("Your Paystack settings could not be read. Save them again under Settings > Payments.")
+    }
     const secret = fundingOwner === "PLATFORM" ? getWalletPaystackSecret() : paymentSettings?.paystackConnected ? paymentSettings.paystackSecretKey : null
-    if (!secret) return ApiErrors.BAD_REQUEST(fundingOwner === "PLATFORM" ? "Platform wallet payments are not configured. Contact the platform admin." : "Your store owner's Paystack is not connected.")
+    if (!secret) {
+      return ApiErrors.BAD_REQUEST(
+        fundingOwner === "PLATFORM"
+          ? "Platform wallet payments are not configured. Contact the platform admin."
+          : user.role === "SUBSCRIBER"
+            ? "Your Paystack account is not connected. Open Settings > Payments."
+            : "Your store owner's Paystack is not connected."
+      )
+    }
 
     const netPesewas = Math.round(rawAmount * 100);
     if (!Number.isSafeInteger(netPesewas) || netPesewas <= 0 || Math.abs(rawAmount * 100 - netPesewas) > 0.000001) return ApiErrors.BAD_REQUEST("Enter an amount with at most two decimal places");
@@ -97,33 +111,39 @@ export async function POST(req: Request) {
         ? body.returnPath
         : defaultReturnPath;
 
-    const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${secret}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: user.email,
-        amount: amountInPesewas,
-        currency: "GHS",
-        metadata: {
-          purpose: "wallet_topup",
-          paymentOwner: fundingOwner === "PLATFORM" ? "platform" : "subscriber",
-          walletFundingOwner: fundingOwner,
-          organizationId: user.organizationId,
-          walletUserId: user.id,
-          walletUserEmail: user.email,
-          walletUserRole: user.role,
-          walletTopupAmountGHS: charge.netAmount,
-          walletGrossAmountGHS: charge.grossAmount,
-          walletPaystackFeeGHS: charge.feeAmount,
-          walletFeePaidBy: user.role === "AGENT" || user.role === "RESELLER" ? "seller" : "wallet_owner",
-          returnPath: safeReturnPath,
+    let paystackResponse: Response
+    try {
+      paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${secret}`,
+          "Content-Type": "application/json",
         },
-        callback_url: `${baseUrl}/api/wallet/paystack/verify?organizationId=${encodeURIComponent(user.organizationId)}&fundingOwner=${fundingOwner}`,
-      }),
-    });
+        body: JSON.stringify({
+          email: user.email,
+          amount: amountInPesewas,
+          currency: "GHS",
+          metadata: {
+            purpose: "wallet_topup",
+            paymentOwner: fundingOwner === "PLATFORM" ? "platform" : "subscriber",
+            walletFundingOwner: fundingOwner,
+            organizationId: user.organizationId,
+            walletUserId: user.id,
+            walletUserEmail: user.email,
+            walletUserRole: user.role,
+            walletTopupAmountGHS: charge.netAmount,
+            walletGrossAmountGHS: charge.grossAmount,
+            walletPaystackFeeGHS: charge.feeAmount,
+            walletFeePaidBy: user.role === "AGENT" || user.role === "RESELLER" ? "seller" : "wallet_owner",
+            returnPath: safeReturnPath,
+          },
+          callback_url: `${baseUrl}/api/wallet/paystack/verify?organizationId=${encodeURIComponent(user.organizationId)}&fundingOwner=${fundingOwner}`,
+        }),
+      })
+    } catch (error) {
+      logApiError("PAYSTACK_WALLET_NETWORK_ERROR", error)
+      return ApiErrors.SERVICE_UNAVAILABLE("Paystack could not be reached. Check your connection and try again.")
+    }
 
     if (!paystackResponse.ok) {
       const providerBody = await paystackResponse.json().catch(() => null) as { message?: string } | null;
@@ -146,6 +166,6 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     logApiError("[WALLET_PAYSTACK_CHECKOUT]", error);
-    return ApiErrors.INTERNAL_ERROR();
+    return ApiErrors.SERVICE_UNAVAILABLE("Wallet funding could not start. Check Settings > Payments and try again.");
   }
 }

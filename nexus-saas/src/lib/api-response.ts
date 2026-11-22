@@ -99,6 +99,9 @@ export const ApiErrors = {
       details
     ),
 
+  SERVICE_UNAVAILABLE: (message = "The service is temporarily unavailable. Please try again.") =>
+    apiError("SERVICE_UNAVAILABLE", message, 503),
+
   INVALID_ORGANIZATION: () =>
     apiError("INVALID_ORGANIZATION", "User has no organization", 400),
 
