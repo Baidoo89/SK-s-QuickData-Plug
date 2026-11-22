@@ -90,7 +90,6 @@ export default async function AnalyticsPage(props: { searchParams: Promise<{ ran
   const revenue = financial.grossSales;
   const profit = financial.grossMargin;
   let completed = 0;
-  let failed = 0;
   const byDay = new Map<string, number>();
   const byNetwork = new Map<string, number>();
   const byAgent = new Map<string, { name: string; revenue: number; orders: number }>();
@@ -102,10 +101,6 @@ export default async function AnalyticsPage(props: { searchParams: Promise<{ ran
     if (order.status === "COMPLETED") {
       completed += 1;
     }
-    if (order.status === "FAILED") {
-      failed += 1;
-    }
-
     const dayKey = order.createdAt.toISOString().slice(0, 10);
     const currentForDay = byDay.get(dayKey) ?? 0;
     byDay.set(dayKey, currentForDay + (isCompleted ? order.total : 0));
@@ -209,7 +204,7 @@ export default async function AnalyticsPage(props: { searchParams: Promise<{ ran
           </CardHeader>
           <CardContent>
             <div className="text-lg md:text-2xl font-bold text-foreground">{successRate.toFixed(1)}%</div>
-            <p className="text-xs md:text-sm text-muted-foreground">{completed} successful / {failed} failed</p>
+            <p className="text-xs md:text-sm text-muted-foreground">{completed} completed / {orders.length} total</p>
           </CardContent>
         </Card>
       </div>
@@ -217,7 +212,7 @@ export default async function AnalyticsPage(props: { searchParams: Promise<{ ran
       <Card className="premium-surface overflow-hidden rounded-lg" data-testid="financial-reconciliation-summary">
         <CardHeader className="border-b border-border/70 bg-muted/20">
           <CardTitle>Financial reconciliation</CardTitle>
-          <p className="mt-1 text-xs text-muted-foreground">Gross sales include every completed channel. External/API sales are customer money collected outside QuickData and are excluded from withdrawal-eligible margin.</p>
+          <p className="mt-1 text-xs text-muted-foreground">External/API sales are excluded from withdrawal-eligible margin.</p>
         </CardHeader>
         <CardContent className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5">
           <div><p className="text-xs text-muted-foreground">Wallet-backed sales</p><p className="mt-1 font-semibold">{formatGhanaCedis(financial.walletBackedSales)}</p></div>
