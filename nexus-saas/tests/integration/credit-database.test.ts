@@ -140,20 +140,19 @@ it("agents fund resellers by transfer and cannot use credit to create a repayabl
   expect(await getWalletBalance(db, f.user.id)).toBe(10)
   expect(await getWalletBalance(db, reseller.id)).toBe(10)
 })
-it("repayments are verified with the lender's merchant rather than the borrower's merchant", async () => {
+it("owner wallet payments use the store merchant while platform accounts stay separate", async () => {
   const makePayment = (userId: string) => {
     const reference = randomBytes(12).toString("hex")
     return { reference, payment: { reference, status: "success", currency: "GHS", amount: 1000, metadata: { purpose: "wallet_topup", organizationId: runId, walletUserId: userId, walletTopupAmountGHS: 10, walletGrossAmountGHS: 10 } } }
   }
   const ownerPayment = makePayment(owner.id)
-  await expect(recordVerifiedWalletTopup({ organizationId: runId, fundingOwner: "SUBSCRIBER", ...ownerPayment })).rejects.toThrow("INVALID_WALLET_PAYMENT")
-  await recordVerifiedWalletTopup({ organizationId: runId, fundingOwner: "PLATFORM", ...ownerPayment })
+  await recordVerifiedWalletTopup({ organizationId: runId, fundingOwner: "SUBSCRIBER", ...ownerPayment })
   expect(await getWalletBalance(db, owner.id)).toBe(10)
   const f = await borrower()
   const agentPayment = makePayment(f.user.id)
-  await expect(recordVerifiedWalletTopup({ organizationId: runId, fundingOwner: "PLATFORM", ...agentPayment })).rejects.toThrow("INVALID_WALLET_PAYMENT")
   await recordVerifiedWalletTopup({ organizationId: runId, fundingOwner: "SUBSCRIBER", ...agentPayment })
   expect(await getWalletBalance(db, f.user.id)).toBe(10)
+  await expect(recordVerifiedWalletTopup({ organizationId: runId, fundingOwner: "PLATFORM", ...makePayment(owner.id) })).rejects.toThrow("INVALID_WALLET_PAYMENT")
 })
 it("credit approvals roll back when their audit cannot be recorded", async () => {
   const f = await borrower()

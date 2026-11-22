@@ -76,7 +76,10 @@ export async function POST(req: Request) {
       return ApiErrors.INVALID_ORGANIZATION();
     }
 
-    const fundingOwner = ["SUBSCRIBER", "SUPERADMIN"].includes(user.role) ? "PLATFORM" : "SUBSCRIBER"
+    // A store owner funds their operational wallet through the same merchant
+    // account they configured for customer checkout. Platform billing remains
+    // separate and is handled by the SUPERADMIN platform credentials.
+    const fundingOwner = user.role === "SUPERADMIN" ? "PLATFORM" : "SUBSCRIBER"
     const paymentSettings = fundingOwner === "SUBSCRIBER" ? await getOrganizationPaymentSettings(user.organizationId) : null
     const secret = fundingOwner === "PLATFORM" ? getWalletPaystackSecret() : paymentSettings?.paystackConnected ? paymentSettings.paystackSecretKey : null
     if (!secret) return ApiErrors.BAD_REQUEST(fundingOwner === "PLATFORM" ? "Platform wallet payments are not configured. Contact the platform admin." : "Your store owner's Paystack is not connected.")

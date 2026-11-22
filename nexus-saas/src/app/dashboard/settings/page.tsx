@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { db as prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { SettingsForm } from "@/components/dashboard/settings-form";
 import { ApiKeys } from "@/components/dashboard/api-keys";
 import { PaymentSettingsCard } from "@/components/dashboard/payment-settings-card";
@@ -11,13 +12,11 @@ import { DispatchPolicyCard } from "@/components/admin/dispatch-policy-card";
 import { DispatchHealthCard } from "@/components/admin/dispatch-health-card";
 import { ProviderProductMappingCard } from "@/components/dashboard/provider-product-mapping-card";
 import { PhoneVerificationCard } from "@/components/auth/phone-verification-card";
-import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
-import { Card, CardContent } from "@/components/ui/card";
 import { getStoredOrganizationPaymentSettings } from "@/lib/organization-payment-settings";
 import { isSubscriptionActive } from "@/lib/subscription-access";
 import { getOrCreateSubscriberStorefrontLink } from "@/lib/storefront-links";
-import { Activity, CheckCircle2, CreditCard, KeyRound, Package, RadioTower } from "lucide-react";
+import { Activity, RadioTower } from "lucide-react";
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -62,67 +61,16 @@ export default async function SettingsPage() {
     : null;
   const subscriptionActive = isSubscriptionActive(user.organization.subscription);
   const paystackConnected = Boolean(paymentSettings?.paystackConnected);
-  const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  const apiKeyCount = user.organization.apiKeys.length;
-  const activeApiKeys24h = user.organization.apiKeys.filter((key) => key.lastUsed && key.lastUsed >= dayAgo).length;
-  const setupReadyCount = [
-    user.organization.active,
-    subscriptionActive,
-    paystackConnected,
-    productCount > 0,
-    basePriceCount > 0,
-  ].filter(Boolean).length;
 
   return (
     <div className="portal-page flex min-w-0 flex-col gap-5 overflow-x-hidden sm:gap-6">
-      <PageHeader title="Settings" description="Business, payments, delivery, and integrations." />
+      <PageHeader title="Settings" description="Manage your shop, payments, delivery, and API." />
 
-      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-4">
-        <MetricCard
-          label="Setup Guide"
-          value={`${setupReadyCount}/5`}
-          description="Store, billing, Paystack, products, pricing"
-          icon={CheckCircle2}
-          tone={setupReadyCount === 5 ? "success" : "warning"}
-        />
-        <MetricCard
-          label="Paystack"
-          value={paystackConnected ? "Connected" : "Required"}
-          description="Customer payments settle to subscriber account"
-          icon={CreditCard}
-          tone={paystackConnected ? "success" : "warning"}
-        />
-        <MetricCard
-          label="Products"
-          value={productCount}
-          description={`${basePriceCount} pricing record${basePriceCount === 1 ? "" : "s"}`}
-          icon={Package}
-          tone={productCount > 0 && basePriceCount > 0 ? "success" : "warning"}
-        />
-        <MetricCard
-          label="API Keys"
-          value={apiKeyCount}
-          description={`${activeApiKeys24h} active in last 24h`}
-          icon={KeyRound}
-          tone={apiKeyCount > 0 ? "primary" : "muted"}
-        />
-      </div>
-
-      <Card className="premium-surface min-w-0 overflow-hidden rounded-lg">
-        <CardContent className="grid min-w-0 gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground">How settings work together</p>
-            <p className="mt-1 break-words text-xs text-muted-foreground">
-              Paystack handles customer money, automatic delivery handles API processing, and Website API keys let trusted websites send paid orders.
-            </p>
-          </div>
-          <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap">
-            <span className="min-w-0 break-words rounded-md border border-border/70 bg-background/80 px-3 py-1 text-center text-xs text-muted-foreground shadow-sm">Shop checkout</span>
-            <span className="min-w-0 break-words rounded-md border border-border/70 bg-background/80 px-3 py-1 text-center text-xs text-muted-foreground shadow-sm">Website sales</span>
-            <span className="min-w-0 break-words rounded-md border border-border/70 bg-background/80 px-3 py-1 text-center text-xs text-muted-foreground shadow-sm">Order processing</span>
-          </div>
-        </CardContent>
-      </Card>
+      <nav aria-label="Settings sections" className="flex min-w-0 flex-wrap gap-2 rounded-lg border border-border/70 bg-card p-2">
+        {[['business', 'Business'], ['verification', 'Account'], ['payments', 'Payments'], ['delivery', 'Delivery'], ['website-api', 'Website API']].map(([href, label]) => (
+          <Link key={href} href={`#${href}`} className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">{label}</Link>
+        ))}
+      </nav>
 
       <div className="grid w-full max-w-6xl min-w-0 gap-5 sm:gap-6">
         <StorefrontReadinessCard
@@ -133,24 +81,26 @@ export default async function SettingsPage() {
           productCount={productCount}
           basePriceCount={basePriceCount}
         />
-        <section id="business" className="grid scroll-mt-24 gap-3">
-          <div>
-            <h2 className="break-words text-base font-semibold">Business Name</h2>
-            <p className="break-words text-sm text-muted-foreground">This name appears across the dashboard and shop pages.</p>
-          </div>
-          <SettingsForm initialName={user.organization.name} />
-        </section>
-        <section id="verification" className="grid scroll-mt-24 gap-3">
-          <div>
-            <h2 className="break-words text-base font-semibold">Account Verification</h2>
-            <p className="break-words text-sm text-muted-foreground">Confirm contact details used for security and account notifications.</p>
-          </div>
-          <PhoneVerificationCard initialPhoneNumber={user.phoneNumber} verified={Boolean(user.phoneVerified)} />
-        </section>
+        <div className="grid min-w-0 gap-5 xl:grid-cols-2">
+          <section id="business" className="grid scroll-mt-24 gap-3">
+            <div>
+              <h2 className="break-words text-base font-semibold">Business</h2>
+              <p className="break-words text-sm text-muted-foreground">Name shown on your dashboard and shop.</p>
+            </div>
+            <SettingsForm initialName={user.organization.name} />
+          </section>
+          <section id="verification" className="grid scroll-mt-24 gap-3">
+            <div>
+              <h2 className="break-words text-base font-semibold">Account</h2>
+              <p className="break-words text-sm text-muted-foreground">Contact details for security and alerts.</p>
+            </div>
+            <PhoneVerificationCard initialPhoneNumber={user.phoneNumber} verified={Boolean(user.phoneVerified)} />
+          </section>
+        </div>
         <section id="payments" className="grid scroll-mt-24 gap-3">
           <div>
-            <h2 className="break-words text-base font-semibold">Customer Payments</h2>
-            <p className="break-words text-sm text-muted-foreground">Connect your own Paystack account so customer money goes directly to your business.</p>
+            <h2 className="break-words text-base font-semibold">Payments</h2>
+            <p className="break-words text-sm text-muted-foreground">Customer checkout and seller/owner wallet funding use this Paystack account. Platform subscription billing is separate.</p>
           </div>
           <PaymentSettingsCard />
         </section>
@@ -161,7 +111,7 @@ export default async function SettingsPage() {
               <span className="min-w-0 break-words">Order Processing</span>
             </h2>
             <p className="break-words text-sm text-muted-foreground">
-              Connect delivery APIs, turn options on or off, and choose which networks are automatic or manual.
+              Choose automatic or manual order delivery.
             </p>
           </div>
           <div className="grid min-w-0 gap-5 sm:gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
@@ -181,7 +131,7 @@ export default async function SettingsPage() {
               <Activity className="h-4 w-4 shrink-0 text-primary" />
               <span className="min-w-0 break-words">Website API</span>
             </h2>
-            <p className="break-words text-sm text-muted-foreground">Create keys for trusted websites that already collect payment and send orders to TechDalt.</p>
+            <p className="break-words text-sm text-muted-foreground">Optional keys for a website that already collects payment.</p>
           </div>
           <ApiKeys apiKeys={user.organization.apiKeys} />
         </section>

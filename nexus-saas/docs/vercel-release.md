@@ -29,7 +29,7 @@ Set these in Vercel's production environment, never in Git:
 | `AUTH_TRUST_HOST` | Set `true` only when the deployment host is explicitly trusted (Vercel normally supplies the trusted-host signal). |
 | `PAYMENT_SETTINGS_ENCRYPTION_KEY` | Preserve the key used for saved organization payment settings. |
 
-Platform subscription billing uses `PAYSTACK_SUBSCRIPTION_SECRET_KEY` (or its existing platform fallback), and store-owner wallet funding uses `PAYSTACK_WALLET_SECRET_KEY` (or its existing platform fallback). Shops configure their own customer-payment keys under Settings â†’ Customer Payments. Live checkout requires matching live keys and successful payment verification. Working application pages alone do not prove payments or bundle delivery work.
+Platform subscription billing uses `PAYSTACK_SUBSCRIPTION_SECRET_KEY` (or its existing platform fallback). Stores configure one Paystack account under Settings for customer checkout and owner/agent/reseller wallet funding. `PAYSTACK_WALLET_SECRET_KEY` remains an optional platform-only fallback for superadmin wallet operations. Live checkout requires matching live keys and successful payment verification. Working application pages alone do not prove payments or bundle delivery work.
 
 Configure `RESEND_API_KEY` and `RESEND_FROM_EMAIL` before relying on verification or password-reset email delivery. Preserve the existing provider/dispatch configuration; this UI release does not change its policy.
 

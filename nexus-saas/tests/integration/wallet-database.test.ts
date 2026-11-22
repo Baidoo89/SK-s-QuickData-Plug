@@ -194,7 +194,7 @@ it("credits one verified Paystack payment once across repeated verification requ
   const f = await fixture()
   const reference = randomBytes(12).toString("hex")
   const payment = { reference, status: "success", currency: "GHS", amount: 1020, metadata: { purpose: "wallet_topup", organizationId: runId, walletUserId: f.user.id, walletTopupAmountGHS: 10, walletGrossAmountGHS: 10.20 } }
-  const results = await Promise.all([recordVerifiedWalletTopup({ organizationId: runId, reference, fundingOwner: "PLATFORM", payment }), recordVerifiedWalletTopup({ organizationId: runId, reference, fundingOwner: "PLATFORM", payment })])
+  const results = await Promise.all([recordVerifiedWalletTopup({ organizationId: runId, reference, fundingOwner: "SUBSCRIBER", payment }), recordVerifiedWalletTopup({ organizationId: runId, reference, fundingOwner: "SUBSCRIBER", payment })])
   expect(results.filter(result => result.credited)).toHaveLength(1)
   expect(await balance(f.user.id)).toBe(110)
 })
@@ -203,7 +203,7 @@ it("rejects mismatched amount, currency and reference in verified payments", asy
   const reference = randomBytes(12).toString("hex")
   const payment = { reference, status: "success", currency: "GHS", amount: 1020, metadata: { purpose: "wallet_topup", organizationId: runId, walletUserId: f.user.id, walletTopupAmountGHS: 10, walletGrossAmountGHS: 10.20 } }
   for (const patch of [{ amount: 100 }, { currency: "USD" }, { reference: "another-payment" }]) {
-    await expect(recordVerifiedWalletTopup({ organizationId: runId, reference, fundingOwner: "PLATFORM", payment: { ...payment, ...patch } })).rejects.toThrow("INVALID_WALLET_PAYMENT")
+    await expect(recordVerifiedWalletTopup({ organizationId: runId, reference, fundingOwner: "SUBSCRIBER", payment: { ...payment, ...patch } })).rejects.toThrow("INVALID_WALLET_PAYMENT")
   }
   expect(await balance(f.user.id)).toBe(100)
 })

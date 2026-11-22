@@ -24,7 +24,7 @@ export async function recordVerifiedWalletTopup(input: { organizationId: string;
   return db.$transaction(async tx => {
     await lockWallet(tx, userId)
     const user = await tx.user.findUnique({ where: { id: userId } })
-    const expectedFunding = user && ["SUBSCRIBER", "SUPERADMIN"].includes(user.role) ? "PLATFORM" : "SUBSCRIBER"
+    const expectedFunding = user?.role === "SUPERADMIN" ? "PLATFORM" : "SUBSCRIBER"
     if (!user || user.organizationId !== input.organizationId || input.fundingOwner !== expectedFunding || (meta.walletFundingOwner !== undefined && meta.walletFundingOwner !== expectedFunding)) throw new Error("INVALID_WALLET_PAYMENT")
     const existing = await tx.walletTransaction.findUnique({ where: { paymentReference } })
     if (existing) {

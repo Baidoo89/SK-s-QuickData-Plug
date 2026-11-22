@@ -24,7 +24,7 @@ Example: GHS 20 wallet funds plus a GHS 50 credit limit can cover a GHS 30 purch
 
 ## Repayments and funding boundaries
 
-Store-owner wallet payments are verified using platform wallet billing credentials (PAYSTACK_WALLET_SECRET_KEY or the existing platform fallback). Agent/reseller payments use the store owner's connected merchant. Verification checks the expected funding owner against the actual recipient's role, as well as reference, amount, currency and organization. A store owner cannot clear platform debt by verifying a payment received by their own merchant account.
+Store-owner, agent and reseller wallet payments are verified using the store owner's connected merchant account saved in Settings. A store owner's operational wallet funding is a real Paystack payment into that merchant account; it is separate from platform subscription billing, which uses platform credentials. Verification checks the expected funding owner against the actual recipient's role, as well as reference, amount, currency and organization.
 
 Authorized owner/admin manual credits represent recorded external payments and are audited. Agent-to-reseller manual funding is now a transfer: it debits the agent's available cash and credits their own reseller atomically. Approved credit cannot be transferred to manufacture a repayment or additional wallet balance. Manual payment receipt evidence and operator reconciliation still need a fuller workflow before live release.
 

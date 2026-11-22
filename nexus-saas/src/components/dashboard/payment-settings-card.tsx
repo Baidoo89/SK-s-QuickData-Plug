@@ -70,7 +70,7 @@ export function PaymentSettingsCard() {
       const data = json?.data ?? json
       setSettings(data)
       setSecretKey("")
-      toast({ title: "Paystack saved", description: "Payments will use this account." })
+      toast({ title: "Paystack saved", description: "Checkout and wallet funding will use this account." })
     } catch (error) {
       toast({
         variant: "destructive",
@@ -87,12 +87,12 @@ export function PaymentSettingsCard() {
       <CardHeader className="border-b border-border/70 bg-muted/20 pb-3">
         <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <CardTitle className="flex min-w-0 items-center gap-2 text-sm font-semibold">
+              <CardTitle className="flex min-w-0 items-center gap-2 text-sm font-semibold">
               <CreditCard className="h-5 w-5 shrink-0 text-primary" />
-              <span className="min-w-0 break-words">Paystack</span>
+              <span className="min-w-0 break-words">Paystack account</span>
             </CardTitle>
             <CardDescription className="break-words text-xs">
-              Connect the Paystack account for this business.
+              Customer checkout and wallet funding.
             </CardDescription>
           </div>
           <Badge variant={settings?.paystackConnected ? "secondary" : "destructive"} className={settings?.paystackConnected ? "status-success w-fit border" : "w-fit"}>
@@ -104,17 +104,17 @@ export function PaymentSettingsCard() {
         <div className={settings?.paystackConnected ? "status-success mb-4 flex min-w-0 gap-3 rounded-md border p-3 text-sm" : "status-warning mb-4 flex min-w-0 gap-3 rounded-md border p-3 text-sm"}>
           {settings?.paystackConnected ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />}
           <div className="min-w-0">
-            <p className="font-semibold">{settings?.paystackConnected ? "Paystack is connected" : "Connect Paystack"}</p>
+            <p className="font-semibold">{settings?.paystackConnected ? "Payments are ready" : "Connect Paystack"}</p>
             <p className="break-words">
               {settings?.paystackConnected
-                ? `Last updated ${settings.updatedAt ? new Date(settings.updatedAt).toLocaleString() : "recently"}.`
-                : "Save both keys to accept payments."}
+                ? "Customer payments and owner/seller wallet funding can use this account."
+                : "Save both keys to accept customer payments and fund wallets."}
             </p>
           </div>
         </div>
         <form onSubmit={saveSettings} className="space-y-4">
           <div className="grid gap-2">
-            <Label htmlFor="paystackPublicKey">Paystack public key</Label>
+            <Label htmlFor="paystackPublicKey">Public key</Label>
             <Input
               id="paystackPublicKey"
               value={publicKey}
@@ -126,11 +126,11 @@ export function PaymentSettingsCard() {
             {publicKey && !publicKeyLooksValid ? (
               <p className="break-words text-xs text-destructive">Public key should start with pk_test_ or pk_live_.</p>
             ) : (
-              <p className="break-words text-xs text-muted-foreground">Use test keys for testing, live keys for launch.</p>
+              <p className="break-words text-xs text-muted-foreground">Use test keys while testing, live keys for launch.</p>
             )}
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="paystackSecretKey">Paystack secret key</Label>
+            <Label htmlFor="paystackSecretKey">Secret key</Label>
             <Input
               id="paystackSecretKey"
               value={secretKey}
@@ -142,10 +142,10 @@ export function PaymentSettingsCard() {
             {secretKey && !secretKeyLooksValid ? (
               <p className="break-words text-xs text-destructive">Secret key should start with sk_test_ or sk_live_.</p>
             ) : null}
-            <p className="break-words text-xs text-muted-foreground">Secret keys are stored securely.</p>
+            <p className="break-words text-xs text-muted-foreground">Encrypted before storage. Leave blank to keep the saved key.</p>
           </div>
           <Button type="submit" disabled={loading || saving} className="w-full sm:w-auto">
-            {saving ? "Saving..." : "Save Paystack"}
+            {saving ? "Saving..." : "Save account"}
           </Button>
         </form>
       </CardContent>
