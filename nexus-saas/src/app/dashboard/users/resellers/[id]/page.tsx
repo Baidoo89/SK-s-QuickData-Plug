@@ -39,15 +39,19 @@ export default async function OwnerResellerDetailPage(props: { params: Promise<{
 
   if (!reseller) notFound()
 
-  const [walletSummary, orderSummary, recentOrders] = await Promise.all([
+  const [walletSummary, orderSummary, profitSummary, recentOrders] = await Promise.all([
     db.walletTransaction.aggregate({
       where: { userId: reseller.id, status: "success" },
       _sum: { amount: true },
     }),
     db.order.aggregate({
-      where: { organizationId: currentUser.organizationId, userId: reseller.id },
+      where: { organizationId: currentUser.organizationId, userId: reseller.id, status: "COMPLETED" },
       _count: { _all: true },
       _sum: { total: true },
+    }),
+    db.orderItem.aggregate({
+      where: { order: { organizationId: currentUser.organizationId, userId: reseller.id, status: "COMPLETED" } },
+      _sum: { profit: true },
     }),
     db.order.findMany({
       where: { organizationId: currentUser.organizationId, userId: reseller.id },
@@ -61,6 +65,7 @@ export default async function OwnerResellerDetailPage(props: { params: Promise<{
   const walletBalance = walletSummary._sum.amount ?? 0
   const orderCount = orderSummary._count._all
   const salesVolume = orderSummary._sum.total ?? 0
+  const profit = profitSummary._sum.profit ?? 0
 
   return (
     <div className="portal-page flex flex-col gap-6">
@@ -92,6 +97,7 @@ export default async function OwnerResellerDetailPage(props: { params: Promise<{
         <div><span className="text-muted-foreground">Wallet</span> <span className="font-semibold text-foreground">{formatGhanaCedis(walletBalance)}</span></div>
         <div><span className="text-muted-foreground">Orders</span> <span className="font-semibold text-foreground">{orderCount}</span></div>
         <div><span className="text-muted-foreground">Sales volume</span> <span className="font-semibold text-foreground">{formatGhanaCedis(salesVolume)}</span></div>
+        <div><span className="text-muted-foreground">Profit</span> <span className="font-semibold text-primary">{formatGhanaCedis(profit)}</span></div>
       </div>
 
       <Card className="overflow-hidden">

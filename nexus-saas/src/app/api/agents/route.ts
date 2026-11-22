@@ -32,14 +32,14 @@ export async function GET() {
     if (agentIds.length > 0) {
       const stats = await db.order.groupBy({
         by: ["agentId"],
-        where: { organizationId, agentId: { in: agentIds } },
+        where: { organizationId, status: "COMPLETED", agentId: { in: agentIds } },
         _count: { _all: true },
         _sum: { total: true },
       })
 
       const profitRows = await db.orderItem.findMany({
         where: {
-          order: { organizationId, agentId: { in: agentIds } },
+          order: { organizationId, status: "COMPLETED", agentId: { in: agentIds } },
         },
         select: { profit: true, order: { select: { agentId: true } } },
       })

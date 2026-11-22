@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { MetricCard } from "@/components/ui/metric-card";
 import { Overview } from "@/components/overview";
 import { RecentSales } from "@/components/recent-sales";
+import { TeamPerformance, type TeamPerformanceRow, type DailyTeamPerformance } from "@/components/dashboard/team-performance";
 import { SellingAccessAlert } from "@/components/access/selling-access-alert";
 import { formatGhanaCedis } from "@/lib/currency";
 import { getStoredOrganizationPaymentSettings } from "@/lib/organization-payment-settings";
@@ -65,6 +66,7 @@ export default async function DashboardPage() {
   let monthlySalesData: any[] = [];
   let onboardingItems: OnboardingItem[] = [];
   let channelMetrics: ChannelMetric[] = [];
+  let dailyTeamPerformance: DailyTeamPerformance[] = [];
   let alertItems: AlertItem[] = [];
   let onboardingCompleteCount = 0;
   let onboardingIsReady = false;
@@ -159,6 +161,64 @@ export default async function DashboardPage() {
         const agentsReady = agentCount > 0;
         const storefrontReady = Boolean(user.organization?.slug && subscriptionActive && paystackConnected && productsReady && pricingReady);
         sellingAccess = await getOrganizationSellingAccess(user.organizationId);
+
+        const performanceStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 13);
+        const [teamAgents, teamResellers, teamOrders, teamProfitRows] = await Promise.all([
+          db.agent.findMany({ where: { organizationId: user.organizationId }, select: { id: true, name: true, active: true } }),
+          db.user.findMany({ where: { organizationId: user.organizationId, role: "RESELLER" }, select: { id: true, name: true, active: true, signupStatus: true } }),
+          db.order.findMany({
+            where: { organizationId: user.organizationId, status: "COMPLETED", createdAt: { gte: performanceStart }, OR: [{ agentId: { not: null } }, { userId: { not: null } }] },
+            select: { id: true, agentId: true, userId: true, total: true, createdAt: true },
+          }),
+          db.orderItem.findMany({
+            where: { order: { organizationId: user.organizationId, status: "COMPLETED", createdAt: { gte: performanceStart } } },
+            select: { profit: true, order: { select: { agentId: true, userId: true, createdAt: true } } },
+          }),
+        ]);
+
+        const performanceDays = Array.from({ length: 14 }, (_, index) => {
+          const date = new Date(performanceStart.getFullYear(), performanceStart.getMonth(), performanceStart.getDate() + index);
+          const dateKey = date.toISOString().slice(0, 10);
+          const label = date.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+          return { date, dateKey, label };
+        });
+
+        const profitByDayAndSeller = new Map<string, number>();
+        const statsByDayAndSeller = new Map<string, { orders: number; revenue: number }>();
+        for (const order of teamOrders) {
+          const sellerId = order.agentId || order.userId;
+          if (!sellerId) continue;
+          const dateKey = new Date(order.createdAt).toISOString().slice(0, 10);
+          const key = `${dateKey}:${sellerId}`;
+          const current = statsByDayAndSeller.get(key) ?? { orders: 0, revenue: 0 };
+          current.orders += 1;
+          current.revenue += order.total;
+          statsByDayAndSeller.set(key, current);
+        }
+        for (const row of teamProfitRows) {
+          const sellerId = row.order.agentId || row.order.userId;
+          if (!sellerId) continue;
+          const dateKey = new Date(row.order.createdAt).toISOString().slice(0, 10);
+          const key = `${dateKey}:${sellerId}`;
+          profitByDayAndSeller.set(key, (profitByDayAndSeller.get(key) ?? 0) + row.profit);
+        }
+
+        dailyTeamPerformance = performanceDays.map(({ date, dateKey, label }) => {
+          const rows: TeamPerformanceRow[] = [
+            ...teamAgents.map((agent) => {
+              const profit = profitByDayAndSeller.get(`${dateKey}:${agent.id}`) ?? 0;
+              const stats = statsByDayAndSeller.get(`${dateKey}:${agent.id}`) ?? { orders: 0, revenue: 0 };
+              return { id: agent.id, name: agent.name, role: "AGENT" as const, href: `/dashboard/agents/${agent.id}`, profit, orders: stats.orders, revenue: stats.revenue, active: agent.active };
+            }),
+            ...teamResellers.map((reseller) => {
+              const profit = profitByDayAndSeller.get(`${dateKey}:${reseller.id}`) ?? 0;
+              const stats = statsByDayAndSeller.get(`${dateKey}:${reseller.id}`) ?? { orders: 0, revenue: 0 };
+              return { id: reseller.id, name: reseller.name || "Unnamed reseller", role: "RESELLER" as const, href: `/dashboard/users/resellers/${reseller.id}`, profit, orders: stats.orders, revenue: stats.revenue, active: reseller.active && reseller.signupStatus === "APPROVED" };
+            }),
+          ];
+          return { date: dateKey, label, rows: rows.filter((row) => row.profit > 0).sort((a, b) => b.profit - a.profit) };
+        });
+
 
         onboardingItems = [
           {
@@ -525,6 +585,8 @@ export default async function DashboardPage() {
           ))}
         </CardContent>
       </Card>
+
+      <TeamPerformance days={dailyTeamPerformance} />
 
       {/* Main Analytics Section */}
       <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-7">

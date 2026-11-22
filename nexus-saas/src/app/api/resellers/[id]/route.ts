@@ -79,7 +79,7 @@ export async function GET(req: Request, props: { params: Promise<{ id: string }>
     const selectedSalesRange = resolveSalesRange(searchParams.get("salesRange"))
     const salesStart = getRangeStart(now, selectedSalesRange)
 
-    const [walletAgg, todaysOrdersCount, monthCompletedAgg, monthProfitAgg, filteredSalesAgg, filteredProfitAgg, recentOrders] = await Promise.all([
+    const [walletAgg, todaysOrdersCount, monthCompletedAgg, monthProfitAgg, filteredSalesAgg, filteredProfitAgg, totalProfitAgg, recentOrders] = await Promise.all([
       db.walletTransaction.aggregate({
         _sum: { amount: true },
         where: { userId: reseller.id, status: "success" },
@@ -131,6 +131,10 @@ export async function GET(req: Request, props: { params: Promise<{ id: string }>
           },
         },
       }),
+      db.orderItem.aggregate({
+        _sum: { profit: true },
+        where: { order: { organizationId, userId: reseller.id, status: "COMPLETED" } },
+      }),
       db.order.findMany({
         where: {
           organizationId,
@@ -158,6 +162,7 @@ export async function GET(req: Request, props: { params: Promise<{ id: string }>
         monthProfit: monthProfitAgg._sum.profit ?? 0,
         filteredSales: filteredSalesAgg._sum.total ?? 0,
         filteredProfit: filteredProfitAgg._sum.profit ?? 0,
+        totalProfit: totalProfitAgg._sum.profit ?? 0,
         salesRange: selectedSalesRange,
       },
       recentOrders: recentOrders.map((order) => ({

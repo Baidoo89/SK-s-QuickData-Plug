@@ -182,11 +182,12 @@ export default function AgentDetailPage(props: { params: Promise<{ id: string }>
 
   const stats = useMemo(() => {
     if (!agent) {
-      return { orders: 0, revenue: 0, commissionPercent: 0, estimatedCommission: 0 }
+      return { orders: 0, revenue: 0, profit: 0, commissionPercent: 0, estimatedCommission: 0 }
     }
     return {
       orders: agent.totalOrders ?? 0,
       revenue: agent.totalRevenue ?? 0,
+      profit: agent.totalProfit ?? 0,
       commissionPercent: agent.commissionPercent ?? 0,
       estimatedCommission: agent.estimatedCommission ?? 0,
     }
@@ -307,6 +308,7 @@ export default function AgentDetailPage(props: { params: Promise<{ id: string }>
         </div>
         <div><span className="text-muted-foreground">Orders</span> <span className="font-semibold text-foreground">{stats.orders}</span></div>
         <div><span className="text-muted-foreground">Revenue</span> <span className="font-semibold text-foreground">{formatGhanaCedis(stats.revenue)}</span></div>
+        <div><span className="text-muted-foreground">Profit</span> <span className="font-semibold text-primary">{formatGhanaCedis(stats.profit)}</span></div>
         <div><span className="text-muted-foreground">Commission</span> <span className="font-semibold text-foreground">{stats.commissionPercent.toFixed(1)}%</span></div>
         <div><span className="text-muted-foreground">Est. payout</span> <span className="font-semibold text-foreground">{formatGhanaCedis(stats.estimatedCommission)}</span></div>
       </div>

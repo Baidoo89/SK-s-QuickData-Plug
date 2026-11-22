@@ -45,6 +45,7 @@ interface ResellerMetrics {
   filteredSales: number
   monthProfit?: number
   filteredProfit?: number
+  totalProfit?: number
   salesRange?: "daily" | "weekly" | "monthly"
 }
 
@@ -426,6 +427,7 @@ export default function ResellerDetailPage(props: { params: Promise<{ id: string
         <div><span className="text-muted-foreground">Today</span> <span className="font-semibold text-foreground">{metrics?.todaysOrders ?? 0} orders</span></div>
         <div><span className="text-muted-foreground">Sales ({salesRangeLabel})</span> <span className="font-semibold text-foreground">{formatGhanaCedis(metrics?.filteredSales ?? 0)}</span></div>
         <div><span className="text-muted-foreground">Profit ({salesRangeLabel})</span> <span className="font-semibold text-foreground">{formatGhanaCedis(metrics?.filteredProfit ?? 0)}</span></div>
+        <div><span className="text-muted-foreground">Total profit</span> <span className="font-semibold text-primary">{formatGhanaCedis(metrics?.totalProfit ?? 0)}</span></div>
         <div><span className="text-muted-foreground">Month</span> <span className="font-semibold text-foreground">{formatGhanaCedis(metrics?.monthCompletedTotal ?? 0)}</span></div>
         <div><span className="text-muted-foreground">Month profit</span> <span className="font-semibold text-foreground">{formatGhanaCedis(metrics?.monthProfit ?? 0)}</span></div>
       </div>
