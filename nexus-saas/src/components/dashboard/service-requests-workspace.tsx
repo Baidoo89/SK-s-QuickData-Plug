@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useToast } from "@/components/ui/use-toast"
 import { formatGhanaCedis } from "@/lib/currency"
 import { CheckCircle2, PackageCheck, XCircle } from "lucide-react"
 
@@ -50,6 +51,10 @@ function formatType(value: string) {
   return value.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
 }
 
+function formatStatus(value: string) {
+  return value.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
 function statusClass(status: string) {
   if (status === "COMPLETED") return "border-primary bg-primary/10 text-primary"
   if (status === "PROCESSING" || status === "PENDING_REVIEW") return "status-warning border"
@@ -61,6 +66,7 @@ function ServiceStatusSelect({ requestId, initialStatus }: { requestId: string; 
   const [status, setStatus] = useState(initialStatus)
   const [saving, setSaving] = useState(false)
   const router = useRouter()
+  const { toast } = useToast()
   const locked = PAYMENT_LOCKED_STATUSES.has(status)
 
   async function handleChange(event: React.ChangeEvent<HTMLSelectElement>) {
@@ -77,13 +83,16 @@ function ServiceStatusSelect({ requestId, initialStatus }: { requestId: string; 
       })
 
       if (!response.ok) {
-        throw new Error(`Failed to update service request (${response.status})`)
+        const result = await response.json().catch(() => null)
+        throw new Error(result?.error?.message || `Failed to update service request (${response.status})`)
       }
 
+      toast({ title: "Status updated", description: `Request marked ${formatStatus(next).toLowerCase()}.` })
       router.refresh()
     } catch (error) {
       console.error("Failed to update service request status", error)
       setStatus(previous)
+      toast({ variant: "destructive", title: "Could not update request", description: error instanceof Error ? error.message : "Try again." })
     } finally {
       setSaving(false)
     }
@@ -92,7 +101,7 @@ function ServiceStatusSelect({ requestId, initialStatus }: { requestId: string; 
   if (locked) {
     return (
       <Badge variant="outline" className={`w-full justify-center py-1.5 text-[11px] ${statusClass(status)}`}>
-        {status.replace(/_/g, " ")}
+        {formatStatus(status)}
       </Badge>
     )
   }
@@ -106,7 +115,7 @@ function ServiceStatusSelect({ requestId, initialStatus }: { requestId: string; 
     >
       {STATUS_OPTIONS.map((option) => (
         <option key={option} value={option}>
-          {option.replace(/_/g, " ")}
+          {formatStatus(option)}
         </option>
       ))}
     </select>
@@ -116,6 +125,7 @@ function ServiceStatusSelect({ requestId, initialStatus }: { requestId: string; 
 function ServiceRequestActions({ requestId, status, readOnly }: { requestId: string; status: string; readOnly?: boolean }) {
   const [saving, setSaving] = useState<string | null>(null)
   const router = useRouter()
+  const { toast } = useToast()
 
   async function updateStatus(next: string) {
     setSaving(next)
@@ -127,12 +137,15 @@ function ServiceRequestActions({ requestId, status, readOnly }: { requestId: str
       })
 
       if (!response.ok) {
-        throw new Error(`Failed to update service request (${response.status})`)
+        const result = await response.json().catch(() => null)
+        throw new Error(result?.error?.message || `Failed to update service request (${response.status})`)
       }
 
+      toast({ title: "Status updated", description: `Request marked ${formatStatus(next).toLowerCase()}.` })
       router.refresh()
     } catch (error) {
       console.error("Failed to update service request status", error)
+      toast({ variant: "destructive", title: "Could not update request", description: error instanceof Error ? error.message : "Try again." })
     } finally {
       setSaving(null)
     }
@@ -164,10 +177,55 @@ function ServiceRequestActions({ requestId, status, readOnly }: { requestId: str
   )
 }
 
+function ServiceRequestCard({ request, readOnly }: { request: ServiceRequestRow; readOnly: boolean }) {
+  return (
+    <article className="rounded-lg border border-border/70 bg-background/70 p-3 shadow-sm md:hidden">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate font-semibold text-foreground">{request.serviceName}</p>
+          <p className="truncate text-xs text-muted-foreground">{request.customerName} · {formatDate(request.createdAt)}</p>
+          <p className="font-mono text-[10px] text-muted-foreground">#{request.id.slice(-8)}</p>
+        </div>
+        <Badge variant="outline" className={`shrink-0 ${statusClass(request.status)}`}>{formatStatus(request.status)}</Badge>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+        <div><p className="text-muted-foreground">Total</p><p className="font-semibold text-foreground">{formatGhanaCedis(request.total)}</p></div>
+        <div><p className="text-muted-foreground">Profit</p><p className={request.profit > 0 ? "font-semibold text-primary" : "font-semibold text-muted-foreground"}>{formatGhanaCedis(request.profit)}</p></div>
+        <div><p className="text-muted-foreground">Seller</p><p className="truncate font-medium text-foreground">{request.sellerName}</p></div>
+        <div><p className="text-muted-foreground">Payment</p><p className="font-medium text-foreground">{request.paymentStatus}</p></div>
+      </div>
+
+      <details className="mt-3 rounded-md border border-border/70 bg-muted/20 px-3 py-2 text-xs">
+        <summary className="cursor-pointer font-medium">Request details</summary>
+        <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
+          <div><dt className="text-muted-foreground">Provider</dt><dd className="truncate">{request.provider || "SERVICE"}</dd></div>
+          <div><dt className="text-muted-foreground">Type</dt><dd className="truncate">{formatType(request.type)}</dd></div>
+          <div><dt className="text-muted-foreground">Phone</dt><dd className="truncate">{request.phoneNumber || "-"}</dd></div>
+          <div><dt className="text-muted-foreground">Location</dt><dd className="truncate">{request.location || "-"}</dd></div>
+          <div><dt className="text-muted-foreground">Ghana Card</dt><dd className="truncate">{request.ghanaCardNumber || "-"}</dd></div>
+          <div><dt className="text-muted-foreground">Birth date</dt><dd>{request.dateOfBirth || "-"}</dd></div>
+          {request.formDetails.map((detail) => <div key={detail.label} className="col-span-2"><dt className="text-muted-foreground">{detail.label}</dt><dd className="break-words">{detail.value}</dd></div>)}
+        </dl>
+      </details>
+
+      {!readOnly ? (
+        <div className="mt-3 space-y-2 border-t border-border/70 pt-3">
+          <ServiceStatusSelect requestId={request.id} initialStatus={request.status} />
+          <ServiceRequestActions requestId={request.id} status={request.status} readOnly={readOnly} />
+        </div>
+      ) : null}
+    </article>
+  )
+}
+
 export function ServiceRequestsWorkspace({ rows, readOnly = false }: Props) {
   return (
     <div className="space-y-4">
-      <div className="ops-table-surface min-w-0 max-w-full overflow-hidden rounded-lg">
+      <div className="grid gap-3 md:hidden">
+        {rows.map((request) => <ServiceRequestCard key={request.id} request={request} readOnly={readOnly} />)}
+      </div>
+      <div className="ops-table-surface hidden min-w-0 max-w-full overflow-hidden rounded-lg md:block">
         <div className="table-scroll">
           <Table className="min-w-[1640px] table-fixed text-xs">
             <TableHeader className="bg-muted/40">
@@ -226,7 +284,7 @@ export function ServiceRequestsWorkspace({ rows, readOnly = false }: Props) {
                   <TableCell>
                     {readOnly ? (
                       <Badge variant="outline" className={`w-full justify-center py-1.5 text-[11px] ${statusClass(request.status)}`}>
-                        {request.status.replace(/_/g, " ")}
+                        {formatStatus(request.status)}
                       </Badge>
                     ) : (
                       <ServiceStatusSelect requestId={request.id} initialStatus={request.status} />

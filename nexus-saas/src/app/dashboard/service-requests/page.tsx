@@ -4,12 +4,11 @@ import { db } from "@/lib/db"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { EmptyState } from "@/components/ui/empty-state"
-import { MetricCard } from "@/components/ui/metric-card"
 import { PageHeader } from "@/components/ui/page-header"
 import { ServiceRequestsWorkspace, type ServiceRequestRow } from "@/components/dashboard/service-requests-workspace"
 import { formatGhanaCedis } from "@/lib/currency"
 import { expireAbandonedStorefrontPayments } from "@/lib/storefront-payment-cleanup"
-import { CheckCircle2, Clock, FileText, ListFilter } from "lucide-react"
+import { FileText } from "lucide-react"
 
 function parseDetails(value: string | null) {
   if (!value) return {}
@@ -39,6 +38,7 @@ function buildFormDetails(details: Record<string, unknown>) {
 type ServiceRequestFilters = {
   status?: string
   serviceId?: string
+  skipCleanup?: boolean
 }
 
 async function getServiceRequests(filters: ServiceRequestFilters = {}) {
@@ -51,7 +51,7 @@ async function getServiceRequests(filters: ServiceRequestFilters = {}) {
   })
 
   if (!user?.organizationId) return []
-  await expireAbandonedStorefrontPayments(user.organizationId)
+  if (!filters.skipCleanup) await expireAbandonedStorefrontPayments(user.organizationId)
 
   const where: any = {
     organizationId: user.organizationId,
@@ -136,7 +136,7 @@ export default async function ServiceRequestsPage(
   const serviceId = typeof searchParams?.service === "string" ? searchParams.service : undefined
   const [rows, allRowsForStatus] = await Promise.all([
     getServiceRequests({ status, serviceId }),
-    getServiceRequests({ status }),
+    getServiceRequests({ status, skipCleanup: true }),
   ])
   const hasFilters = Boolean((status && status !== "ALL") || (serviceId && serviceId !== "ALL"))
   const serviceOptions = Array.from(
@@ -169,8 +169,9 @@ export default async function ServiceRequestsPage(
       <PageHeader
         as="h2"
         title="Services"
-        description="Review and process requests."
+        description="Review paid service requests."
         actions={<form className="grid w-full min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]" method="GET">
+          {serviceId && serviceId !== "ALL" ? <input type="hidden" name="service" value={serviceId} /> : null}
           <select
             name="status"
             defaultValue={status || "ALL"}
@@ -194,7 +195,7 @@ export default async function ServiceRequestsPage(
         <CardContent className="space-y-3 p-4">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-semibold text-foreground">Services</p>
+              <p className="text-sm font-semibold text-foreground">By service</p>
             </div>
             {serviceId && serviceId !== "ALL" ? <Badge variant="outline">Filtered service</Badge> : null}
           </div>
@@ -218,11 +219,12 @@ export default async function ServiceRequestsPage(
         </CardContent>
       </Card>
 
-      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
-        <MetricCard label="Visible Requests" value={rows.length} description={hasFilters ? "Matching active filters" : "All service requests"} icon={ListFilter} tone="primary" />
-        <MetricCard label="Pending Review" value={pending} description="Paid requests awaiting action" icon={Clock} tone={pending > 0 ? "warning" : "success"} />
-        <MetricCard label="Completed" value={completed} description={`${processing} currently processing`} icon={CheckCircle2} tone="success" />
-        <MetricCard label="Visible Revenue" value={formatGhanaCedis(totalRevenue)} description="Service checkout value" icon={FileText} tone="info" />
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg border border-border/70 bg-muted/20 px-3 py-2.5 text-xs">
+        <span><strong className="text-foreground">{rows.length}</strong> requests{hasFilters ? " shown" : ""}</span>
+        <span><strong className={pending > 0 ? "text-amber-600 dark:text-amber-400" : "text-foreground"}>{pending}</strong> pending</span>
+        <span><strong className="text-foreground">{processing}</strong> processing</span>
+        <span><strong className="text-foreground">{completed}</strong> completed</span>
+        <span className="font-semibold text-foreground">{formatGhanaCedis(totalRevenue)} sales</span>
       </div>
 
       <Card className="premium-surface min-w-0 max-w-full overflow-hidden rounded-lg">
