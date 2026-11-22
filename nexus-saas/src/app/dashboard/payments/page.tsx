@@ -3,13 +3,14 @@ import { auth } from "@/auth"
 import { db } from "@/lib/db"
 import { formatGhanaCedis } from "@/lib/currency"
 import { format } from "date-fns"
-import { CheckCircle2, CircleDollarSign, Clock3, CreditCard, XCircle } from "lucide-react"
+import { CreditCard } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
-import { MetricCard } from "@/components/ui/metric-card"
+import { PageHeader } from "@/components/ui/page-header"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { expireAbandonedStorefrontPayments } from "@/lib/storefront-payment-cleanup"
 
 function parseOrderIds(value: string) {
   try {
@@ -26,7 +27,24 @@ function paymentBadgeClass(status: string) {
   return "border-destructive/50 bg-destructive/10 text-destructive"
 }
 
-async function getStorefrontPayments() {
+function formatPaymentStatus(value: string) {
+  return value.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
+function parseServiceRequestIds(value: string | null): string[] {
+  if (!value) return []
+  try {
+    const parsed = JSON.parse(value)
+    const rawIds: unknown = parsed && typeof parsed === "object" && "serviceRequestIds" in parsed
+      ? (parsed as { serviceRequestIds?: unknown }).serviceRequestIds
+      : undefined
+    return Array.isArray(rawIds) ? rawIds.filter((item: unknown): item is string => typeof item === "string") : []
+  } catch {
+    return []
+  }
+}
+
+async function getStorefrontPayments(status?: string) {
   const session = await auth()
   if (!session?.user?.email) return { payments: [], totals: { success: 0, pending: 0, failed: 0, revenue: 0 } }
 
@@ -39,8 +57,10 @@ async function getStorefrontPayments() {
     return { payments: [], totals: { success: 0, pending: 0, failed: 0, revenue: 0 } }
   }
 
+  await expireAbandonedStorefrontPayments(user.organizationId)
+
   const payments = await db.storefrontPayment.findMany({
-    where: { organizationId: user.organizationId },
+    where: { organizationId: user.organizationId, ...(status && status !== "ALL" ? { status } : {}) },
     orderBy: { createdAt: "desc" },
     take: 200,
   })
@@ -63,48 +83,62 @@ async function getStorefrontPayments() {
   return { payments, totals }
 }
 
-export default async function DashboardPaymentsPage() {
-  const { payments, totals } = await getStorefrontPayments()
+export default async function DashboardPaymentsPage(
+  props: { searchParams?: Promise<{ [key: string]: string | string[] | undefined }> },
+) {
+  const searchParams = await props.searchParams
+  const requestedStatus = typeof searchParams?.status === "string" ? searchParams.status : "ALL"
+  const status = ["ALL", "SUCCESS", "PENDING", "FAILED"].includes(requestedStatus) ? requestedStatus : "ALL"
+  const { payments, totals } = await getStorefrontPayments(status)
+  const hasFilter = status !== "ALL"
 
   return (
-    <div className="portal-page space-y-6">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="mb-1 text-2xl font-bold tracking-tight md:text-3xl">Storefront Payments</h2>
-          <p className="max-w-2xl text-muted-foreground">
-            Reconcile customer storefront payments against Paystack references and linked orders.
-          </p>
-        </div>
-        <Link href="/dashboard/orders">
-          <Button variant="outline" className="w-full text-xs md:w-auto">View Orders</Button>
-        </Link>
-      </div>
+    <div className="portal-page space-y-5">
+      <PageHeader
+        as="h2"
+        title="Payments"
+        description="Customer payments and linked sales."
+        actions={<div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <form className="flex min-w-0 gap-2" method="GET">
+            <select name="status" defaultValue={status} className="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-xs sm:w-40 sm:flex-none">
+              <option value="ALL">All statuses</option>
+              <option value="SUCCESS">Successful</option>
+              <option value="PENDING">Pending</option>
+              <option value="FAILED">Failed</option>
+            </select>
+            <Button type="submit" size="sm" className="h-9">Filter</Button>
+          </form>
+          <Button variant="outline" size="sm" className="h-9" asChild><Link href="/dashboard/orders">View orders</Link></Button>
+        </div>}
+      />
 
-      <div className="grid min-w-0 gap-4 md:grid-cols-2 2xl:grid-cols-4">
-        <MetricCard label="Successful" value={totals.success} description="Paid customer checkouts." icon={CheckCircle2} tone="success" />
-        <MetricCard label="Pending" value={totals.pending} description="Started but not confirmed yet." icon={Clock3} tone="warning" />
-        <MetricCard label="Failed" value={totals.failed} description="Failed or abandoned payment attempts." icon={XCircle} tone="destructive" />
-        <MetricCard label="Paid Revenue" value={formatGhanaCedis(totals.revenue)} description="Settled through your Paystack." icon={CircleDollarSign} tone="primary" />
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg border border-border/70 bg-muted/20 px-3 py-2.5 text-xs">
+        <span><strong className="text-foreground">{payments.length}</strong> payments{hasFilter ? " shown" : ""}</span>
+        <span><strong className="text-foreground">{totals.success}</strong> successful</span>
+        <span><strong className="text-foreground">{totals.pending}</strong> pending</span>
+        <span><strong className="text-foreground">{totals.failed}</strong> failed</span>
+        <span className="font-semibold text-foreground">{formatGhanaCedis(totals.revenue)} paid</span>
       </div>
 
       <Card className="premium-surface overflow-hidden rounded-lg">
         <CardHeader className="border-b border-border/70 bg-muted/20">
-          <CardTitle className="text-lg">Payment History</CardTitle>
+          <CardTitle className="text-sm">Payment history</CardTitle>
         </CardHeader>
         <CardContent>
           {payments.length === 0 ? (
             <EmptyState
               icon={CreditCard}
-              title="No storefront payments yet"
-              description="Customer payments will appear here after your storefront Paystack settings are connected and buyers complete checkout."
-              action={{ label: "Configure Payments", href: "/dashboard/settings" }}
-              secondaryAction={{ label: "Review Storefront Setup", href: "/dashboard/setup" }}
+              title={hasFilter ? "No payments match this status" : "No storefront payments yet"}
+              description={hasFilter ? "Choose another status or show all payments." : "Customer payments will appear here after buyers complete checkout."}
+              action={hasFilter ? { label: "Show all", href: "/dashboard/payments" } : undefined}
+              secondaryAction={!hasFilter ? { label: "Configure payments", href: "/dashboard/settings#payments" } : undefined}
             />
           ) : (
             <>
             <div className="grid gap-3 xl:hidden lg:grid-cols-2">
               {payments.map((payment) => {
                 const orderIds = parseOrderIds(payment.orderIds)
+                const serviceIds = parseServiceRequestIds(payment.metadata)
                 return (
                   <div key={payment.id} className="rounded-lg border border-border/70 bg-background/80 p-3 text-sm shadow-sm">
                     <div className="flex items-start justify-between gap-3">
@@ -113,7 +147,7 @@ export default async function DashboardPaymentsPage() {
                         <p className="text-xs text-muted-foreground">{format(payment.createdAt, "MMM d, yyyy HH:mm")}</p>
                       </div>
                       <Badge variant="outline" className={paymentBadgeClass(payment.status)}>
-                        {payment.status}
+                        {formatPaymentStatus(payment.status)}
                       </Badge>
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
@@ -126,7 +160,7 @@ export default async function DashboardPaymentsPage() {
                         <p>Paid at</p>
                       </div>
                     </div>
-                    {orderIds.length > 0 ? (
+                    {orderIds.length > 0 || serviceIds.length > 0 ? (
                       <div className="mt-3 flex flex-wrap gap-1">
                         {orderIds.slice(0, 4).map((orderId) => (
                           <Link key={orderId} href={`/dashboard/orders?q=${encodeURIComponent(orderId.slice(-8))}`}>
@@ -134,6 +168,8 @@ export default async function DashboardPaymentsPage() {
                           </Link>
                         ))}
                         {orderIds.length > 4 ? <span className="text-xs text-muted-foreground">+{orderIds.length - 4}</span> : null}
+                        {serviceIds.slice(0, 4).map((serviceId) => <Badge key={serviceId} variant="outline" className="font-mono text-[10px]">Service {serviceId.slice(-8)}</Badge>)}
+                        {serviceIds.length > 4 ? <span className="text-xs text-muted-foreground">+{serviceIds.length - 4} services</span> : null}
                       </div>
                     ) : null}
                   </div>
@@ -148,20 +184,21 @@ export default async function DashboardPaymentsPage() {
                     <TableHead>Date</TableHead>
                     <TableHead>Reference</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Orders</TableHead>
+                    <TableHead>Linked records</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {payments.map((payment) => {
                     const orderIds = parseOrderIds(payment.orderIds)
+                    const serviceIds = parseServiceRequestIds(payment.metadata)
                     return (
                       <TableRow key={payment.id}>
                         <TableCell>{format(payment.createdAt, "MMM d, yyyy HH:mm")}</TableCell>
                         <TableCell className="font-mono text-xs">{payment.reference}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className={paymentBadgeClass(payment.status)}>
-                            {payment.status}
+                            {formatPaymentStatus(payment.status)}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -172,6 +209,8 @@ export default async function DashboardPaymentsPage() {
                               </Link>
                             ))}
                             {orderIds.length > 4 ? <span className="text-xs text-muted-foreground">+{orderIds.length - 4}</span> : null}
+                            {serviceIds.slice(0, 4).map((serviceId) => <Badge key={serviceId} variant="outline" className="font-mono text-[10px]">Service {serviceId.slice(-8)}</Badge>)}
+                            {serviceIds.length > 4 ? <span className="text-xs text-muted-foreground">+{serviceIds.length - 4} services</span> : null}
                           </div>
                         </TableCell>
                         <TableCell className="text-right font-semibold">{formatGhanaCedis(payment.amount)}</TableCell>
