@@ -290,11 +290,8 @@ export default function AgentDetailPage(props: { params: Promise<{ id: string }>
       </div>
 
       <div className="mt-2 text-xs text-muted-foreground">
-        <Link
-          href={`/dashboard/customers?agentId=${agent.id}`}
-          className="underline underline-offset-2 hover:text-primary"
-        >
-          View customers who bought via this agent storefront
+        <Link href={`/dashboard/orders?agentId=${agent.id}`} className="font-medium text-primary underline underline-offset-2 hover:text-primary/80">
+          View this agent&apos;s orders
         </Link>
       </div>
 

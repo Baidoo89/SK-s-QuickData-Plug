@@ -20,6 +20,8 @@ type OrderFilters = {
   to?: string
   q?: string
   source?: string
+  agentId?: string
+  userId?: string
 }
 
 async function getOrders(filters: OrderFilters = {}) {
@@ -65,6 +67,9 @@ async function getOrders(filters: OrderFilters = {}) {
         { agent: { name: { contains: q, mode: "insensitive" } } },
       ]
     }
+
+    if (filters.agentId) where.agentId = filters.agentId
+    if (filters.userId) where.userId = filters.userId
 
     const orders = await db.order.findMany({
       where,
@@ -118,8 +123,10 @@ export default async function OrdersPage(
   const to = typeof searchParams?.to === "string" ? searchParams.to : undefined
   const q = typeof searchParams?.q === "string" ? searchParams.q : undefined
   const source = typeof searchParams?.source === "string" ? searchParams.source : undefined
+  const agentId = typeof searchParams?.agentId === "string" ? searchParams.agentId : undefined
+  const userId = typeof searchParams?.userId === "string" ? searchParams.userId : undefined
 
-  const filters: OrderFilters = { status, from, to, q, source }
+  const filters: OrderFilters = { status, from, to, q, source, agentId, userId }
 
   const ordersRaw = await getOrders(filters)
   const orders = Array.isArray(ordersRaw) ? ordersRaw : []
@@ -130,9 +137,11 @@ export default async function OrdersPage(
   if (to) query.set("to", to)
   if (q) query.set("q", q)
   if (source) query.set("source", source)
+  if (agentId) query.set("agentId", agentId)
+  if (userId) query.set("userId", userId)
   query.set("format", "csv")
   const downloadUrl = `/api/orders?${query.toString()}`
-  const hasFilters = Boolean(status || from || to || q || source)
+  const hasFilters = Boolean(status || from || to || q || source || agentId || userId)
   const filteredRevenue = orders.reduce((sum, order) => sum + order.total, 0)
   const pendingOrders = orders.filter((order) => order.status === "PENDING").length
   const processingOrders = orders.filter((order) => order.status === "PROCESSING").length
@@ -172,8 +181,8 @@ export default async function OrdersPage(
     <div className="portal-page flex-1 space-y-6">
       <PageHeader
         as="h2"
-        title="Orders"
-        description="Review and fulfill sales."
+        title={agentId ? "Agent orders" : userId ? "Reseller orders" : "Orders"}
+        description={agentId ? "Orders sold by this agent." : userId ? "Orders placed by this reseller." : "Review and fulfill sales."}
         actions={
           <a href={downloadUrl}>
             <Button variant="outline" className="w-full justify-center whitespace-nowrap lg:w-auto">
@@ -222,6 +231,8 @@ export default async function OrdersPage(
               <summary className="cursor-pointer text-xs font-semibold text-muted-foreground">Filters{hasFilters ? " · active" : ""}</summary>
               <form className="mt-3 grid w-full min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[auto_auto_auto_minmax(14rem,1fr)_auto_auto] 2xl:items-end" method="GET">
               {status ? <input type="hidden" name="status" value={status} /> : null}
+              {agentId ? <input type="hidden" name="agentId" value={agentId} /> : null}
+              {userId ? <input type="hidden" name="userId" value={userId} /> : null}
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground mb-1">From</span>
                 <Input type="date" name="from" defaultValue={from} className="h-9 w-full" />

@@ -24,6 +24,8 @@ export async function GET(req: Request) {
     const to = searchParams.get("to") || undefined
     const q = searchParams.get("q") || undefined
     const source = searchParams.get("source") || undefined
+    const agentId = searchParams.get("agentId") || undefined
+    const userId = searchParams.get("userId") || undefined
     const format = searchParams.get("format") || undefined
     const claimPending = ["1", "true", "yes"].includes((searchParams.get("claimPending") || "").toLowerCase())
 
@@ -52,6 +54,9 @@ export async function GET(req: Request) {
         { agent: { name: { contains: q, mode: "insensitive" } } },
       ]
     }
+
+    if (agentId) where.agentId = agentId
+    if (userId) where.userId = userId
 
     let orders = await db.order.findMany({
       where,

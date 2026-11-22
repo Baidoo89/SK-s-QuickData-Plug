@@ -68,7 +68,12 @@ export default async function OwnerResellerDetailPage(props: { params: Promise<{
         eyebrow="Team / Resellers"
         title={reseller.name || "Unnamed reseller"}
         description={reseller.email || "No email provided"}
-        actions={<Button asChild variant="outline"><Link href="/dashboard/users/resellers"><ArrowLeft className="mr-2 h-4 w-4" />Back to resellers</Link></Button>}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button asChild><Link href={`/dashboard/orders?userId=${reseller.id}`}>View orders</Link></Button>
+            <Button asChild variant="outline"><Link href="/dashboard/users/resellers"><ArrowLeft className="mr-2 h-4 w-4" />Back to resellers</Link></Button>
+          </div>
+        }
       />
 
       <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border/75 bg-muted/20 px-3 py-3 text-xs">
