@@ -89,7 +89,7 @@ export default async function DashboardSetupPage() {
       description: organizationActive
         ? "Active."
         : "Ask the platform owner to reactivate it.",
-      href: "/dashboard/settings",
+      href: "/dashboard/settings/business",
       complete: organizationActive,
       required: true,
       icon: Store,
@@ -111,7 +111,7 @@ export default async function DashboardSetupPage() {
       description: paystackConnected
         ? "Connected."
         : "Connect Paystack to accept payments.",
-      href: "/dashboard/settings#payments",
+      href: "/dashboard/settings/payments",
       complete: paystackConnected,
       required: true,
       icon: WalletCards,
@@ -169,7 +169,7 @@ export default async function DashboardSetupPage() {
       description: apiReady
         ? `${user.organization.apiKeys.length} key${user.organization.apiKeys.length === 1 ? "" : "s"}.`
         : "Optional.",
-      href: "/dashboard/settings#website-api",
+      href: "/dashboard/settings/api",
       complete: apiReady,
       required: false,
       icon: Activity,
@@ -180,7 +180,7 @@ export default async function DashboardSetupPage() {
       description: storePath
         ? "Open and review."
         : "Set your business name first.",
-      href: storePath ?? "/dashboard/settings",
+      href: storePath ?? "/dashboard/settings/business",
       complete: Boolean(storePath && organizationActive && subscriptionActive && paystackConnected && productsReady && pricingReady),
       required: false,
       icon: ExternalLink,

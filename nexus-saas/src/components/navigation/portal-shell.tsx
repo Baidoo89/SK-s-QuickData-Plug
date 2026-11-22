@@ -24,7 +24,7 @@ function navigation(role: Role): { home: string; title: string; primary: NavLink
       { label: "Team", links: [link("Team home", "/dashboard/team", Users), link("Agents", "/dashboard/agents", Users), link("Resellers", "/dashboard/users/resellers", Users), link("Approvals", "/dashboard/approvals"), link("Directory", "/dashboard/users")] },
       { label: "Sales", links: [link("Sales overview", "/dashboard/analytics"), link("Services", "/dashboard/service-requests"), link("Payments", "/dashboard/payments"), link("Pricing", "/dashboard/products?tab=pricing_profiles"), link("Review", "/dashboard/reconciliation", FileText)] },
       { label: "Finance", links: [link("Withdrawals", "/dashboard/withdrawals"), link("Credit", "/dashboard/credit", Wallet), link("Subscription", "/dashboard/subscription")] },
-      { label: "Settings", links: [link("Business", "/dashboard/settings#business", Settings), link("Payments", "/dashboard/settings#payments"), link("Delivery", "/dashboard/settings#delivery"), link("API", "/dashboard/settings#website-api"), link("Activity", "/dashboard/system/logs"), link("Support", "/dashboard/support")] },
+      { label: "Settings", links: [link("Business", "/dashboard/settings/business", Settings), link("Account", "/dashboard/settings/account"), link("Payments", "/dashboard/settings/payments"), link("Delivery", "/dashboard/settings/delivery"), link("API", "/dashboard/settings/api"), link("Activity", "/dashboard/system/logs"), link("Support", "/dashboard/support")] },
     ],
   }
   const base = `/${role}`
@@ -112,7 +112,7 @@ function PortalShellInner({ role, children }: { role: Role; children: ReactNode 
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>{config.title}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild><Link href={role === "owner" ? "/dashboard/settings" : `/${role}/account`}>My account</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild><Link href={role === "owner" ? "/dashboard/settings/account" : `/${role}/account`}>My account</Link></DropdownMenuItem>
               {role === "owner" && <DropdownMenuItem asChild><Link href="/dashboard/support">Support</Link></DropdownMenuItem>}
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => { void signOut({ callbackUrl: "/login" }) }}>Log out</DropdownMenuItem>

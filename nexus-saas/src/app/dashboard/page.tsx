@@ -231,7 +231,7 @@ export default async function DashboardPage() {
           {
             label: "Payment ready",
             description: paystackConnected ? "Paystack is connected." : "Connect Paystack.",
-            href: "/dashboard/settings",
+            href: "/dashboard/settings/payments",
             complete: paystackConnected,
             icon: WalletCards,
           },
@@ -252,7 +252,7 @@ export default async function DashboardPage() {
           {
             label: "Shop ready",
             description: storefrontReady ? "Ready to share." : "Finish setup first.",
-            href: storeUrl !== "#" ? storeUrl : "/dashboard/settings",
+            href: storeUrl !== "#" ? storeUrl : "/dashboard/settings/business",
             complete: storefrontReady,
             icon: ExternalLink,
           },
@@ -267,7 +267,7 @@ export default async function DashboardPage() {
           {
             label: "Website API",
             description: apiReady ? `${apiKeyCount} key${apiKeyCount === 1 ? "" : "s"}.` : "Optional.",
-            href: "/dashboard/settings",
+            href: "/dashboard/settings/api",
             complete: apiReady,
             required: false,
             icon: Activity,
@@ -344,14 +344,14 @@ export default async function DashboardPage() {
           ...(!paystackConnected ? [{
             label: "Payments offline",
             description: "Connect Paystack to accept payments.",
-            href: "/dashboard/settings",
+            href: "/dashboard/settings/payments",
             action: "Connect Paystack",
             tone: "warning" as const,
           }] : []),
           ...(!providerConnected ? [{
             label: "Delivery offline",
             description: "Orders can be processed manually.",
-            href: "/dashboard/settings",
+            href: "/dashboard/settings/delivery",
             action: "Review delivery",
             tone: "info" as const,
           }] : []),

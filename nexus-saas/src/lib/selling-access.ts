@@ -44,7 +44,7 @@ export async function getOrganizationSellingAccess(organizationId: string): Prom
       productsReady,
       pricingReady,
       reason: "This organization is inactive. Contact the platform superadmin before selling can resume.",
-      nextActionHref: "/dashboard/settings",
+      nextActionHref: "/dashboard/settings/business",
       nextActionLabel: "Review Settings",
     }
   }
@@ -72,7 +72,7 @@ export async function getOrganizationSellingAccess(organizationId: string): Prom
       productsReady,
       pricingReady,
       reason: "Selling is blocked until subscriber Paystack keys are connected for customer payments.",
-      nextActionHref: "/dashboard/settings",
+      nextActionHref: "/dashboard/settings/payments",
       nextActionLabel: "Connect Paystack",
     }
   }

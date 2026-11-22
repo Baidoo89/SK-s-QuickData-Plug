@@ -39,7 +39,7 @@ export function StorefrontReadinessCard({
       label: "Store active",
       complete: organizationActive,
       description: organizationActive ? "Active." : "Needs reactivation.",
-      href: "/dashboard/settings",
+      href: "/dashboard/settings/business",
       icon: Store,
     },
     {
@@ -53,7 +53,7 @@ export function StorefrontReadinessCard({
       label: "Paystack",
       complete: paystackConnected,
       description: paystackConnected ? "Connected." : "Connect Paystack.",
-      href: "/dashboard/settings",
+      href: "/dashboard/settings/payments",
       icon: CreditCard,
     },
     {

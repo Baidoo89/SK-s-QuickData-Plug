@@ -131,7 +131,7 @@ export default async function DashboardPaymentsPage(
               title={hasFilter ? "No payments match this status" : "No storefront payments yet"}
               description={hasFilter ? "Choose another status or show all payments." : "Customer payments will appear here after buyers complete checkout."}
               action={hasFilter ? { label: "Show all", href: "/dashboard/payments" } : undefined}
-              secondaryAction={!hasFilter ? { label: "Configure payments", href: "/dashboard/settings#payments" } : undefined}
+              secondaryAction={!hasFilter ? { label: "Configure payments", href: "/dashboard/settings/payments" } : undefined}
             />
           ) : (
             <>
