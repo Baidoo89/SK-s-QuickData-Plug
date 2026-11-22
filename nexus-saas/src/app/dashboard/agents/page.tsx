@@ -7,9 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Input } from "@/components/ui/input"
-import { MetricCard } from "@/components/ui/metric-card"
 import { useToast } from "@/components/ui/use-toast"
-import { Activity, ChevronRight, CircleDollarSign, UserCheck, UserPlus, Users } from "lucide-react"
+import { ChevronRight, UserPlus, Users } from "lucide-react"
 import { formatGhanaCedis } from "@/lib/currency"
 
 interface Agent {
@@ -69,14 +68,6 @@ export default function AgentsPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all")
 
   const selectedAgent = useMemo(() => agents.find((a) => a.id === selectedAgentId) || null, [agents, selectedAgentId])
-
-  const aggregateStats = useMemo(() => {
-    const totalAgents = agents.length
-    const activeAgents = agents.filter((a) => a.active !== false).length
-    const totalOrders = agents.reduce((sum, a) => sum + (a.totalOrders ?? 0), 0)
-    const totalRevenue = agents.reduce((sum, a) => sum + (a.totalRevenue ?? 0), 0)
-    return { totalAgents, activeAgents, totalOrders, totalRevenue }
-  }, [agents])
 
   useEffect(() => {
     async function load() {
@@ -223,16 +214,12 @@ export default function AgentsPage() {
             <Users className="h-5 w-5 text-primary" />
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Agents</h1>
           </div>
-          <p className="text-sm text-muted-foreground max-w-xl">
-            Onboard agents, send invite links that show your business clearly, share storefront links, and control commission and prices from one place.
-          </p>
+          <p className="text-sm text-muted-foreground max-w-xl">Onboard agents, manage access, and open their pricing workspace.</p>
         </div>
         <Card className="premium-surface w-full max-w-md overflow-hidden rounded-lg">
           <CardHeader className="border-b border-border/70 bg-muted/20 pb-2">
             <CardTitle className="text-sm font-medium">Add new agent</CardTitle>
-            <CardDescription className="text-xs">
-              The invite opens on TechDalt, but the signup page tells the agent they are joining your business. They verify email first, then you approve access.
-            </CardDescription>
+            <CardDescription className="text-xs">Create an account and share its invite link. New agents are approved in Team → Approvals.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="flex flex-col gap-2 md:flex-row">
@@ -298,24 +285,13 @@ export default function AgentsPage() {
         </Card>
       </div>
 
-      {/* High-level agent overview */}
-      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
-        <MetricCard label="Total Agents" value={aggregateStats.totalAgents} description="Across your VTU business." icon={Users} tone="primary" />
-        <MetricCard label="Active Agents" value={aggregateStats.activeAgents} description="Currently allowed to sell." icon={UserCheck} tone="success" />
-        <MetricCard label="Total Orders" value={aggregateStats.totalOrders} description="Orders from all agents." icon={Activity} tone="info" />
-        <MetricCard label="Total Revenue" value={formatGhanaCedis(aggregateStats.totalRevenue)} description="Gross VTU revenue driven by agents." icon={CircleDollarSign} tone="success" />
-      </div>
-
-      {/* Main layout: left = agents & stats, right = pricing */}
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)]">
+      <div>
         <Card className="premium-surface overflow-hidden rounded-lg">
           <CardHeader className="space-y-2 border-b border-border/70 bg-muted/20">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <CardTitle className="text-sm font-semibold">Agents</CardTitle>
-                <CardDescription className="text-xs">
-                  Tap an agent to view full details and pricing.
-                </CardDescription>
+              <CardTitle className="text-sm font-semibold">Agents</CardTitle>
+                <CardDescription className="text-xs">Select an agent to manage pricing and account access.</CardDescription>
               </div>
               <span className="rounded-md border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary">
                 {agents.length} total
@@ -424,27 +400,6 @@ export default function AgentsPage() {
                   )
                 })}
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="premium-surface overflow-hidden rounded-lg">
-          <CardHeader className="border-b border-border/70 bg-muted/20">
-            <CardTitle className="text-sm font-semibold">Pricing overrides</CardTitle>
-            <CardDescription className="text-xs">
-              Manage overrides from an agent&apos;s detail page where the network-specific table is easier to review.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <p className="text-muted-foreground">
-              This page is for onboarding, status, and agent selection. Use the detail view to edit prices per network.
-            </p>
-            {selectedAgentId ? (
-              <Button type="button" variant="outline" onClick={() => router.push(`/dashboard/agents/${selectedAgentId}`)}>
-                Open selected agent
-              </Button>
-            ) : (
-              <p className="text-xs text-muted-foreground">Select an agent first to open their detail page.</p>
             )}
           </CardContent>
         </Card>

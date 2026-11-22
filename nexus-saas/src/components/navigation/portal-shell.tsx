@@ -21,7 +21,7 @@ function navigation(role: Role): { home: string; title: string; primary: NavLink
     home: "/dashboard", title: "Store owner",
     primary: [link("Overview", "/dashboard", Home), link("Setup", "/dashboard/setup", Rocket), link("Buy", "/dashboard/buy/single", ShoppingBag), link("Orders", "/dashboard/orders", FileText), link("Products", "/dashboard/products", Package), link("Wallet", "/dashboard/wallet", Wallet)],
     groups: [
-      { label: "Team", links: [link("Agents", "/dashboard/agents", Users), link("Resellers", "/dashboard/users/resellers", Users), link("Approvals", "/dashboard/approvals"), link("Users", "/dashboard/users"), link("Customers", "/dashboard/customers")] },
+      { label: "Team", links: [link("Team home", "/dashboard/team", Users), link("Agents", "/dashboard/agents", Users), link("Resellers", "/dashboard/users/resellers", Users), link("Approvals", "/dashboard/approvals"), link("Directory", "/dashboard/users")] },
       { label: "Sales", links: [link("Reports", "/dashboard/analytics"), link("Services", "/dashboard/service-requests"), link("Payments", "/dashboard/payments"), link("Pricing", "/dashboard/products?tab=pricing_profiles"), link("Withdrawals", "/dashboard/withdrawals"), link("Credit", "/dashboard/credit", Wallet), link("Review", "/dashboard/reconciliation", FileText), link("Add funds", "/dashboard/wallet?tab=manual_credit"), link("Subscription", "/dashboard/subscription")] },
       { label: "Settings", links: [link("Business", "/dashboard/settings#business", Settings), link("Payments", "/dashboard/settings#payments"), link("Delivery", "/dashboard/settings#delivery"), link("API", "/dashboard/settings#website-api"), link("Activity", "/dashboard/system/logs"), link("Support", "/dashboard/support")] },
     ],

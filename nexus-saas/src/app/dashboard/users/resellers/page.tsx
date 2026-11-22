@@ -1,7 +1,6 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
-import { ShoppingCart, UserCheck, Users, Wallet } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -10,7 +9,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MetricCard } from "@/components/ui/metric-card";
 import { PortalAccessMessage } from "@/components/access/portal-access-message";
 import { formatGhanaCedis } from "@/lib/currency";
 import {
@@ -79,35 +77,19 @@ export default async function ResellersPage() {
     orderStats.filter((row) => row.userId).map((row) => [row.userId as string, row._sum.total ?? 0])
   );
 
-  const activeResellers = resellers.filter((reseller) => reseller.active && reseller.signupStatus === "APPROVED").length;
-  const pendingResellers = resellers.filter((reseller) => reseller.signupStatus === "PENDING").length;
-  const totalWalletBalance = Array.from(walletByUserId.values()).reduce((sum, amount) => sum + amount, 0);
-  const totalOrders = Array.from(ordersByUserId.values()).reduce((sum, count) => sum + count, 0);
-
   return (
     <div className="portal-page flex flex-col gap-6 md:gap-8">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold mb-1">Resellers</h1>
-          <p className="text-muted-foreground max-w-xl">
-            View all reseller accounts under your organization. Admins can credit their wallets from the wallet manual credit tools.
-          </p>
+          <p className="text-muted-foreground max-w-xl">View reseller accounts across your agent network.</p>
         </div>
-      </div>
-
-      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-4">
-        <MetricCard label="Resellers" value={resellers.length} description={`${activeResellers} active accounts`} icon={Users} tone="primary" />
-        <MetricCard label="Pending Approval" value={pendingResellers} description="Reseller signups waiting for approval" icon={UserCheck} tone={pendingResellers > 0 ? "warning" : "muted"} />
-        <MetricCard label="Wallet Balance" value={formatGhanaCedis(totalWalletBalance)} description="Combined successful wallet balance" icon={Wallet} tone="success" />
-        <MetricCard label="Orders" value={totalOrders} description="Orders placed by reseller accounts" icon={ShoppingCart} tone="info" />
       </div>
 
       <Card className="premium-surface overflow-hidden rounded-lg">
         <CardHeader className="border-b border-border/70 bg-muted/20">
-          <CardTitle>Reseller Directory</CardTitle>
-          <CardDescription>
-            All users with the RESELLER role in this organization.
-          </CardDescription>
+          <CardTitle>Reseller directory</CardTitle>
+          <CardDescription>Wallet, orders, and sales volume by reseller.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 xl:hidden lg:grid-cols-2">
