@@ -23,7 +23,7 @@ function navigation(role: Role): { home: string; title: string; primary: NavLink
     groups: [
       { label: "Team", links: [link("Team home", "/dashboard/team", Users), link("Agents", "/dashboard/agents", Users), link("Resellers", "/dashboard/users/resellers", Users), link("Approvals", "/dashboard/approvals"), link("Directory", "/dashboard/users")] },
       { label: "Sales", links: [link("Sales overview", "/dashboard/analytics"), link("Services", "/dashboard/service-requests"), link("Payments", "/dashboard/payments"), link("Pricing", "/dashboard/products?tab=pricing_profiles"), link("Review", "/dashboard/reconciliation", FileText)] },
-      { label: "Finance", links: [link("Withdrawals", "/dashboard/withdrawals"), link("Credit", "/dashboard/credit", Wallet), link("Add funds", "/dashboard/wallet?tab=manual_credit"), link("Subscription", "/dashboard/subscription")] },
+      { label: "Finance", links: [link("Withdrawals", "/dashboard/withdrawals"), link("Credit", "/dashboard/credit", Wallet), link("Subscription", "/dashboard/subscription")] },
       { label: "Settings", links: [link("Business", "/dashboard/settings#business", Settings), link("Payments", "/dashboard/settings#payments"), link("Delivery", "/dashboard/settings#delivery"), link("API", "/dashboard/settings#website-api"), link("Activity", "/dashboard/system/logs"), link("Support", "/dashboard/support")] },
     ],
   }

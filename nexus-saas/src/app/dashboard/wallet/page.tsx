@@ -210,7 +210,7 @@ export default function WalletPage() {
 
   return (
     <div className="portal-page mx-auto w-full max-w-6xl space-y-5">
-      <PageHeader eyebrow="Finance" title="Wallet" description="Fund your wallet and manage team transfers." />
+      <PageHeader title="Wallet" description="Fund your wallet and manage team transfers." />
       <section aria-label="Wallet status" className="flex flex-wrap gap-2 rounded-lg border border-border bg-card p-3 text-xs">
         <span className="rounded-md bg-muted px-3 py-1.5"><strong className="mr-1 text-foreground">{formatGhanaCedis(balance)}</strong> available</span>
         <span className="rounded-md bg-muted px-3 py-1.5"><strong className="mr-1 text-foreground">{topups.length}</strong> recent top-ups</span>
