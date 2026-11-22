@@ -68,7 +68,7 @@ export default async function TeamPage() {
     db.user.count({ where: { organizationId, role: "RESELLER" } }),
     db.user.count({ where: { organizationId, role: "RESELLER", active: true, signupStatus: "APPROVED" } }),
     db.user.count({ where: { organizationId, role: "AGENT", signupStatus: "PENDING" } }),
-    db.user.count({ where: { organizationId, role: { in: ["SUBSCRIBER", "AGENT", "RESELLER"] } } }),
+    db.user.count({ where: { organizationId, role: { in: ["AGENT", "RESELLER"] } } }),
   ])
 
   return (

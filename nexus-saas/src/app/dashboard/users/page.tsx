@@ -1,29 +1,26 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
-import { ShieldCheck, UserCheck, Users } from "lucide-react";
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatGhanaCedis } from "@/lib/currency";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { MetricCard } from "@/components/ui/metric-card";
 import { PortalAccessMessage } from "@/components/access/portal-access-message";
 
 const ROLE_COLORS: Record<string, string> = {
-  SUBSCRIBER: "border-primary/20 bg-primary/10 text-primary",
   AGENT: "border-warning/20 bg-warning/10 text-warning",
   RESELLER: "border-success/20 bg-success/10 text-success",
 };
 
 const ROLE_LABELS: Record<string, string> = {
-  SUBSCRIBER: "ADMIN",
   AGENT: "AGENT",
   RESELLER: "RESELLER",
 };
 
-type RoleFilter = "all" | "SUBSCRIBER" | "AGENT" | "RESELLER";
+type RoleFilter = "all" | "AGENT" | "RESELLER";
 type SortOption = "joined_desc" | "wallet_desc" | "orders_desc";
 
 export default async function DashboardUsersPage(
@@ -44,7 +41,7 @@ export default async function DashboardUsersPage(
 
   const roleParam = typeof searchParams?.role === "string" ? searchParams.role : "all";
   const roleFilter: RoleFilter =
-    roleParam === "SUBSCRIBER" || roleParam === "AGENT" || roleParam === "RESELLER"
+    roleParam === "AGENT" || roleParam === "RESELLER"
       ? roleParam
       : "all";
 
@@ -61,32 +58,22 @@ export default async function DashboardUsersPage(
     return <PortalAccessMessage title="Organization unavailable" description="This account is not linked to an organization directory yet." />;
   }
 
-  const [users, roleCounts] = await Promise.all([
-    db.user.findMany({
-      where: {
-        organizationId: me.organizationId,
-        role: { in: ["SUBSCRIBER", "AGENT", "RESELLER"] },
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        agentId: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: "desc" },
-      take: 200,
-    }),
-    db.user.groupBy({
-      by: ["role"],
-      where: {
-        organizationId: me.organizationId,
-        role: { in: ["SUBSCRIBER", "AGENT", "RESELLER"] },
-      },
-      _count: { role: true },
-    }),
-  ]);
+  const users = await db.user.findMany({
+    where: {
+      organizationId: me.organizationId,
+      role: { in: ["AGENT", "RESELLER"] },
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      agentId: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+    take: 200,
+  });
 
   const userIds = users.map((u) => u.id);
   const agentIds = users
@@ -172,10 +159,6 @@ export default async function DashboardUsersPage(
       .filter((id): id is string => Boolean(id))
   );
 
-  const countByRole = Object.fromEntries(
-    roleCounts.map((r: { role: string; _count: { role: number } }) => [r.role, r._count.role])
-  );
-
   const [profiles, assignments] = await Promise.all([
     db.pricingProfile.findMany({
       where: { organizationId: me.organizationId },
@@ -215,6 +198,13 @@ export default async function DashboardUsersPage(
     };
   });
 
+  const detailHref = (row: (typeof rows)[number]) =>
+    row.role === "AGENT" && row.agentId
+      ? `/dashboard/agents/${row.agentId}`
+      : row.role === "RESELLER"
+        ? `/dashboard/users/resellers/${row.id}`
+        : null;
+
   const filteredRows = rows
     .filter((row) => {
       if (roleFilter !== "all" && row.role !== roleFilter) {
@@ -247,24 +237,14 @@ export default async function DashboardUsersPage(
   return (
     <div className="portal-page flex flex-col gap-6 md:gap-8">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold mb-1">All Users</h1>
-        <p className="text-muted-foreground max-w-xl">
-          Unified directory for admin, agents, and resellers in your organization.
-        </p>
-      </div>
-
-      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3">
-        <MetricCard label="Admins" value={countByRole.SUBSCRIBER ?? 0} description="Subscriber owner accounts in this organization" icon={ShieldCheck} tone="primary" />
-        <MetricCard label="Agents" value={countByRole.AGENT ?? 0} description="Approved and pending agent accounts" icon={Users} tone="warning" />
-        <MetricCard label="Resellers" value={countByRole.RESELLER ?? 0} description="Reseller accounts connected to agents" icon={UserCheck} tone="success" />
+        <h1 className="text-2xl md:text-3xl font-bold mb-1">Team directory</h1>
+        <p className="text-muted-foreground max-w-xl">Agents and resellers in your organization.</p>
       </div>
 
       <Card className="premium-surface overflow-hidden rounded-lg">
         <CardHeader className="border-b border-border/70 bg-muted/20">
-          <CardTitle>User Directory</CardTitle>
-          <CardDescription>
-            All internal users under this subscriber account.
-          </CardDescription>
+          <CardTitle>Team members</CardTitle>
+          <CardDescription>Assign pricing profiles and review wallet activity.</CardDescription>
         </CardHeader>
         <CardContent>
           <form method="GET" className="mb-4 grid gap-2 md:grid-cols-[1fr_180px_180px_auto]">
@@ -279,7 +259,6 @@ export default async function DashboardUsersPage(
               className="h-10 rounded-md border border-input bg-background px-3 text-sm"
             >
               <option value="all">All roles</option>
-              <option value="SUBSCRIBER">Admin</option>
               <option value="AGENT">Agents</option>
               <option value="RESELLER">Resellers</option>
             </select>
@@ -309,7 +288,7 @@ export default async function DashboardUsersPage(
                   <div key={u.id} className="rounded-lg border border-border/70 bg-background/80 p-3 text-sm shadow-sm">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="truncate font-semibold">{u.name ?? "Unnamed"}</p>
+                        {detailHref(u) ? <Link href={detailHref(u)!} className="truncate font-semibold hover:text-primary hover:underline">{u.name ?? "Unnamed"}</Link> : <p className="truncate font-semibold">{u.name ?? "Unnamed"}</p>}
                         <p className="break-all text-xs text-muted-foreground">{u.email ?? "-"}</p>
                       </div>
                       <Badge variant="secondary" className={`text-xs ${ROLE_COLORS[u.role] ?? "bg-gray-100 text-gray-700"}`}>
@@ -396,7 +375,7 @@ export default async function DashboardUsersPage(
                   const roleCanAssign = u.role === "AGENT" || u.role === "RESELLER"
                   return (
                     <TableRow key={u.id}>
-                      <TableCell className="font-medium">{u.name ?? "Unnamed"}</TableCell>
+                      <TableCell className="font-medium">{detailHref(u) ? <Link href={detailHref(u)!} className="hover:text-primary hover:underline">{u.name ?? "Unnamed"}</Link> : u.name ?? "Unnamed"}</TableCell>
                       <TableCell>{u.email ?? "-"}</TableCell>
                       <TableCell>
                         <Badge

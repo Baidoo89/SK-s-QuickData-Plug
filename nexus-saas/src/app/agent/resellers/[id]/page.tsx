@@ -414,103 +414,26 @@ export default function ResellerDetailPage(props: { params: Promise<{ id: string
         </Button>
         <div className="space-y-0.5">
           <h1 className="text-xl md:text-2xl font-bold tracking-tight">{reseller.name}</h1>
-          <p className="text-xs text-muted-foreground">
-            Manage this reseller&apos;s pricing, performance, and wallet status.
-          </p>
+          <p className="text-xs text-muted-foreground">{reseller.email}</p>
         </div>
+        <span className={reseller.active !== false ? "status-success ml-auto rounded-full border px-2 py-0.5 text-xs font-semibold" : "ml-auto rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive"}>
+          {reseller.active !== false ? "Active" : "Inactive"}
+        </span>
       </div>
 
-      <div className="grid min-w-0 gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Email</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm font-mono">{reseller.email}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <span
-              className={[
-                "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
-                reseller.active !== false
-                  ? "bg-primary/10 text-primary"
-                  : "bg-destructive/10 text-destructive",
-              ].join(" ")}
-            >
-              {reseller.active !== false ? "Active" : "Inactive"}
-            </span>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid min-w-0 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Wallet balance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xl font-semibold">{formatGhanaCedis(metrics?.walletBalance ?? 0)}</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Current available reseller wallet balance.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Today&apos;s orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xl font-semibold">{metrics?.todaysOrders ?? 0}</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Orders placed by this reseller today.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Sales ({salesRangeLabel})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xl font-semibold">{formatGhanaCedis(metrics?.filteredSales ?? 0)}</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Revenue from completed orders in selected range.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Profit ({salesRangeLabel})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xl font-semibold">{formatGhanaCedis(metrics?.filteredProfit ?? 0)}</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Agent margin earned from this reseller in the selected range.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Month completed sales</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xl font-semibold">{formatGhanaCedis(metrics?.monthCompletedTotal ?? 0)}</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Total completed order value for this month.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Month profit</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xl font-semibold">{formatGhanaCedis(metrics?.monthProfit ?? 0)}</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Agent margin earned from this reseller this month.</p>
-          </CardContent>
-        </Card>
+      <div className="flex flex-wrap gap-x-5 gap-y-3 rounded-lg border border-border/75 bg-muted/20 px-3 py-3 text-xs">
+        <div><span className="text-muted-foreground">Wallet</span> <span className="font-semibold text-foreground">{formatGhanaCedis(metrics?.walletBalance ?? 0)}</span></div>
+        <div><span className="text-muted-foreground">Today</span> <span className="font-semibold text-foreground">{metrics?.todaysOrders ?? 0} orders</span></div>
+        <div><span className="text-muted-foreground">Sales ({salesRangeLabel})</span> <span className="font-semibold text-foreground">{formatGhanaCedis(metrics?.filteredSales ?? 0)}</span></div>
+        <div><span className="text-muted-foreground">Profit ({salesRangeLabel})</span> <span className="font-semibold text-foreground">{formatGhanaCedis(metrics?.filteredProfit ?? 0)}</span></div>
+        <div><span className="text-muted-foreground">Month</span> <span className="font-semibold text-foreground">{formatGhanaCedis(metrics?.monthCompletedTotal ?? 0)}</span></div>
+        <div><span className="text-muted-foreground">Month profit</span> <span className="font-semibold text-foreground">{formatGhanaCedis(metrics?.monthProfit ?? 0)}</span></div>
       </div>
 
       <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle className="text-sm font-semibold">Recent reseller orders</CardTitle>
-          <CardDescription className="text-xs">
-            Latest transactions to monitor performance and delivery status.
-          </CardDescription>
+          <CardDescription className="text-xs">Latest orders from this reseller.</CardDescription>
           <div className="flex flex-wrap gap-2 pt-2">
             {([
               { key: "daily", label: "Daily" },
@@ -590,9 +513,7 @@ export default function ResellerDetailPage(props: { params: Promise<{ id: string
       <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle className="text-sm font-semibold">Reseller pricing profile</CardTitle>
-          <CardDescription className="text-xs">
-            Assign a reusable default price sheet to this reseller. Use individual overrides below only for special exceptions.
-          </CardDescription>
+          <CardDescription className="text-xs">Assign a default price sheet, then adjust exceptions below.</CardDescription>
           <div className="grid min-w-0 gap-3 pt-3 lg:grid-cols-[1fr_1fr]">
             <div className="rounded-md border bg-muted/30 p-3">
               <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Create profile</p>
@@ -607,9 +528,7 @@ export default function ResellerDetailPage(props: { params: Promise<{ id: string
                   Create
                 </Button>
               </div>
-              <p className="mt-2 text-[11px] text-muted-foreground">
-                New profiles start with your current agent cost as the reseller buy price.
-              </p>
+              <p className="mt-2 text-[11px] text-muted-foreground">Starts from your current agent cost.</p>
             </div>
             <div className="rounded-md border bg-muted/30 p-3">
               <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Assigned to this reseller</p>
@@ -638,9 +557,7 @@ export default function ResellerDetailPage(props: { params: Promise<{ id: string
                   onChange={(e) => setStrictPricing(e.target.checked)}
                   className="mt-0.5 h-4 w-4 rounded border-input"
                 />
-                <span>
-                  Profile only. Products missing from the profile will be hidden for this reseller until added to the profile.
-                </span>
+                  <span>Profile only. Hide products not in the profile.</span>
               </label>
               {assignedProfileId && (
                 <Button
@@ -667,9 +584,7 @@ export default function ResellerDetailPage(props: { params: Promise<{ id: string
               <div className="mb-4 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-xs font-semibold">Edit profile prices</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    These prices become the reseller&apos;s default buy prices unless an override below is saved.
-                  </p>
+                    <p className="text-[11px] text-muted-foreground">These become default buy prices.</p>
                 </div>
                 <select
                   value={selectedProfileId}
@@ -774,22 +689,11 @@ export default function ResellerDetailPage(props: { params: Promise<{ id: string
       <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle className="text-sm font-semibold">Pricing overrides</CardTitle>
-          <CardDescription className="text-xs">
-            Set one-off reseller buy prices only where this reseller should differ from the assigned profile.
-          </CardDescription>
-          <div className="grid min-w-0 gap-3 pt-3 md:grid-cols-3">
-            <div className="rounded-md border bg-muted/30 p-3">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Overrides</p>
-              <p className="mt-1 text-lg font-semibold">{pricingSummary.configured}/{pricingSummary.total}</p>
-            </div>
-            <div className="rounded-md border bg-muted/30 p-3">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Profile defaults</p>
-              <p className="mt-1 text-lg font-semibold">{pricingSummary.profileDefaults}/{pricingSummary.total}</p>
-            </div>
-            <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-primary">Rule</p>
-              <p className="mt-1 text-xs text-muted-foreground">Override prices must stay equal to or above your agent cost.</p>
-            </div>
+          <CardDescription className="text-xs">Change only prices that differ from the assigned profile.</CardDescription>
+          <div className="flex flex-wrap gap-3 pt-1 text-xs text-muted-foreground">
+            <span><strong className="text-foreground">{pricingSummary.configured}/{pricingSummary.total}</strong> overrides</span>
+            <span><strong className="text-foreground">{pricingSummary.profileDefaults}/{pricingSummary.total}</strong> profile defaults</span>
+            <span>Prices cannot go below agent cost</span>
           </div>
           {providers.length > 1 && (
             <div className="flex flex-wrap gap-2 pt-3">

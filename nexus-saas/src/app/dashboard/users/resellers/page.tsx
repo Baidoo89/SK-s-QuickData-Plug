@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -102,7 +103,7 @@ export default async function ResellersPage() {
                 <div key={r.id} className="rounded-lg border border-border/70 bg-background/80 p-3 text-sm shadow-sm">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="truncate font-semibold">{r.name ?? "Unnamed"}</p>
+                      <Link href={`/dashboard/users/resellers/${r.id}`} className="truncate font-semibold text-foreground hover:text-primary hover:underline">{r.name ?? "Unnamed"}</Link>
                       <p className="break-all text-xs text-muted-foreground">{r.email}</p>
                     </div>
                     <Badge variant={approved ? "secondary" : r.signupStatus === "PENDING" ? "outline" : "destructive"} className={approved ? "status-success border" : r.signupStatus === "PENDING" ? "status-warning border" : ""}>
@@ -158,7 +159,7 @@ export default async function ResellersPage() {
                 const approved = r.signupStatus === "APPROVED" && r.active;
                 return (
                   <TableRow key={r.id}>
-                    <TableCell className="font-medium">{r.name ?? "Unnamed"}</TableCell>
+                    <TableCell className="font-medium"><Link href={`/dashboard/users/resellers/${r.id}`} className="hover:text-primary hover:underline">{r.name ?? "Unnamed"}</Link></TableCell>
                     <TableCell>{r.email}</TableCell>
                     <TableCell>
                       <Badge variant={approved ? "secondary" : r.signupStatus === "PENDING" ? "outline" : "destructive"} className={approved ? "status-success border" : r.signupStatus === "PENDING" ? "status-warning border" : ""}>
