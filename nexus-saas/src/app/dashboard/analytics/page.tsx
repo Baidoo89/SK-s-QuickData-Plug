@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Overview } from "@/components/overview";
 import { Button } from "@/components/ui/button";
-import { DollarSign, Percent, Users, Activity } from "lucide-react";
+import { DollarSign, Percent, Activity } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdvancedAnalyticsTables } from "@/components/dashboard/advanced-analytics-tables";
@@ -95,8 +95,6 @@ export default async function AnalyticsPage(props: { searchParams: Promise<{ ran
   const byNetwork = new Map<string, number>();
   const byAgent = new Map<string, { name: string; revenue: number; orders: number }>();
   const byProduct = new Map<string, { name: string; revenue: number; orders: number }>();
-  const activeCustomerIds = new Set<string>();
-  const activeAgentIds = new Set<string>();
 
   for (const order of orders) {
     const isCompleted = order.status === "COMPLETED";
@@ -142,7 +140,6 @@ export default async function AnalyticsPage(props: { searchParams: Promise<{ ran
     }
 
     if (order.agentId && order.agent) {
-      activeAgentIds.add(order.agentId);
       const agentKey = order.agentId;
       const existingAgent = byAgent.get(agentKey) ?? {
         name: order.agent.name,
@@ -156,13 +153,9 @@ export default async function AnalyticsPage(props: { searchParams: Promise<{ ran
       byAgent.set(agentKey, existingAgent);
     }
 
-    if (order.customerId && order.customer) {
-      activeCustomerIds.add(order.customerId);
-    }
   }
 
   const successRate = orders.length > 0 ? (completed / orders.length) * 100 : 0;
-  const averageOrderValue = completed > 0 ? revenue / completed : 0;
 
   const dailySeries = Array.from(byDay.entries())
     .sort(([a], [b]) => (a < b ? -1 : 1))
@@ -178,8 +171,8 @@ export default async function AnalyticsPage(props: { searchParams: Promise<{ ran
   return (
     <div className="portal-page flex-1 space-y-4">
       <PageHeader
-        title="Analytics"
-        description="Revenue, profit, reliability, and performance."
+        title="Sales overview"
+        description="Revenue, profit, and channel performance."
         actions={<div className="flex w-full min-w-0 flex-wrap gap-2 sm:w-auto">
           {[
             { label: "Today", value: "today" },
@@ -219,9 +212,6 @@ export default async function AnalyticsPage(props: { searchParams: Promise<{ ran
             <p className="text-xs md:text-sm text-muted-foreground">{completed} successful / {failed} failed</p>
           </CardContent>
         </Card>
-        <MetricCard label="Average Order Value" value={formatGhanaCedis(averageOrderValue)} description="Completed orders only" icon={DollarSign} tone="muted" />
-        <MetricCard label="Active Customers" value={activeCustomerIds.size} description="Placed at least one order in period" icon={Users} tone="primary" />
-        <MetricCard label="Active Agents" value={activeAgentIds.size} description="Agents with at least one order" icon={Users} tone="info" />
       </div>
 
       <Card className="premium-surface overflow-hidden rounded-lg" data-testid="financial-reconciliation-summary">
