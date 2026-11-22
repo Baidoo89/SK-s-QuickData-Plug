@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Input } from "@/components/ui/input"
 import { PageHeader } from "@/components/ui/page-header"
+import { useToast } from "@/components/ui/use-toast"
 import { formatGhanaCedis } from "@/lib/currency"
 import { Suspense } from "react"
 import { useSearchParams } from "next/navigation"
@@ -99,6 +100,7 @@ type PricingProfileRow = {
 
 function BundlePricingContent() {
   const searchParams = useSearchParams()
+  const { toast } = useToast()
   const tabParam = searchParams.get("tab")
   const activeTab = tabParam === "network_pricing" || tabParam === "pricing_profiles" ? "pricing_profiles" : "bundle_pricing"
 
@@ -133,12 +135,6 @@ function BundlePricingContent() {
     fetchProducts()
     fetchProfiles()
   }, [])
-
-  useEffect(() => {
-    if (activeTab === "pricing_profiles") {
-      fetchProfiles()
-    }
-  }, [activeTab])
 
   async function fetchProducts() {
     setLoading(true)
@@ -193,7 +189,7 @@ function BundlePricingContent() {
 
   async function createPricingProfile() {
     if (!newProfileName.trim()) {
-      alert("Profile name is required")
+      toast({ variant: "destructive", title: "Profile name required" })
       return
     }
     const res = await fetch("/api/pricing/profiles", {
@@ -207,7 +203,7 @@ function BundlePricingContent() {
     })
     if (!res.ok) {
       const payload = await res.json().catch(() => null as any)
-      alert(payload?.error?.message || payload?.message || "Failed to create profile")
+      toast({ variant: "destructive", title: "Could not create price group", description: payload?.error?.message || payload?.message || "Try again." })
       return
     }
     const payload = await res.json().catch(() => null as any)
@@ -219,13 +215,14 @@ function BundlePricingContent() {
       setSelectedProfileId(profile.id)
       await fetchProfileDetails(profile.id)
     }
+    toast({ title: "Price group created" })
   }
 
   async function saveProfilePrice(productId: string, price: number) {
     if (!selectedProfileId) return
     const row = profileRows.find((item) => item.productId === productId)
     if (!row || Number.isNaN(price) || price < row.basePrice) {
-      alert(`Profile price cannot be below the base price (${formatGhanaCedis(row?.basePrice ?? 0)}).`)
+      toast({ variant: "destructive", title: "Price is below cost", description: `Use at least ${formatGhanaCedis(row?.basePrice ?? 0)}.` })
       return
     }
 
@@ -241,8 +238,9 @@ function BundlePricingContent() {
       setProfileRows((prev) =>
         prev.map((row) => (row.productId === productId ? { ...row, profilePrice: price } : row))
       )
+      toast({ title: "Price saved" })
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Could not save profile price")
+      toast({ variant: "destructive", title: "Could not save price", description: error instanceof Error ? error.message : "Try again." })
     } finally {
       setSavingProfileProductId(null)
     }
@@ -595,10 +593,10 @@ function BundlePricingContent() {
                       setSelectedProfileId(profile.id)
                       await fetchProfileDetails(profile.id)
                     }}
-                    className="text-xs"
+                    className="h-9 text-xs"
                   >
-                    {profile.name}
-                    {profile.tag ? ` (${profile.tag})` : ""}
+                    <span className="max-w-[11rem] truncate">{profile.name}{profile.tag ? ` · ${profile.tag}` : ""}</span>
+                    <Badge variant={selectedProfileId === profile.id ? "secondary" : "outline"} className="ml-1 text-[10px]">{profile.assignmentCount}</Badge>
                   </Button>
                 ))}
               </div>
@@ -651,7 +649,25 @@ function BundlePricingContent() {
                 className="py-6"
               />
             ) : (
-              <div className="ops-table-surface table-scroll rounded-lg">
+              <>
+              <div className="grid gap-3 md:hidden">
+                {networkProfileRows.map((row) => {
+                  const margin = Number(row.profilePrice) - Number(row.basePrice)
+                  return (
+                    <div key={row.productId} className="rounded-lg border border-border/70 bg-background/70 p-3 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="min-w-0 truncate text-sm font-semibold">{row.productName}</p>
+                        <span className={margin < 0 ? "shrink-0 text-xs font-semibold text-destructive" : "shrink-0 text-xs font-semibold text-primary"}>{formatGhanaCedis(margin)} margin</span>
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                        <div><p className="text-muted-foreground">Base price</p><p className="font-medium">{formatGhanaCedis(row.basePrice)}</p></div>
+                        <div><p className="text-muted-foreground">Group price</p><Input type="number" min="0" step="0.01" defaultValue={row.profilePrice} disabled={savingProfileProductId === row.productId} className="mt-1 h-8" onBlur={(e) => { const val = Number(e.target.value); if (!Number.isNaN(val) && val !== row.profilePrice) saveProfilePrice(row.productId, val) }} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur() }} /></div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="ops-table-surface table-scroll hidden rounded-lg md:block">
                 <Table className="min-w-[640px]">
                   <TableHeader>
                     <TableRow>
@@ -700,6 +716,7 @@ function BundlePricingContent() {
                   </TableBody>
                 </Table>
               </div>
+              </>
             )}
           </CardContent>
         </Card>
