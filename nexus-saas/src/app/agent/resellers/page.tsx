@@ -6,10 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Input } from "@/components/ui/input"
-import { MetricCard } from "@/components/ui/metric-card"
 import { useToast } from "@/components/ui/use-toast"
 import { formatGhanaCedis } from "@/lib/currency"
-import { CheckCircle2, Clock3, UsersRound } from "lucide-react"
+import { UsersRound } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -43,9 +42,6 @@ export default function AgentResellersPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [selectedReseller, setSelectedReseller] = useState<Reseller | null>(null)
   const [editName, setEditName] = useState("")
-  const activeCount = resellers.filter((reseller) => reseller.active !== false).length
-  const inactiveCount = resellers.length - activeCount
-
   const loadResellers = async () => {
     try {
       const res = await fetch(`/api/resellers?t=${Date.now()}`, { cache: "no-store" })
@@ -250,23 +246,13 @@ export default function AgentResellersPage() {
     <div className="portal-page space-y-6">
       <div className="space-y-1">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Resellers</h1>
-        <p className="text-sm text-muted-foreground">
-          Invite resellers under your organization, review public signup requests, and approve them when ready.
-        </p>
-      </div>
-
-      <div className="grid min-w-0 gap-4 md:grid-cols-3">
-        <MetricCard label="Total Resellers" value={resellers.length} description="Linked under your agent account." icon={UsersRound} tone="primary" />
-        <MetricCard label="Active" value={activeCount} description="Allowed to sell." icon={CheckCircle2} tone="success" />
-        <MetricCard label="Inactive" value={inactiveCount} description="Paused or awaiting approval." icon={Clock3} tone={inactiveCount > 0 ? "warning" : "muted"} />
+        <p className="text-sm text-muted-foreground">Invite and manage the resellers under your agent account.</p>
       </div>
 
       <Card className="w-full max-w-2xl border border-border bg-card/95 shadow-md">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-semibold">Add new reseller</CardTitle>
-          <CardDescription className="text-xs">
-            Enter the reseller&apos;s name and email. We&apos;ll generate a secure invite link for them.
-          </CardDescription>
+          <CardDescription className="text-xs">Create an account and share its invite link.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="grid min-w-0 gap-2 md:grid-cols-2">
@@ -338,9 +324,7 @@ export default function AgentResellersPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-sm font-semibold">Your resellers</CardTitle>
-          <CardDescription className="text-xs">
-            Manage your reseller accounts and pricing access.
-          </CardDescription>
+          <CardDescription className="text-xs">Pricing and account actions for resellers you own.</CardDescription>
         </CardHeader>
         <CardContent>
           {initialLoading && (

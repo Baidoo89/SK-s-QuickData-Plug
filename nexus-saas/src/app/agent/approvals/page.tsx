@@ -89,23 +89,7 @@ export default async function AgentApprovalsPage() {
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight">Reseller Approvals</h1>
-          <p className="text-sm text-muted-foreground">
-            Review reseller signup requests, check verification status, then approve or reject access.
-          </p>
-        </div>
-        <div className="grid min-w-0 grid-cols-3 gap-2 lg:min-w-[420px]">
-          <div className="rounded-lg border border-border/70 bg-background/80 px-3 py-2 text-sm shadow-sm">
-            <p className="text-xs text-muted-foreground">Pending</p>
-            <p className="font-semibold">{pendingResellers.length}</p>
-          </div>
-          <div className="rounded-lg border border-border/70 bg-background/80 px-3 py-2 text-sm shadow-sm">
-            <p className="text-xs text-muted-foreground">Email verified</p>
-            <p className="font-semibold">{pendingResellers.filter((user) => user.emailVerified).length}</p>
-          </div>
-          <div className="rounded-lg border border-border/70 bg-background/80 px-3 py-2 text-sm shadow-sm">
-            <p className="text-xs text-muted-foreground">Phone verified</p>
-            <p className="font-semibold">{pendingResellers.filter((user) => user.phoneVerified).length}</p>
-          </div>
+          <p className="text-sm text-muted-foreground">Approve reseller access and API requests.</p>
         </div>
       </div>
 
@@ -115,9 +99,7 @@ export default async function AgentApprovalsPage() {
             Pending resellers
             <Badge variant="secondary">{pendingResellers.length}</Badge>
           </CardTitle>
-          <CardDescription className="text-xs">
-            Approving a reseller activates their account and changes status from pending to approved.
-          </CardDescription>
+          <CardDescription className="text-xs">Review verification before approving.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {pendingResellers.length === 0 ? (

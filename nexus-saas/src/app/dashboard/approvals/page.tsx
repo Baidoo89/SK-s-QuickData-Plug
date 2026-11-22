@@ -83,21 +83,7 @@ export default async function DashboardApprovalsPage() {
     <div className="portal-page space-y-6">
       <PageHeader
         title="Approvals"
-        description="Review and approve access."
-        actions={<div className="grid grid-cols-3 gap-2 lg:min-w-[420px]">
-          <div className="rounded-lg border border-border/70 bg-background/80 px-3 py-2 text-sm shadow-sm">
-            <p className="text-xs text-muted-foreground">Pending</p>
-            <p className="font-semibold">{pendingAgents.length}</p>
-          </div>
-          <div className="rounded-lg border border-border/70 bg-background/80 px-3 py-2 text-sm shadow-sm">
-            <p className="text-xs text-muted-foreground">Email verified</p>
-            <p className="font-semibold">{pendingAgents.filter((user) => user.emailVerified).length}</p>
-          </div>
-          <div className="rounded-lg border border-border/70 bg-background/80 px-3 py-2 text-sm shadow-sm">
-            <p className="text-xs text-muted-foreground">Phone verified</p>
-            <p className="font-semibold">{pendingAgents.filter((user) => user.phoneVerified).length}</p>
-          </div>
-        </div>}
+        description="Approve agent access and API requests."
       />
 
       <Card className="premium-surface overflow-hidden rounded-lg">
@@ -106,9 +92,7 @@ export default async function DashboardApprovalsPage() {
             Pending agents
             <Badge variant="secondary">{pendingAgents.length}</Badge>
           </CardTitle>
-          <CardDescription className="text-xs">
-            Agent requests are approved here. Reseller requests are approved by agents in the agent portal.
-          </CardDescription>
+          <CardDescription className="text-xs">Reseller requests are handled by their agent.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {pendingAgents.length === 0 ? (
@@ -189,9 +173,7 @@ export default async function DashboardApprovalsPage() {
             Agent API access
             <Badge variant="secondary">{pendingApiRequests.length}</Badge>
           </CardTitle>
-          <CardDescription className="text-xs">
-            Approve external API keys for agents who want their own websites to submit paid orders into this organization.
-          </CardDescription>
+          <CardDescription className="text-xs">Approve API keys for agent storefronts.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {pendingApiRequests.length === 0 ? (
