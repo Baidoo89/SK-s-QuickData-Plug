@@ -24,6 +24,8 @@ async function requireSuperAdmin() {
   if (!session?.user || role !== "SUPERADMIN") {
     redirect("/login")
   }
+
+  return session
 }
 
 async function createPlan(formData: FormData) {
@@ -114,11 +116,14 @@ async function updateSubscriptionStatus(formData: FormData) {
 async function extendSubscription(formData: FormData) {
   "use server"
 
-  await requireSuperAdmin()
+  const session = await requireSuperAdmin()
 
   const subscriptionId = String(formData.get("subscriptionId") ?? "").trim()
   const months = Number(formData.get("months") ?? 1)
   const customDateRaw = String(formData.get("customDate") ?? "").trim()
+  const reason = String(formData.get("reason") ?? "").trim()
+
+  if (reason.length < 3 || reason.length > 500) return
 
   const subscription = subscriptionId
     ? await db.subscription.findUnique({
@@ -136,7 +141,9 @@ async function extendSubscription(formData: FormData) {
     customDate && !Number.isNaN(customDate.getTime())
       ? customDate
       : getNextBillingDate(subscription.nextBillingAt, Number.isFinite(months) && months > 0 ? months : 1)
-  const reference = `MANUAL-SUB-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  const actor = session.user?.email
+    ? await db.user.findUnique({ where: { email: session.user.email }, select: { id: true, email: true } })
+    : null
 
   const updated = await db.subscription.update({
     where: { id: subscription.id },
@@ -144,17 +151,19 @@ async function extendSubscription(formData: FormData) {
       status: "ACTIVE",
       canceledAt: null,
       nextBillingAt,
-      paystackRef: reference,
+      paystackRef: null,
     },
   })
 
-  await db.payment.create({
+  await db.auditLog.create({
     data: {
-      subscriptionId: updated.id,
-      amount: subscription.plan.priceGHS,
-      paystackRef: reference,
-      status: "SUCCESS",
-      paidAt: new Date(),
+      action: "SUPERADMIN_EXTEND_SUBSCRIPTION",
+      targetType: "SUBSCRIPTION",
+      targetId: updated.id,
+      organizationId: subscription.organizationId,
+      actorId: actor?.id,
+      actorName: actor?.email ?? "Super Admin",
+      meta: JSON.stringify({ reason, nextBillingAt: nextBillingAt.toISOString(), months: Number.isFinite(months) ? months : 1, manualGrant: true }),
     },
   })
 
@@ -164,51 +173,47 @@ async function extendSubscription(formData: FormData) {
   redirect("/admin/subscriptions?notice=subscription-extended")
 }
 
-async function assignDefaultPlan(formData: FormData) {
+async function grantSubscriptionAccess(formData: FormData) {
   "use server"
 
-  await requireSuperAdmin()
+  const session = await requireSuperAdmin()
 
   const organizationId = String(formData.get("organizationId") ?? "")
   const planId = String(formData.get("planId") ?? "")
+  const reason = String(formData.get("reason") ?? "").trim()
   const plan = planId ? await db.plan.findUnique({ where: { id: planId } }) : null
 
-  if (!organizationId || !plan) {
+  if (!organizationId || !plan || reason.length < 3 || reason.length > 500) {
     return
   }
 
-  const reference = `MANUAL-ACTIVATE-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-  const subscription = await db.subscription.upsert({
-    where: { organizationId },
-    update: {
-      planId: plan.id,
-      status: "ACTIVE",
-      nextBillingAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      canceledAt: null,
-      paystackRef: reference,
-    },
-    create: {
-      organizationId,
-      planId: plan.id,
-      status: "ACTIVE",
-      nextBillingAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      paystackRef: reference,
-    },
-  })
+  const actor = session.user?.email
+    ? await db.user.findUnique({ where: { email: session.user.email }, select: { id: true, email: true } })
+    : null
+  const nextBillingAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+  await db.$transaction(async (tx) => {
+    const subscription = await tx.subscription.upsert({
+      where: { organizationId },
+      update: { planId: plan.id, status: "ACTIVE", nextBillingAt, canceledAt: null, paystackRef: null },
+      create: { organizationId, planId: plan.id, status: "ACTIVE", nextBillingAt, canceledAt: null, paystackRef: null },
+    })
 
-  await db.payment.create({
-    data: {
-      subscriptionId: subscription.id,
-      amount: plan.priceGHS,
-      paystackRef: reference,
-      status: "SUCCESS",
-      paidAt: new Date(),
-    },
+    await tx.auditLog.create({
+      data: {
+        action: "SUPERADMIN_GRANT_SUBSCRIPTION",
+        targetType: "SUBSCRIPTION",
+        targetId: subscription.id,
+        organizationId,
+        actorId: actor?.id,
+        actorName: actor?.email ?? "Super Admin",
+        meta: JSON.stringify({ reason, planId: plan.id, planName: plan.name, nextBillingAt: nextBillingAt.toISOString(), manualGrant: true }),
+      },
+    })
   })
 
   revalidatePath("/admin/subscriptions")
   revalidatePath("/admin")
-  redirect("/admin/subscriptions?notice=plan-assigned")
+  redirect("/admin/subscriptions?notice=access-granted")
 }
 
 function subscriptionBadgeClass(status: string) {
@@ -271,10 +276,10 @@ export default async function AdminSubscriptionsPage(
 
       {searchParams?.notice ? (
         <div className="status-success rounded-md border px-4 py-3 text-sm">
-          {searchParams.notice === "plan-assigned"
-            ? "Plan assigned and subscription activated successfully."
+          {searchParams.notice === "access-granted"
+            ? "Access granted. No payment was recorded."
             : searchParams.notice === "subscription-extended"
-              ? "Subscription extended and payment record added successfully."
+              ? "Access extended. No payment was recorded."
               : "Subscription status updated successfully."}
         </div>
       ) : null}
@@ -334,10 +339,10 @@ export default async function AdminSubscriptionsPage(
 
       <Card>
         <CardHeader>
-          <CardTitle>Manual Subscriber Activation</CardTitle>
+          <CardTitle>Grant access</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={assignDefaultPlan} className="grid min-w-0 gap-3 lg:grid-cols-2 2xl:grid-cols-[minmax(0,1fr)_220px_auto]">
+          <form action={grantSubscriptionAccess} className="grid min-w-0 gap-3 lg:grid-cols-2 2xl:grid-cols-[minmax(0,1fr)_220px_minmax(0,1fr)_auto]">
             <select name="organizationId" className="h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm" required>
               <option value="">Choose subscriber organization</option>
               {organizations.map((org) => (
@@ -354,10 +359,11 @@ export default async function AdminSubscriptionsPage(
                 </option>
               ))}
             </select>
-            <Button type="submit" className="w-full">Activate Plan</Button>
+            <Input name="reason" placeholder="Reason (trial, migration, support)" required minLength={3} maxLength={500} />
+            <Button type="submit" className="w-full">Grant access</Button>
           </form>
           <p className="mt-2 text-xs text-muted-foreground">
-            Gives the organization 30 days of active SaaS access on the selected plan.
+            Gives 30 days of access. This does not create a payment record.
           </p>
         </CardContent>
       </Card>
@@ -491,12 +497,13 @@ export default async function AdminSubscriptionsPage(
                       <form action={extendSubscription} className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
                         <input type="hidden" name="subscriptionId" value={subscription.id} />
                         <select name="months" defaultValue="1" className="h-9 w-full rounded-md border border-input bg-background px-2 text-xs">
-                          <option value="1">Extend 30 days</option>
-                          <option value="2">Extend 60 days</option>
-                          <option value="3">Extend 90 days</option>
+                          <option value="1">30 days</option>
+                          <option value="2">60 days</option>
+                          <option value="3">90 days</option>
                         </select>
-                        <Button type="submit" size="sm">Renew</Button>
+                        <Button type="submit" size="sm">Extend</Button>
                         <input name="customDate" type="date" className="col-span-2 h-9 w-full rounded-md border border-input bg-background px-2 text-xs" />
+                        <Input name="reason" placeholder="Reason" required minLength={3} maxLength={500} className="col-span-2 h-9 text-xs" />
                       </form>
                     </div>
                   )
@@ -559,7 +566,7 @@ export default async function AdminSubscriptionsPage(
                               </select>
                               <Button type="submit" size="sm" variant="outline">Save</Button>
                             </form>
-                            <form action={extendSubscription} className="flex justify-end gap-2">
+                            <form action={extendSubscription} className="flex flex-wrap justify-end gap-2">
                               <input type="hidden" name="subscriptionId" value={subscription.id} />
                               <select name="months" defaultValue="1" className="h-9 rounded-md border border-input bg-background px-2 text-xs">
                                 <option value="1">30 days</option>
@@ -567,7 +574,8 @@ export default async function AdminSubscriptionsPage(
                                 <option value="3">90 days</option>
                               </select>
                               <input name="customDate" type="date" className="h-9 rounded-md border border-input bg-background px-2 text-xs" />
-                              <Button type="submit" size="sm">Renew</Button>
+                              <Input name="reason" placeholder="Reason" required minLength={3} maxLength={500} className="h-9 w-44 text-xs" />
+                              <Button type="submit" size="sm">Extend</Button>
                             </form>
                           </div>
                         </TableCell>
