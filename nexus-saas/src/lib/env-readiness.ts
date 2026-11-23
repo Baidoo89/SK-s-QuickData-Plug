@@ -13,6 +13,8 @@ function hasAnyEnv(keys: string[]) {
   return keys.some(hasEnv)
 }
 
+const production = process.env.NODE_ENV === "production"
+
 export function getEnvironmentReadiness() {
   const checks: EnvCheck[] = [
     {
@@ -48,8 +50,8 @@ export function getEnvironmentReadiness() {
     {
       key: "RESEND_API_KEY and RESEND_FROM_EMAIL",
       ok: hasEnv("RESEND_API_KEY") && hasEnv("RESEND_FROM_EMAIL"),
-      required: false,
-      description: "Required before production email delivery to real users.",
+      required: production,
+      description: "Required for production email verification and password reset delivery.",
     },
     {
       key: "NEXT_PUBLIC_APP_URL",

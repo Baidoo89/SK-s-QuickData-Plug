@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isResendingVerification, setIsResendingVerification] = useState(false)
   const [verifyRequiredNotice, setVerifyRequiredNotice] = useState(false)
+  const [showVerificationHelp, setShowVerificationHelp] = useState(false)
 
   const [formData, setFormData] = useState({
     email: "",
@@ -48,12 +49,13 @@ export default function LoginPage() {
       })
 
       if (result?.error) {
+        setShowVerificationHelp(true)
         toast({
           variant: "destructive",
           title: "Cannot sign in",
           description: verifyRequiredNotice
             ? "Please verify your email before signing in."
-            : "Invalid credentials, unverified email, or account still waiting for approval.",
+            : "Check your email and password. New accounts must verify email; agent and reseller accounts also need approval.",
         })
       } else if (result?.ok) {
         toast({
@@ -118,9 +120,9 @@ export default function LoginPage() {
       <CardHeader className="space-y-1 border-b border-border/70 bg-muted/20">
         <CardTitle className="text-center text-2xl font-bold">Sign in</CardTitle>
       </CardHeader>
-      {verifyRequiredNotice ? (
+      {verifyRequiredNotice || showVerificationHelp ? (
         <div className="mx-6 mb-4 space-y-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm shadow-sm">
-          <p>Verify your email before signing in.</p>
+          <p>{verifyRequiredNotice ? "Verify your email before signing in." : "New accounts must verify email before signing in."}</p>
           <Button type="button" size="sm" variant="outline" className="h-8 bg-background text-xs" onClick={handleResendVerification} disabled={isResendingVerification}>
             {isResendingVerification ? "Sending..." : "Resend email"}
           </Button>
