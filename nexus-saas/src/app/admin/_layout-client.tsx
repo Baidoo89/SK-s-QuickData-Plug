@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   LayoutDashboard,
+  Building2,
   ShoppingCart,
   Users,
   UserCheck,
@@ -55,7 +56,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <>
       <div>
         <p className="portal-sidebar-section px-3 pb-1 text-[11px] font-bold uppercase text-muted-foreground">Overview</p>
-        <NavLink href="/admin" label="Businesses" icon={LayoutDashboard} closeOnClick={mobile} />
+        <NavLink href="/admin" label="Overview" icon={LayoutDashboard} closeOnClick={mobile} />
+        <NavLink href="/admin/businesses" label="Businesses" icon={Building2} closeOnClick={mobile} />
       </div>
 
       <div>
