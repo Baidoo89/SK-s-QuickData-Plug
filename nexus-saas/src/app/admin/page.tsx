@@ -2,7 +2,7 @@ import Link from "next/link"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { hash } from "bcryptjs"
-import { AlertTriangle, Building2, CreditCard, PackageCheck, ShieldCheck, ShoppingCart, UserCheck, Users } from "lucide-react"
+import { AlertTriangle, Building2, CreditCard, UserCheck } from "lucide-react"
 import { auth } from "@/auth"
 import { db } from "@/lib/db"
 import { formatGhanaCedis } from "@/lib/currency"
@@ -305,9 +305,9 @@ export default async function SuperAdminPage(
   return (
     <div className="portal-page space-y-6">
       <PageHeader
-        eyebrow="Owner console"
+        eyebrow="Platform"
         title="Super Admin"
-        description="Businesses, plans, approvals, and platform health."
+        description="Manage businesses, access, and platform activity."
         actions={<div className="grid w-full gap-2 sm:grid-cols-3 lg:w-auto">
           <Button asChild variant="outline" size="sm">
             <Link href="/admin/subscriptions">Subscriptions</Link>
@@ -324,20 +324,38 @@ export default async function SuperAdminPage(
       <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-4">
         <MetricCard label="Businesses" value={totalOrganizations} description={`${activeOrganizations} active, ${inactiveOrganizations} inactive`} icon={Building2} tone="primary" />
         <MetricCard label="Revenue" value={formatGhanaCedis(platformRevenue._sum.amount ?? 0)} description={`${formatGhanaCedis(monthPlatformRevenue._sum.amount ?? 0)} this month`} icon={CreditCard} tone="success" />
-        <MetricCard label="Seller Sales" value={formatGhanaCedis(storefrontVolume._sum.amount ?? 0)} description="Seller Paystack volume" icon={ShoppingCart} tone="info" />
-        <MetricCard label="Users" value={totalUsers} description={`${totalSubscribers} subscribers, ${totalAgents} agents, ${totalResellers} resellers`} icon={Users} tone="info" />
-        <MetricCard label="Orders" value={failedOrders > 0 ? failedOrders : pendingOrders} description={`${pendingOrders} pending, ${failedOrders} failed`} icon={AlertTriangle} tone={failedOrders > 0 ? "warning" : "muted"} />
-        <MetricCard label="Products" value={activeProducts} description="Active products" icon={PackageCheck} tone="primary" />
+        <MetricCard label="Orders" value={totalOrders} description={`${pendingOrders} pending, ${failedOrders} failed`} icon={AlertTriangle} tone={failedOrders > 0 ? "warning" : "muted"} />
         <MetricCard label="Approvals" value={pendingSignups} description="Waiting review" icon={UserCheck} tone={pendingSignups > 0 ? "warning" : "muted"} />
-        <MetricCard label="Health" value={failedOrders > 0 ? "Review" : "Stable"} description="Failed order signal" icon={ShieldCheck} tone={failedOrders > 0 ? "warning" : "success"} />
       </div>
 
       <Card className="premium-surface overflow-hidden rounded-lg">
+        <CardContent className="grid grid-cols-2 gap-0 p-0 sm:grid-cols-4">
+          <div className="border-b border-r border-border/60 p-3 sm:border-b-0">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Users</p>
+            <p className="mt-1 text-lg font-bold">{totalUsers}</p>
+            <p className="text-[10px] text-muted-foreground">{totalSubscribers} subscribers · {totalAgents} agents · {totalResellers} resellers</p>
+          </div>
+          <div className="border-b border-border/60 p-3 sm:border-b-0 sm:border-r">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Products</p>
+            <p className="mt-1 text-lg font-bold">{activeProducts}</p>
+            <p className="text-[10px] text-muted-foreground">Active products</p>
+          </div>
+          <div className="border-r border-border/60 p-3">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Seller sales</p>
+            <p className="mt-1 text-lg font-bold">{formatGhanaCedis(storefrontVolume._sum.amount ?? 0)}</p>
+            <p className="text-[10px] text-muted-foreground">Paystack volume</p>
+          </div>
+          <div className="p-3">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Health</p>
+            <p className={failedOrders > 0 ? "mt-1 text-lg font-bold text-warning" : "mt-1 text-lg font-bold text-success"}>{failedOrders > 0 ? "Review" : "Stable"}</p>
+            <p className="text-[10px] text-muted-foreground">Failed order signal</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="premium-surface overflow-hidden rounded-lg">
         <CardHeader className="border-b border-border/70 bg-muted/20">
-          <CardTitle>Add Business</CardTitle>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Create a business account and owner login.
-          </p>
+          <CardTitle className="text-sm">Add business</CardTitle>
         </CardHeader>
         <CardContent>
           <form action={createSubscriberTenant} className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-[1.1fr_0.9fr_1fr_1fr_0.9fr_0.9fr_auto] xl:items-end">
@@ -406,9 +424,6 @@ export default async function SuperAdminPage(
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
           <CardTitle>Businesses</CardTitle>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Search, suspend, or reactivate businesses.
-              </p>
             </div>
             <form className="grid w-full gap-2 sm:grid-cols-[minmax(0,1fr)_auto] lg:w-auto" method="GET">
               <Input name="q" defaultValue={q} placeholder="Search business or owner" className="lg:w-80" />
@@ -545,10 +560,7 @@ export default async function SuperAdminPage(
       <div className="grid min-w-0 gap-4 xl:grid-cols-2">
         <Card className="premium-surface overflow-hidden rounded-lg">
           <CardHeader className="border-b border-border/70 bg-muted/20">
-            <CardTitle>Recent Orders</CardTitle>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Read-only platform view.
-            </p>
+            <CardTitle>Recent orders</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {recentOrders.length === 0 ? (

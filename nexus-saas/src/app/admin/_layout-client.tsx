@@ -54,23 +54,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const renderNavigation = (mobile = false) => (
     <>
       <div>
-        <p className="portal-sidebar-section px-3 pb-1 text-[11px] font-bold uppercase text-muted-foreground">Control</p>
+        <p className="portal-sidebar-section px-3 pb-1 text-[11px] font-bold uppercase text-muted-foreground">Overview</p>
         <NavLink href="/admin" label="Businesses" icon={LayoutDashboard} closeOnClick={mobile} />
       </div>
 
       <div>
-        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Users</p>
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">People</p>
         <NavLink href="/admin/users" label="Users" icon={Users} closeOnClick={mobile} />
         <NavLink href="/admin/approvals" label="Approvals" icon={UserCheck} closeOnClick={mobile} />
       </div>
 
       <div>
-        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Plans</p>
-        <NavLink href="/admin/subscriptions" label="Plans" icon={CreditCard} closeOnClick={mobile} />
-      </div>
-
-      <div>
-        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Money</p>
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Commerce</p>
+        <NavLink href="/admin/orders" label="Orders" icon={ShoppingCart} closeOnClick={mobile} />
         <NavLink href="/admin/payments" label="Payments" icon={CreditCard} closeOnClick={mobile} />
         <NavLink href="/admin/wallet" label="Wallets" icon={Wallet} closeOnClick={mobile} />
         <NavLink href="/admin/withdrawals" label="Withdrawals" icon={Wallet} closeOnClick={mobile} />
@@ -79,22 +75,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
 
       <div>
-        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Orders</p>
-        <NavLink href="/admin/orders" label="Orders" icon={ShoppingCart} closeOnClick={mobile} />
-      </div>
-
-      <div>
-        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Tools</p>
+        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Platform</p>
+        <NavLink href="/admin/subscriptions" label="Plans" icon={CreditCard} closeOnClick={mobile} />
         <NavLink href="/admin/tools" label="Tools" icon={Wrench} closeOnClick={mobile} />
-      </div>
-
-      <div>
-        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">System</p>
         <NavLink href="/admin/system" label="Health" icon={ServerCog} closeOnClick={mobile} />
-      </div>
-
-      <div>
-        <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Settings</p>
         <NavLink href="/admin/settings" label="Settings" icon={Settings} closeOnClick={mobile} />
       </div>
     </>
@@ -104,13 +88,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="app-shell-bg min-h-screen w-full max-w-full overflow-x-hidden">
       <aside data-collapsed={sidebarCollapsed} className={`portal-sidebar app-sidebar hidden border-r border-border/70 backdrop-blur-xl md:fixed md:left-0 md:top-0 md:z-30 md:block md:h-screen ${sidebarCollapsed ? "md:w-[72px]" : "md:w-[220px] xl:w-[260px]"}`}>
         <div className={`flex h-[60px] items-center border-b border-border/70 px-4 ${sidebarCollapsed ? "justify-center" : ""}`}>
-          <div className="portal-sidebar-label flex min-w-0 items-center gap-3">
+              <div className="portal-sidebar-label flex min-w-0 items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-xs font-extrabold text-primary">
               SA
             </div>
             <div className="min-w-0">
-              <span className="block text-[11px] font-bold uppercase text-muted-foreground">Superadmin</span>
-              <span className="block truncate text-sm font-extrabold tracking-normal">Owner</span>
+              <span className="block text-[11px] font-bold uppercase text-muted-foreground">Platform</span>
+              <span className="block truncate text-sm font-extrabold tracking-normal">Admin</span>
             </div>
           </div>
           <Button
@@ -147,8 +131,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       SA
                     </div>
                     <div className="min-w-0">
-                      <span className="block text-[11px] font-bold uppercase text-muted-foreground">Superadmin</span>
-                      <span className="block truncate text-sm font-extrabold tracking-normal">Owner</span>
+                      <span className="block text-[11px] font-bold uppercase text-muted-foreground">Platform</span>
+                      <span className="block truncate text-sm font-extrabold tracking-normal">Admin</span>
                     </div>
                   </div>
                 </div>
@@ -158,11 +142,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </SheetContent>
             </Sheet>
             <div className="min-w-0">
-            <h1 className="text-lg font-extrabold tracking-normal">Owner</h1>
+            <h1 className="text-lg font-extrabold tracking-normal">Admin</h1>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <Button variant="outline" size="sm" className="hidden sm:inline-flex">Owner View</Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="secondary" size="icon" className="rounded-full">
@@ -171,7 +154,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Superadmin</DropdownMenuLabel>
+                <DropdownMenuLabel>Platform admin</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/admin/settings">Settings</Link>
