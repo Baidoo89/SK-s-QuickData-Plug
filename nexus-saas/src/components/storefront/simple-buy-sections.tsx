@@ -599,7 +599,7 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
   }
 
   return (
-    <div className="portal-page min-w-0 space-y-5 sm:space-y-6">
+    <div className="portal-page mx-auto w-full max-w-3xl min-w-0 space-y-5 sm:space-y-6">
       {!storeActive && (
         <SellingAccessAlert
           canSell={false}
@@ -626,7 +626,7 @@ export function SimpleBuySections({ subscriberSlug, bundles, services = [], agen
           ) : null}
         </TabsList>
 
-        <div className="min-w-0 max-w-3xl">
+        <div className="mx-auto min-w-0 max-w-3xl">
           <div className="min-w-0 space-y-5">
             <TabsContent value="single" className="mt-0">
               <Card className="premium-surface min-w-0 overflow-hidden rounded-lg">
