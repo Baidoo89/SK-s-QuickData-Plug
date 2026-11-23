@@ -433,6 +433,8 @@ export default async function DashboardPage() {
 
   const requiredOnboardingItems = onboardingItems.filter((item) => item.required !== false);
   const showFundingStatus = walletBalance !== 0 || creditEnabled || creditOwed > 0;
+  const activeChannels = channelMetrics.filter((channel) => channel.count > 0);
+  const hasTeamPerformance = dailyTeamPerformance.some((day) => day.rows.length > 0);
   return (
     <div className="portal-page space-y-4 sm:space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -488,15 +490,7 @@ export default async function DashboardPage() {
             ))}
           </CardContent>
         </Card>
-      ) : (
-        <div className="status-success flex gap-3 rounded-md border px-4 py-3 text-sm">
-          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-          <div>
-            <p className="font-semibold">Operations look clean</p>
-            <p>No urgent alerts.</p>
-          </div>
-        </div>
-      )}
+      ) : null}
 
       {showFundingStatus ? (
         <Card className="premium-surface overflow-hidden rounded-lg" data-testid="dashboard-funding-status">
@@ -574,27 +568,29 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <Card className="premium-surface overflow-hidden rounded-lg">
-        <CardHeader className="border-b bg-muted/30 pb-3">
-          <CardTitle className="text-sm font-semibold text-foreground">Sales channels</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-0 p-0 md:grid-cols-3 xl:grid-cols-5">
-          {channelMetrics.map((channel) => (
-            <Link key={channel.key} href={channel.href} className="flex min-w-0 items-center justify-between gap-2 border-b border-r border-border/60 p-3 transition-colors hover:bg-muted/40">
-              <div className="min-w-0">
-                <p className="truncate text-xs font-semibold text-foreground">{channel.label}</p>
-                <p className="mt-1 text-[11px] text-muted-foreground">{channel.count} order{channel.count === 1 ? "" : "s"}</p>
-              </div>
-              <div className="shrink-0 text-right">
-                <p className="text-xs font-semibold text-foreground">{formatGhanaCedis(channel.revenue)}</p>
-                <p className={channel.profit > 0 ? "text-[10px] font-medium text-primary" : "text-[10px] text-muted-foreground"}>{formatGhanaCedis(channel.profit)} profit</p>
-              </div>
-            </Link>
-          ))}
-        </CardContent>
-      </Card>
+      {activeChannels.length > 0 ? (
+        <Card className="premium-surface overflow-hidden rounded-lg">
+          <CardHeader className="border-b bg-muted/30 pb-3">
+            <CardTitle className="text-sm font-semibold text-foreground">Sales channels</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-0 p-0 md:grid-cols-3 xl:grid-cols-5">
+            {activeChannels.map((channel) => (
+              <Link key={channel.key} href={channel.href} className="flex min-w-0 items-center justify-between gap-2 border-b border-r border-border/60 p-3 transition-colors hover:bg-muted/40">
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-semibold text-foreground">{channel.label}</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">{channel.count} order{channel.count === 1 ? "" : "s"}</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-xs font-semibold text-foreground">{formatGhanaCedis(channel.revenue)}</p>
+                  <p className={channel.profit > 0 ? "text-[10px] font-medium text-primary" : "text-[10px] text-muted-foreground"}>{formatGhanaCedis(channel.profit)} profit</p>
+                </div>
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
 
-      <TeamPerformance days={dailyTeamPerformance} />
+      {hasTeamPerformance ? <TeamPerformance days={dailyTeamPerformance} /> : null}
 
       {/* Main Analytics Section */}
       <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-7">

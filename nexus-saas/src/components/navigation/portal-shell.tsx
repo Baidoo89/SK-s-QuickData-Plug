@@ -19,12 +19,12 @@ const link = (label: string, href: string, icon: NavLink["icon"] = FileText): Na
 function navigation(role: Role): { home: string; title: string; primary: NavLink[]; groups: NavGroup[] } {
   if (role === "owner") return {
     home: "/dashboard", title: "Store owner",
-    primary: [link("Overview", "/dashboard", Home), link("Setup", "/dashboard/setup", Rocket), link("Buy", "/dashboard/buy/single", ShoppingBag), link("Orders", "/dashboard/orders", FileText), link("Products", "/dashboard/products", Package), link("Wallet", "/dashboard/wallet", Wallet)],
+    primary: [link("Overview", "/dashboard", Home), link("Orders", "/dashboard/orders", FileText), link("Products", "/dashboard/products", Package), link("Team", "/dashboard/team", Users), link("Wallet", "/dashboard/wallet", Wallet)],
     groups: [
-      { label: "Team", links: [link("Team home", "/dashboard/team", Users), link("Agents", "/dashboard/agents", Users), link("Resellers", "/dashboard/users/resellers", Users), link("Approvals", "/dashboard/approvals"), link("Directory", "/dashboard/users")] },
-      { label: "Sales", links: [link("Sales overview", "/dashboard/analytics"), link("Services", "/dashboard/service-requests"), link("Payments", "/dashboard/payments"), link("Pricing", "/dashboard/products?tab=pricing_profiles"), link("Review", "/dashboard/reconciliation", FileText)] },
+      { label: "Sell", links: [link("Buy", "/dashboard/buy/single", ShoppingBag), link("Sales", "/dashboard/analytics"), link("Services", "/dashboard/service-requests"), link("Payments", "/dashboard/payments"), link("Pricing", "/dashboard/products?tab=pricing_profiles"), link("Review", "/dashboard/reconciliation", FileText)] },
+      { label: "Team", links: [link("Agents", "/dashboard/agents", Users), link("Resellers", "/dashboard/users/resellers", Users), link("Approvals", "/dashboard/approvals"), link("Directory", "/dashboard/users")] },
       { label: "Finance", links: [link("Withdrawals", "/dashboard/withdrawals"), link("Credit", "/dashboard/credit", Wallet), link("Subscription", "/dashboard/subscription")] },
-      { label: "Settings", links: [link("Business", "/dashboard/settings/business", Settings), link("Account", "/dashboard/settings/account"), link("Payments", "/dashboard/settings/payments"), link("Delivery", "/dashboard/settings/delivery"), link("API", "/dashboard/settings/api"), link("Activity", "/dashboard/system/logs"), link("Support", "/dashboard/support")] },
+      { label: "Settings", links: [link("Setup", "/dashboard/setup", Rocket), link("Business", "/dashboard/settings/business", Settings), link("Account", "/dashboard/settings/account"), link("Payment setup", "/dashboard/settings/payments"), link("Delivery", "/dashboard/settings/delivery"), link("API", "/dashboard/settings/api"), link("Activity", "/dashboard/system/logs"), link("Support", "/dashboard/support")] },
     ],
   }
   const base = `/${role}`
