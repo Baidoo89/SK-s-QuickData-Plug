@@ -18,6 +18,7 @@ import { OrderTimelineDialog } from "@/components/orders/order-timeline-dialog"
 import { formatGhanaCedis } from "@/lib/currency"
 import { getDispatchMetaByOrderIds } from "@/lib/admin-order-dispatch"
 import { resolveOrderRecipientPhone } from "@/lib/order-recipient"
+import { PageHeader } from "@/components/ui/page-header"
 
 type OrderFilters = {
   status?: string
@@ -143,27 +144,7 @@ export default async function AdminOrdersPage(
 
   return (
     <div className="portal-page space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-primary">Read-only audit</p>
-          <h2 className="mb-1 text-2xl font-bold tracking-tight md:text-3xl">Order Activity</h2>
-          <p className="text-muted-foreground max-w-xl">
-            Platform-wide visibility into tenant order flow. Subscriber admins handle fulfillment status changes from their own dashboard.
-          </p>
-        </div>
-        <div className="grid w-full gap-2 sm:grid-cols-2 md:w-auto">
-          <Link href="/admin/orders?dispatch=MANUAL">
-            <Button variant="outline" className="w-full text-xs">Manual Dispatch</Button>
-          </Link>
-          <Link href="/admin/orders?dispatch=API">
-            <Button variant="outline" className="w-full text-xs">API Dispatch</Button>
-          </Link>
-        </div>
-      </div>
-
-      <div className="status-info rounded-md border px-4 py-3 text-sm">
-        Superadmin order pages are intentionally read-only. Use them to audit tenant activity, spot risk, and verify queue health without operating tenant orders directly.
-      </div>
+      <PageHeader eyebrow="Commerce" title="Orders" description="Read-only order audit." actions={<div className="grid w-full gap-2 sm:grid-cols-2 md:w-auto"><Button asChild variant="outline" size="sm"><Link href="/admin/orders?dispatch=MANUAL">Manual</Link></Button><Button asChild variant="outline" size="sm"><Link href="/admin/orders?dispatch=API">API</Link></Button></div>} />
 
       <Card className="premium-surface overflow-hidden rounded-lg">
         <CardHeader className="border-b border-border/70 bg-muted/20">
@@ -247,10 +228,7 @@ export default async function AdminOrdersPage(
             <p className="py-8 text-center text-sm text-muted-foreground">No orders found.</p>
           ) : (
             <div className="space-y-2">
-              <div className="px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                Orders table
-              </div>
-              <div className="grid gap-3 xl:hidden lg:grid-cols-2">
+              <div className="divide-y xl:hidden">
                 {orders.map((order) => {
                   const buyerName = order.customer?.name || "Guest Customer"
                   const recipientPhone = resolveOrderRecipientPhone(order)
@@ -258,45 +236,7 @@ export default async function AdminOrdersPage(
                   const itemLabel = order.items
                     .map((item: AdminOrderItemRow) => item.product.name.match(/\b\d+(?:\.\d+)?\s?(?:GB|MB|KB|TB)\b/i)?.[0].replace(/\s+/g, "").toUpperCase() ?? item.product.name)
                     .join(", ")
-                  return (
-                    <div key={order.id} className="rounded-lg border border-border/70 bg-background/80 p-3 text-sm shadow-sm">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="font-mono text-xs font-semibold">{order.publicOrderCode || order.id.slice(-8)}</p>
-                          <p className="truncate font-medium">{orgName}</p>
-                          <p className="text-xs text-muted-foreground">{format(order.createdAt, "MMM d, yyyy")}</p>
-                        </div>
-                        <Badge
-                          variant={order.status === "COMPLETED" ? "secondary" : order.status === "FAILED" ? "destructive" : "outline"}
-                          className={statusBadgeClass(order.status)}
-                        >
-                          {order.status}
-                        </Badge>
-                      </div>
-                      <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                        <div>
-                          <p className="truncate font-medium text-foreground">{buyerName}</p>
-                          <p>Buyer</p>
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">{recipientPhone || "N/A"}</p>
-                          <p>Phone</p>
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">{order.dispatch?.network || "-"}</p>
-                          <p>Network</p>
-                        </div>
-                        <div>
-                          <p className="font-semibold text-foreground">{formatGhanaCedis(order.total)}</p>
-                          <p>Total</p>
-                        </div>
-                      </div>
-                      {itemLabel ? <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{itemLabel}</p> : null}
-                      <div className="mt-3">
-                        <OrderTimelineDialog orderId={order.id} endpointBase="/api/admin/orders" />
-                      </div>
-                    </div>
-                  )
+                  return <div key={order.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3 text-sm"><div className="min-w-0"><p className="font-mono text-xs font-semibold">{order.publicOrderCode || order.id.slice(-8)}</p><p className="truncate text-xs font-medium">{orgName} · {buyerName}</p><p className="truncate text-[11px] text-muted-foreground">{recipientPhone || "No phone"}{order.dispatch?.network ? ` · ${order.dispatch.network}` : ""} · {format(order.createdAt, "MMM d")}</p>{itemLabel ? <p className="truncate text-[11px] text-muted-foreground">{itemLabel}</p> : null}</div><div className="flex shrink-0 flex-col items-end gap-1"><Badge variant={order.status === "COMPLETED" ? "secondary" : order.status === "FAILED" ? "destructive" : "outline"} className={statusBadgeClass(order.status)}>{order.status}</Badge><span className="text-sm font-semibold">{formatGhanaCedis(order.total)}</span><OrderTimelineDialog orderId={order.id} endpointBase="/api/admin/orders" /></div></div>
                 })}
               </div>
 

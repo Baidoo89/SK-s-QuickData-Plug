@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { EmptyState } from "@/components/ui/empty-state"
 import { MetricCard } from "@/components/ui/metric-card"
+import { PageHeader } from "@/components/ui/page-header"
 
 function parseOrderIds(value: string) {
   try {
@@ -68,21 +69,16 @@ export default async function AdminPaymentsPage() {
 
   return (
     <div className="portal-page space-y-6">
-      <div>
-        <h2 className="mb-1 text-2xl font-bold tracking-tight md:text-3xl">Storefront Payments</h2>
-        <p className="max-w-2xl text-muted-foreground">
-          Platform oversight of subscriber-owned Paystack storefront transactions. Funds settle to subscribers.
-        </p>
-      </div>
+      <PageHeader eyebrow="Commerce" title="Payments" description="Storefront payment audit." />
 
       <div className="grid min-w-0 gap-4 md:grid-cols-2 2xl:grid-cols-4">
-        <MetricCard label="Successful" value={totals.success} description="Verified storefront collections." icon={CheckCircle2} tone="success" />
-        <MetricCard label="Pending" value={totals.pending} description="Initialized or awaiting provider confirmation." icon={Clock3} tone="warning" />
-        <MetricCard label="Failed" value={totals.failed} description="Provider failures or abandoned payments." icon={XCircle} tone="destructive" />
+        <MetricCard label="Successful" value={totals.success} description="Completed" icon={CheckCircle2} tone="success" />
+        <MetricCard label="Pending" value={totals.pending} description="Awaiting confirmation" icon={Clock3} tone="warning" />
+        <MetricCard label="Failed" value={totals.failed} description="Unsuccessful" icon={XCircle} tone="destructive" />
         <MetricCard
           label="Subscriber Revenue"
           value={formatGhanaCedis(totals.revenue)}
-          description="Settled to subscriber-owned Paystack accounts."
+          description="Completed volume"
           icon={CircleDollarSign}
           tone="primary"
         />
@@ -90,7 +86,7 @@ export default async function AdminPaymentsPage() {
 
       <Card className="premium-surface overflow-hidden rounded-lg">
         <CardHeader className="border-b border-border/70 bg-muted/20">
-          <CardTitle className="text-lg">Recent Storefront Payments</CardTitle>
+          <CardTitle className="text-sm">Payment list</CardTitle>
         </CardHeader>
         <CardContent>
           {payments.length === 0 ? (
@@ -101,45 +97,11 @@ export default async function AdminPaymentsPage() {
             />
           ) : (
             <>
-          <div className="grid gap-3 xl:hidden lg:grid-cols-2">
+          <div className="divide-y xl:hidden">
             {payments.map((payment) => {
               const orderIds = parseOrderIds(payment.orderIds)
               return (
-                <div key={payment.id} className="rounded-lg border border-border/70 bg-background/80 p-3 text-sm shadow-sm">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold">{orgById.get(payment.organizationId) || payment.organizationId.slice(-8)}</p>
-                      <p className="font-mono text-[11px] text-muted-foreground">{payment.reference}</p>
-                    </div>
-                    <Badge variant="outline" className={paymentBadgeClass(payment.status)}>
-                      {payment.status}
-                    </Badge>
-                  </div>
-                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                    <div>
-                      <p className="font-medium text-foreground">{format(payment.createdAt, "MMM d, yyyy HH:mm")}</p>
-                      <p>Created</p>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-foreground">{formatGhanaCedis(payment.amount)}</p>
-                      <p>Amount</p>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="font-medium text-foreground">{payment.paidAt ? format(payment.paidAt, "MMM d, yyyy HH:mm") : "-"}</p>
-                      <p>Paid at</p>
-                    </div>
-                  </div>
-                  {orderIds.length > 0 ? (
-                    <div className="mt-3 flex flex-wrap gap-1">
-                      {orderIds.slice(0, 4).map((orderId) => (
-                        <Link key={orderId} href={`/admin/orders?q=${encodeURIComponent(orderId.slice(-8))}`}>
-                          <Badge variant="secondary" className="font-mono text-[10px]">{orderId.slice(-8)}</Badge>
-                        </Link>
-                      ))}
-                      {orderIds.length > 4 ? <span className="text-xs text-muted-foreground">+{orderIds.length - 4}</span> : null}
-                    </div>
-                  ) : null}
-                </div>
+                <div key={payment.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3 text-sm"><div className="min-w-0"><p className="truncate font-semibold">{orgById.get(payment.organizationId) || payment.organizationId.slice(-8)}</p><p className="truncate font-mono text-[11px] text-muted-foreground">{payment.reference}</p><p className="text-[11px] text-muted-foreground">{format(payment.createdAt, "MMM d, yyyy HH:mm")}{payment.paidAt ? ` · paid ${format(payment.paidAt, "MMM d")}` : ""}</p></div><div className="flex shrink-0 flex-col items-end gap-1"><Badge variant="outline" className={paymentBadgeClass(payment.status)}>{payment.status}</Badge><span className="font-semibold">{formatGhanaCedis(payment.amount)}</span>{orderIds.length > 0 ? <Link href={`/admin/orders?q=${encodeURIComponent(orderIds[0].slice(-8))}`} className="text-[11px] text-primary hover:underline">View order</Link> : null}</div></div>
               )
             })}
           </div>

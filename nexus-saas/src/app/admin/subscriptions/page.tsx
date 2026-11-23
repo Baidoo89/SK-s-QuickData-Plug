@@ -1,6 +1,6 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import { CreditCard, Layers3, ReceiptText, Store, Users } from "lucide-react"
+import { CreditCard, Layers3, ReceiptText } from "lucide-react"
 import { auth } from "@/auth"
 import { db } from "@/lib/db"
 import { formatGhanaCedis } from "@/lib/currency"
@@ -296,40 +296,6 @@ export default async function AdminSubscriptionsPage(
           tone="info"
         />
       </div>
-
-      <Card className="border-primary/20 bg-primary/5">
-        <CardHeader>
-          <CardTitle className="text-base">Pricing Ownership Rule</CardTitle>
-          <p className="max-w-3xl text-sm text-muted-foreground">
-            Superadmin controls only SaaS plan pricing and subscription access. Subscriber bundle prices, storefront prices, agent margins, reseller margins, wallets, and Paystack settlement stay inside each tenant workspace.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
-              <div className="flex items-center gap-2 text-sm font-semibold">
-                <CreditCard className="h-4 w-4 text-primary" />
-                Platform-owned
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">Plans, subscription status, platform billing collections.</p>
-            </div>
-            <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
-              <div className="flex items-center gap-2 text-sm font-semibold">
-                <Store className="h-4 w-4 text-primary" />
-                Subscriber-owned
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">Storefront prices, customer revenue, Paystack settlement, product margins.</p>
-            </div>
-            <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
-              <div className="flex items-center gap-2 text-sm font-semibold">
-                <Users className="h-4 w-4 text-primary" />
-                Tenant hierarchy
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">Agent and reseller pricing stays under the subscriber organization.</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>

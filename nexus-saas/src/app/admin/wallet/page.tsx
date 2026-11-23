@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Activity, Eye, WalletCards } from "lucide-react"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -75,27 +75,27 @@ export default function AdminWalletPage() {
 
   return (
     <div className="portal-page space-y-6">
-      <PageHeader title="Wallet activity" description="Read-only wallet oversight across the platform." />
+      <PageHeader eyebrow="Finance" title="Wallet" description="Platform wallet audit." />
 
       <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3">
         <MetricCard
-          label="Recorded Wallet Credits"
+          label="Balance"
           value={formatGhanaCedis(balance)}
-          description="Successful transactions in the current oversight scope."
+          description="Successful credits"
           icon={WalletCards}
           tone="success"
         />
         <MetricCard
-          label="Transactions Loaded"
+          label="Transactions"
           value={transactions.length}
-          description={`${successfulTransactions} successful, ${pendingTransactions} pending.`}
+          description={`${successfulTransactions} successful · ${pendingTransactions} pending`}
           icon={Activity}
           tone="info"
         />
         <MetricCard
-          label="Operating Model"
-          value="Oversight"
-          description="Subscribers control their own Paystack settlement; this console does not custody tenant revenue."
+          label="Scope"
+          value="Audit"
+          description="Read-only"
           icon={Eye}
           tone="muted"
         />
@@ -103,10 +103,7 @@ export default function AdminWalletPage() {
 
       <Card className="premium-surface overflow-hidden rounded-lg">
         <CardHeader className="border-b border-border/70 bg-muted/20">
-          <CardTitle className="text-sm font-semibold">Wallet Transactions</CardTitle>
-          <CardDescription className="text-xs">
-            Search user, method, performer, or status across recent wallet activity.
-          </CardDescription>
+          <CardTitle className="text-sm font-semibold">Transactions</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-xs">
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
@@ -135,45 +132,14 @@ export default function AdminWalletPage() {
             </div>
           </div>
 
-          <div className="grid gap-3 xl:hidden lg:grid-cols-2">
+          <div className="divide-y xl:hidden">
             {loading ? (
               <p className="py-6 text-center text-xs text-muted-foreground">Loading wallet transactions...</p>
             ) : transactions.length === 0 ? (
               <p className="py-6 text-center text-xs text-muted-foreground">No transactions found.</p>
             ) : (
               transactions.map((tx) => (
-                <div key={tx.id} className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-sm">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold">{tx.user?.name || tx.user?.email || "Unknown"}</p>
-                      <p className="break-all text-[11px] text-muted-foreground">{tx.user?.email || "-"}</p>
-                    </div>
-                    <Badge
-                      variant={tx.status === "success" ? "secondary" : tx.status === "failed" ? "destructive" : "outline"}
-                      className={statusBadgeClass(tx.status)}
-                    >
-                      {tx.status}
-                    </Badge>
-                  </div>
-                  <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">{formatGhanaCedis(tx.amount)}</p>
-                      <p>Amount</p>
-                    </div>
-                    <div>
-                      <p className="font-medium uppercase text-foreground">{tx.method}</p>
-                      <p>Method</p>
-                    </div>
-                    <div>
-                      <p className="text-foreground">{new Date(tx.createdAt).toLocaleDateString()}</p>
-                      <p>Date</p>
-                    </div>
-                    <div>
-                      <p className="truncate text-foreground">{tx.performedByEmail || "-"}</p>
-                      <p>Performed by</p>
-                    </div>
-                  </div>
-                </div>
+                <div key={tx.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3 text-sm"><div className="min-w-0"><p className="truncate font-semibold">{tx.user?.name || tx.user?.email || "Unknown"}</p><p className="truncate text-[11px] text-muted-foreground">{tx.method} · {new Date(tx.createdAt).toLocaleDateString()}</p><p className="truncate text-[11px] text-muted-foreground">{tx.performedByEmail || "No performer"}</p></div><div className="flex shrink-0 flex-col items-end gap-1"><Badge variant={tx.status === "success" ? "secondary" : tx.status === "failed" ? "destructive" : "outline"} className={statusBadgeClass(tx.status)}>{tx.status}</Badge><span className="font-semibold">{formatGhanaCedis(tx.amount)}</span></div></div>
               ))
             )}
           </div>

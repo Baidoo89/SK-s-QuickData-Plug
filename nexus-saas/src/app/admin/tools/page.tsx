@@ -83,31 +83,29 @@ export default async function AdminToolsPage() {
   return (
     <div className="portal-page space-y-6">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-primary">Diagnostics</p>
-        <h2 className="text-2xl font-bold tracking-tight">Platform Diagnostics</h2>
-        <p className="text-sm text-muted-foreground">
-          Read-only checks for launch gaps, product readiness, and stale tenant operations that need follow-up.
-        </p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-primary">Platform</p>
+        <h2 className="text-2xl font-bold tracking-tight">Checks</h2>
+        <p className="text-sm text-muted-foreground">Launch, stock, and stale-order checks.</p>
       </div>
 
       <div className="grid min-w-0 gap-4 md:grid-cols-3">
-        <MetricCard label="Tenant Launch Gaps" value={tenantGaps.length} description="Inactive, unsubscribed, or empty product catalogs." icon={Building2} tone={tenantGaps.length > 0 ? "warning" : "success"} />
-        <MetricCard label="Zero Stock" value={zeroStockProducts.length} description="Active products needing review" icon={PackageX} tone={zeroStockProducts.length > 0 ? "warning" : "success"} />
-        <MetricCard label="Stale Pending" value={pendingOrders.length} description="Pending orders older than 30 days" icon={AlertTriangle} tone={pendingOrders.length > 0 ? "destructive" : "success"} />
+        <MetricCard label="Launch gaps" value={tenantGaps.length} description="Needs setup" icon={Building2} tone={tenantGaps.length > 0 ? "warning" : "success"} />
+        <MetricCard label="Zero stock" value={zeroStockProducts.length} description="Active products" icon={PackageX} tone={zeroStockProducts.length > 0 ? "warning" : "success"} />
+        <MetricCard label="Stale orders" value={pendingOrders.length} description="Pending 30+ days" icon={AlertTriangle} tone={pendingOrders.length > 0 ? "destructive" : "success"} />
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between text-base">
-            Tenant Launch Gaps
+            Launch gaps
             <Badge variant={tenantGaps.length > 0 ? "outline" : "secondary"}>{tenantGaps.length}</Badge>
           </CardTitle>
           <p className="text-xs text-muted-foreground">
-            Tenants that may need Superadmin follow-up before they can sell reliably.
+            Businesses that need setup.
           </p>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="grid gap-3 p-4 xl:hidden lg:grid-cols-2">
+          <div className="divide-y xl:hidden">
             {tenantGaps.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">No tenant launch gaps found.</p>
             ) : (
@@ -121,7 +119,7 @@ export default async function AdminToolsPage() {
                 ].filter((signal): signal is string => Boolean(signal))
 
                 return (
-                  <div key={org.id} className="rounded-lg border border-border/70 bg-background/80 p-3 text-sm shadow-sm">
+                  <div key={org.id} className="p-3 text-sm">
                     <p className="truncate font-semibold">{org.name}</p>
                     <p className="font-mono text-xs text-muted-foreground">/{org.slug}</p>
                     <div className="mt-3 flex flex-wrap gap-1">
@@ -189,17 +187,17 @@ export default async function AdminToolsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between text-base">
-            Active Products With Zero Stock
+            Zero-stock products
             <Badge variant={zeroStockProducts.length > 0 ? "outline" : "secondary"}>{zeroStockProducts.length}</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="grid gap-3 p-4 xl:hidden lg:grid-cols-2">
+          <div className="divide-y xl:hidden">
             {zeroStockProducts.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">No zero-stock active products.</p>
             ) : (
               zeroStockProducts.map((product) => (
-                <div key={product.id} className="rounded-lg border border-border/70 bg-background/80 p-3 text-sm shadow-sm">
+                <div key={product.id} className="p-3 text-sm">
                   <p className="font-semibold">{product.name}</p>
                   <p className="text-xs text-muted-foreground">{product.organization?.name ?? "-"}</p>
                   <div className="mt-3 flex flex-wrap gap-1">
@@ -247,17 +245,17 @@ export default async function AdminToolsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between text-base">
-            Pending Orders Older Than 30 Days
+            Stale pending orders
             <Badge variant={pendingOrders.length > 0 ? "destructive" : "secondary"}>{pendingOrders.length}</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="grid gap-3 p-4 xl:hidden lg:grid-cols-2">
+          <div className="divide-y xl:hidden">
             {pendingOrders.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">No stale pending orders.</p>
             ) : (
               pendingOrders.map((order) => (
-                <div key={order.id} className="rounded-lg border border-border/70 bg-background/80 p-3 text-sm shadow-sm">
+                <div key={order.id} className="p-3 text-sm">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-mono text-xs font-semibold">#{order.id.slice(0, 10)}</p>

@@ -99,10 +99,8 @@ export default async function AdminSystemPage() {
     <div className="portal-page space-y-4">
       <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">System Health</h2>
-          <p className="max-w-2xl text-sm text-muted-foreground">
-            Review platform scale, production configuration, and recent audit activity across all tenants.
-          </p>
+          <h2 className="text-2xl font-bold tracking-tight">Health</h2>
+          <p className="max-w-2xl text-sm text-muted-foreground">Readiness, scale, and audit activity.</p>
         </div>
         <Badge
           variant={productionReady ? "secondary" : "outline"}
@@ -128,13 +126,11 @@ export default async function AdminSystemPage() {
         <CardHeader>
           <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div>
-              <CardTitle>Production Readiness</CardTitle>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Required checks should be green before launch. Optional checks improve operations but do not block manual-first selling.
-              </p>
+              <CardTitle>Readiness</CardTitle>
+              <p className="mt-1 text-sm text-muted-foreground">Required configuration checks.</p>
             </div>
             <div className="text-xs text-muted-foreground">
-              Optional ready: {optionalReady}/{optionalItems.length}
+              Optional: {optionalReady}/{optionalItems.length}
             </div>
           </div>
         </CardHeader>
@@ -172,7 +168,7 @@ export default async function AdminSystemPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent Audit Logs</CardTitle>
+          <CardTitle>Audit log</CardTitle>
         </CardHeader>
         <CardContent className="overflow-x-hidden p-0">
           <div className="grid gap-3 p-4 xl:hidden lg:grid-cols-2">
