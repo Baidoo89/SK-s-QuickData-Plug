@@ -50,6 +50,7 @@ export default async function DashboardPage() {
   
   let storeUrl = "#";
   let revenueToday = 0;
+  let allTimeRevenue = 0;
   let profitToday = 0;
   let ordersToday = 0;
   let pendingManualOrders = 0;
@@ -394,6 +395,7 @@ export default async function DashboardPage() {
 
         completedOrdersData.forEach((order) => {
           const date = new Date(order.createdAt);
+          allTimeRevenue += order.total;
 
           if (date >= startOfToday) {
             revenueToday += order.total;
@@ -541,7 +543,7 @@ export default async function DashboardPage() {
         </Card>
       ) : null}
 
-      <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-4">
         <MetricCard
           label="Revenue"
           value={formatGhanaCedis(revenueToday)}
@@ -562,7 +564,13 @@ export default async function DashboardPage() {
           description={`${pendingManualOrders} pending, ${processingManualOrders} processing`}
           icon={Wrench}
           tone={pendingManualOrders > 0 ? "warning" : "success"}
-          className="col-span-2 sm:col-span-1"
+        />
+        <MetricCard
+          label="All-time revenue"
+          value={formatGhanaCedis(allTimeRevenue)}
+          description="Completed sales"
+          icon={CreditCard}
+          tone="info"
         />
       </div>
 
