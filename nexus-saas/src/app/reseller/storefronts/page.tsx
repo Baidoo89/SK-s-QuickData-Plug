@@ -1,6 +1,6 @@
 import { auth } from "@/auth"
 import { db } from "@/lib/db"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { ShareLinksCard } from "@/components/storefront/share-links-card"
 import { PortalAccessMessage } from "@/components/access/portal-access-message"
 import { getOrCreateResellerStorefrontLink } from "@/lib/storefront-links"
@@ -20,7 +20,7 @@ export default async function ResellerStorefrontsPage() {
       parentAgentId: true,
       name: true,
       email: true,
-      organization: { select: { name: true, slug: true } },
+      organization: { select: { slug: true } },
     },
   })
 
@@ -45,53 +45,35 @@ export default async function ResellerStorefrontsPage() {
 
   const storefrontLinks = [
     {
-      label: "Your customer shop link",
+      label: "Customer shop",
       path: resellerStorePath,
-      description: user.parentAgentId
-        ? "Share this with customers. Your prices and profit tracking apply here."
-        : "Your shop link needs agent linkage before sharing.",
     },
   ]
 
   return (
-    <div className="portal-page space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Shop Links</h1>
-        <p className="text-sm text-muted-foreground">
-          Share your customer link and track reseller sales.
-        </p>
+    <div className="portal-page space-y-4">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Shop link</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Share your customer shop.</p>
       </div>
 
-      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:max-w-md sm:gap-3">
         <Card className="premium-surface border-0">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Business</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-lg font-semibold">{user.organization.name}</p>
+          <CardContent className="p-3">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Orders</p>
+            <p className="mt-1 text-xl font-bold">{resellerOrderCount}</p>
           </CardContent>
         </Card>
         <Card className="premium-surface border-0">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Your orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-lg font-semibold">{resellerOrderCount}</p>
-          </CardContent>
-        </Card>
-        <Card className="premium-surface border-0">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Completed orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-lg font-semibold">{resellerCompletedOrderCount}</p>
+          <CardContent className="p-3">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Completed</p>
+            <p className="mt-1 text-xl font-bold">{resellerCompletedOrderCount}</p>
           </CardContent>
         </Card>
       </div>
 
       <ShareLinksCard
-        title="Shareable shop links"
-        description="Customers see your shop name and link. Website API links stay separate."
+        title="Link"
         links={storefrontLinks}
       />
 
