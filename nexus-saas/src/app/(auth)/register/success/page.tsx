@@ -3,7 +3,7 @@
 import { Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { Building2, CheckCircle2, Mail, ShieldCheck, UserRound, UsersRound } from "lucide-react"
+import { Building2, CheckCircle2, Mail, UserRound, UsersRound } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,12 +14,12 @@ function getContent(type: AccountType) {
   if (type === "AGENT") {
     return {
       title: "Agent request submitted",
-      description: "Verify your email, then wait for the business owner to approve you.",
+      description: "Verify email, then wait for owner approval.",
       icon: UserRound,
       steps: [
-        "Open the verification link sent to your email.",
-        "The business owner reviews your request.",
-        "After approval, sign in.",
+        "Verify your email",
+        "Wait for approval",
+        "Sign in",
       ],
     }
   }
@@ -27,24 +27,24 @@ function getContent(type: AccountType) {
   if (type === "RESELLER") {
     return {
       title: "Reseller request submitted",
-      description: "Verify your email, then wait for your agent to approve your reseller account.",
+      description: "Verify email, then wait for agent approval.",
       icon: UsersRound,
       steps: [
-        "Open the verification link sent to your email.",
-        "Your parent agent reviews your request.",
-        "After approval, sign in and use the reseller dashboard.",
+        "Verify your email",
+        "Wait for approval",
+        "Sign in",
       ],
     }
   }
 
   return {
     title: "Business account created",
-    description: "Verify your email first. After login, choose a subscription plan before selling.",
+    description: "Verify email, then choose a plan.",
     icon: Building2,
     steps: [
-      "Open the verification link sent to your email.",
-      "Sign in to your dashboard.",
-      "Choose a plan, then add products, prices, and Paystack.",
+      "Verify your email",
+      "Sign in",
+      "Choose a plan",
     ],
   }
 }
@@ -70,7 +70,7 @@ function SignupSuccessCard() {
       <CardContent className="space-y-3">
         <div className="status-info flex gap-3 rounded-md border px-3 py-2 text-sm">
           <Mail className="mt-0.5 h-4 w-4 shrink-0" />
-          <p>Verify your email before signing in.</p>
+          <p>Check your email.</p>
         </div>
         <div className="space-y-2">
           {content.steps.map((step, index) => (
@@ -81,10 +81,6 @@ function SignupSuccessCard() {
               <p className="text-muted-foreground">{step}</p>
             </div>
           ))}
-        </div>
-        <div className="flex items-start gap-2 rounded-lg border border-border/70 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-          <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <p>Your plan keeps the software active. Wallet funds are for orders.</p>
         </div>
       </CardContent>
       <CardFooter className="flex flex-col gap-3 sm:flex-row">

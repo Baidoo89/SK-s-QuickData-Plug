@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
-import { Building2, CheckCircle2, Eye, EyeOff, ShieldCheck } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
 
 function getRegisterErrorMessage(data: any) {
   if (data?.error?.details && typeof data.error.details === "object") {
@@ -101,39 +101,11 @@ export default function RegisterPage() {
   return (
     <Card className="premium-surface min-w-0 w-full overflow-hidden rounded-lg backdrop-blur-xl">
         <CardHeader className="space-y-1 border-b border-border/70 bg-muted/20">
-          <CardTitle className="text-2xl font-bold">Create your business account</CardTitle>
-          <CardDescription>
-            Start your own TechDalt business. You can add agents and resellers later.
-          </CardDescription>
+          <CardTitle className="text-center text-2xl font-bold">Create account</CardTitle>
+          <CardDescription className="text-center">Set up your business workspace.</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="rounded-lg border border-primary/30 bg-primary/10 p-3 text-sm text-foreground shadow-sm">
-              <p className="flex items-center gap-2 font-semibold">
-                <Building2 className="h-4 w-4 text-primary" />
-                New business account
-              </p>
-              <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
-                <p className="flex gap-2">
-                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-                  Own business setup
-                </p>
-                <p className="flex gap-2">
-                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-                  Connect your own Paystack
-                </p>
-                <p className="flex gap-2">
-                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-                  Invite agents and resellers later
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-3 rounded-lg border border-info/30 bg-info/10 px-3 py-2 text-xs text-info-foreground shadow-sm">
-              <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <p>Joining another seller? Use their invite link. This form creates your own business.</p>
-            </div>
-
+          <CardContent className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
               <Input
@@ -188,11 +160,8 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 disabled={isLoading}
               />
-              <p className="text-xs text-muted-foreground">
-                Optional for now. Email verification is required before login.
-              </p>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Input
@@ -215,7 +184,7 @@ export default function RegisterPage() {
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground">Use at least 8 characters.</p>
+              <p className="text-xs text-muted-foreground">8+ characters.</p>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">

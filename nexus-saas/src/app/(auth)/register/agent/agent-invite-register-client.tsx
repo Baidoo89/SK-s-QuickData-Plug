@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Building2, Eye, EyeOff, ShieldCheck } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -146,12 +146,10 @@ export default function AgentInviteRegisterClient({ initialTenant }: { initialTe
     <Card className="premium-surface w-full overflow-hidden rounded-lg backdrop-blur-xl">
       <CardHeader className="space-y-1 border-b border-border/70 bg-muted/20">
         <CardTitle className="text-2xl font-bold">
-          {inviteContext ? `Join ${inviteContext.organizationName} as an agent` : "Agent invite"}
+          {inviteContext ? `Join ${inviteContext.organizationName}` : "Agent invite"}
         </CardTitle>
         <CardDescription>
-          {inviteContext
-            ? "This account will be attached only to the business that invited you."
-            : "Open this page from your agent invite link."}
+          {inviteContext ? "Create your agent account." : "Open this page from your invite link."}
         </CardDescription>
       </CardHeader>
 
@@ -163,20 +161,7 @@ export default function AgentInviteRegisterClient({ initialTenant }: { initialTe
             </div>
           )}
 
-          {inviteContext && (
-              <div className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-foreground shadow-sm">
-              <p className="flex items-center gap-2 font-medium">
-                <Building2 className="h-4 w-4 text-primary" />
-                {inviteContext.organizationName}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Verify your email first. The business owner approves your access.
-              </p>
-              <p className="mt-2 text-[11px] font-medium uppercase tracking-wide text-primary">
-                Secure invite powered by TechDalt
-              </p>
-            </div>
-          )}
+          {inviteContext ? <div className="rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-foreground">{inviteContext.organizationName} · approval required</div> : null}
 
           {inviteError && (
               <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive shadow-sm">
@@ -184,11 +169,7 @@ export default function AgentInviteRegisterClient({ initialTenant }: { initialTe
             </div>
           )}
 
-            <div className="flex gap-3 rounded-lg border border-info/30 bg-info/10 px-3 py-2 text-xs text-info-foreground shadow-sm">
-            <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            <p>This invite joins an existing business. Use public signup only to create your own business.</p>
-          </div>
-
+          <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
             <Input
@@ -232,10 +213,9 @@ export default function AgentInviteRegisterClient({ initialTenant }: { initialTe
               onChange={handleChange}
               disabled={!canSubmit}
             />
-            <p className="text-xs text-muted-foreground">Optional. You can verify this later from your account page.</p>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="password">Password</Label>
             <div className="relative">
               <Input
@@ -259,7 +239,8 @@ export default function AgentInviteRegisterClient({ initialTenant }: { initialTe
                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
             </div>
-            <p className="text-xs text-muted-foreground">Use at least 8 characters.</p>
+            <p className="text-xs text-muted-foreground">8+ characters.</p>
+          </div>
           </div>
         </CardContent>
 
@@ -267,18 +248,7 @@ export default function AgentInviteRegisterClient({ initialTenant }: { initialTe
           <Button className="w-full" type="submit" disabled={!canSubmit}>
             {isLoading ? "Submitting..." : "Submit agent request"}
           </Button>
-          <div className="text-center text-sm text-muted-foreground">
-            Not joining this business?{" "}
-            <Link href="/register" className="underline underline-offset-4 hover:text-primary">
-              Create your own business
-            </Link>
-          </div>
-          <div className="text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link href="/login" className="underline underline-offset-4 hover:text-primary">
-              Log in
-            </Link>
-          </div>
+          <div className="text-center text-sm text-muted-foreground"><Link href="/register" className="underline underline-offset-4 hover:text-primary">Create a business</Link><span className="mx-2">·</span><Link href="/login" className="underline underline-offset-4 hover:text-primary">Log in</Link></div>
         </CardFooter>
       </form>
     </Card>

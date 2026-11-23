@@ -8,7 +8,7 @@ import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
 import { Eye, EyeOff } from "lucide-react"
 
@@ -116,23 +116,20 @@ export default function LoginPage() {
   return (
     <Card className="premium-surface min-w-0 w-full overflow-hidden rounded-lg backdrop-blur-xl">
       <CardHeader className="space-y-1 border-b border-border/70 bg-muted/20">
-        <CardTitle className="text-center text-2xl font-bold">Sign in to TechDalt</CardTitle>
-        <CardDescription className="text-center">
-          Access the right portal for your role.
-        </CardDescription>
+        <CardTitle className="text-center text-2xl font-bold">Sign in</CardTitle>
       </CardHeader>
       {verifyRequiredNotice ? (
         <div className="mx-6 mb-4 space-y-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm shadow-sm">
-          <p>Check your email and verify your account before signing in.</p>
+          <p>Verify your email before signing in.</p>
           <Button type="button" size="sm" variant="outline" className="h-8 bg-background text-xs" onClick={handleResendVerification} disabled={isResendingVerification}>
-            {isResendingVerification ? "Sending..." : "Resend verification email"}
+            {isResendingVerification ? "Sending..." : "Resend email"}
           </Button>
         </div>
       ) : null}
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">Email</Label>
             <Input 
               id="email" 
               name="email"
@@ -178,15 +175,15 @@ export default function LoginPage() {
             </div>
           </div>
           <Button className="w-full" type="submit" disabled={isLoading}>
-            {isLoading ? "Signing in..." : "Sign In"}
+            {isLoading ? "Signing in..." : "Sign in"}
           </Button>
         </CardContent>
       </form>
       <CardFooter className="flex flex-col space-y-2">
         <div className="text-sm text-center text-muted-foreground">
-          Don&apos;t have an account?{" "}
+          New here?{" "}
           <Link href="/register" className="text-primary hover:underline">
-            Sign up
+            Create account
           </Link>
         </div>
       </CardFooter>

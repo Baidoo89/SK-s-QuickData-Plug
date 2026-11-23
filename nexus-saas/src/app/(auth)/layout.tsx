@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Package2, ShieldCheck, WalletCards, Workflow } from "lucide-react"
+import { Package2 } from "lucide-react"
 
 export default function AuthLayout({
   children,
@@ -20,45 +20,13 @@ export default function AuthLayout({
             </Link>
 
             <div className="max-w-md space-y-4">
-              <p className="text-xs font-bold uppercase text-info">Data business software</p>
-              <h1 className="text-4xl font-extrabold leading-tight text-foreground">
-                Sell bundles, manage sellers, and process orders clearly.
-              </h1>
-              <p className="text-sm leading-6 text-muted-foreground">
-                Built for data businesses that need shop links, wallets, payments, and simple order tools.
-              </p>
-            </div>
-
-            <div className="grid gap-3 text-sm">
-              <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-background/50 px-4 py-3 shadow-sm">
-                <WalletCards className="h-4 w-4 text-success" />
-                <span className="text-muted-foreground">Keep subscriptions and wallets separate</span>
-              </div>
-              <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-background/50 px-4 py-3 shadow-sm">
-                <Workflow className="h-4 w-4 text-info" />
-                <span className="text-muted-foreground">Copy, claim, and deliver orders</span>
-              </div>
-              <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-background/50 px-4 py-3 shadow-sm">
-                <ShieldCheck className="h-4 w-4 text-warning" />
-                <span className="text-muted-foreground">Give each user the right access</span>
-              </div>
+              <p className="text-xs font-bold uppercase text-info">Data business platform</p>
+              <h1 className="text-4xl font-extrabold leading-tight text-foreground">Run your data business simply.</h1>
+              <p className="text-sm leading-6 text-muted-foreground">Sell bundles, manage orders, and grow your team.</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 text-xs">
-            <div className="rounded-lg border border-border/70 bg-background/40 p-3 shadow-sm">
-              <p className="text-lg font-extrabold text-foreground">4</p>
-              <p className="text-muted-foreground">Portals</p>
-            </div>
-            <div className="rounded-lg border border-border/70 bg-background/40 p-3 shadow-sm">
-              <p className="text-lg font-extrabold text-foreground">3</p>
-              <p className="text-muted-foreground">Plan tiers</p>
-            </div>
-            <div className="rounded-lg border border-border/70 bg-background/40 p-3 shadow-sm">
-              <p className="text-lg font-extrabold text-foreground">24/7</p>
-              <p className="text-muted-foreground">Order intake</p>
-            </div>
-          </div>
+          <p className="text-xs text-muted-foreground">One workspace for owners, agents, and resellers.</p>
         </section>
 
         <section className="flex w-full min-w-0 flex-col items-center justify-center gap-5">
