@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation"
-import { AlertCircle, CheckCircle2, CreditCard, FileText, Package, ShieldCheck } from "lucide-react"
+import { AlertCircle, CheckCircle2 } from "lucide-react"
 
 import { SimpleBuySectionsClient } from "@/components/storefront/simple-buy-sections-client"
-import { MetricCard } from "@/components/ui/metric-card"
 import { db } from "@/lib/db"
 import { getStoredOrganizationPaymentSettings } from "@/lib/organization-payment-settings"
 import { getResellerPricingProfileContext, resolveResellerBuyPrice } from "@/lib/reseller-pricing"
@@ -259,8 +258,6 @@ export default async function ShopPage(props: ShopPageProps) {
 
   const checkoutStatus = searchParams?.checkout
   const orderCount = Number(searchParams?.orders || 1)
-  const networkCount = new Set(bundles.map((bundle) => String(bundle.provider || "OTHER").toUpperCase())).size
-  const catalogCount = bundles.length + services.length
   const returnPath = `/shop/${encodeURIComponent(handle)}`
 
   return (
@@ -306,34 +303,18 @@ export default async function ShopPage(props: ShopPageProps) {
             </div>
             <div className="flex min-w-0 max-w-[calc(100vw-6rem)] flex-col">
               <span className="truncate text-sm sm:text-base md:text-lg">{data.sellerName}</span>
-              <span className="truncate text-[10px] font-medium uppercase tracking-wide text-muted-foreground sm:text-[11px]">
-                Official customer checkout
-              </span>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="border-b border-border bg-muted/25 py-6 md:py-14">
-        <div className="container min-w-0 space-y-6 sm:space-y-8">
-          <div className="min-w-0 max-w-3xl">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-primary">Official shop</p>
-            <h1 className="break-words text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl lg:text-5xl">
-              Buy data and services from {data.sellerName}
-            </h1>
-            <p className="mt-4 max-w-2xl break-words text-sm text-muted-foreground sm:text-base md:text-lg">
-              Choose a bundle or service, pay securely, and the seller receives your order.
-            </p>
-          </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            <MetricCard label="Bundles" value={bundles.length} description="Available data bundles" icon={Package} tone="primary" />
-            <MetricCard label="Services" value={services.length} description="Forms and requests" icon={FileText} tone="info" />
-            <MetricCard label="Payment" value={data.storeActive ? "Ready" : "Paused"} description="Secure Paystack checkout" icon={data.storeActive ? CreditCard : ShieldCheck} tone={data.storeActive ? "success" : "warning"} />
-          </div>
+      <div className="border-b border-border bg-muted/25 py-5">
+        <div className="container min-w-0">
+          <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Shop</h1>
         </div>
       </div>
 
-      <main className="container min-w-0 py-6 md:py-12">
+      <main className="container min-w-0 py-4 sm:py-6 md:py-8">
         <SimpleBuySectionsClient
           subscriberSlug={data.organization.slug}
           bundles={bundles}
@@ -345,11 +326,6 @@ export default async function ShopPage(props: ShopPageProps) {
           storeInactiveReason={data.storeInactiveReason}
         />
       </main>
-      <footer className="border-t border-border py-6">
-        <div className="container break-words text-center text-xs text-muted-foreground">
-          This shop is operated by {data.sellerName}. Payments are processed securely. {networkCount > 0 ? `${networkCount} network group${networkCount === 1 ? "" : "s"} available.` : catalogCount > 0 ? "Service checkout available." : ""}
-        </div>
-      </footer>
     </div>
   )
 }
