@@ -70,7 +70,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Commerce</p>
         <NavLink href="/admin/orders" label="Orders" icon={ShoppingCart} closeOnClick={mobile} />
         <NavLink href="/admin/payments" label="Payments" icon={CreditCard} closeOnClick={mobile} />
-        <NavLink href="/admin/wallet" label="Wallets" icon={Wallet} closeOnClick={mobile} />
+        <NavLink href="/admin/wallet" label="Wallet" icon={Wallet} closeOnClick={mobile} />
         <NavLink href="/admin/withdrawals" label="Withdrawals" icon={Wallet} closeOnClick={mobile} />
         <NavLink href="/admin/credit" label="Credit" icon={Wallet} closeOnClick={mobile} />
         <NavLink href="/admin/reconciliation" label="Review" icon={CreditCard} closeOnClick={mobile} />
@@ -79,7 +79,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div>
         <p className="portal-sidebar-section px-3 pb-1 pt-2 text-[11px] font-bold uppercase text-muted-foreground">Platform</p>
         <NavLink href="/admin/subscriptions" label="Plans" icon={CreditCard} closeOnClick={mobile} />
-        <NavLink href="/admin/tools" label="Tools" icon={Wrench} closeOnClick={mobile} />
+        <NavLink href="/admin/tools" label="Checks" icon={Wrench} closeOnClick={mobile} />
         <NavLink href="/admin/system" label="Health" icon={ServerCog} closeOnClick={mobile} />
         <NavLink href="/admin/settings" label="Settings" icon={Settings} closeOnClick={mobile} />
       </div>
