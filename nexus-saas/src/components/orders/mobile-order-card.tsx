@@ -5,6 +5,28 @@ import { Badge } from "@/components/ui/badge"
 import { OrderTimelineDialog } from "@/components/orders/order-timeline-dialog"
 import { formatGhanaCedis } from "@/lib/currency"
 
+export const MOBILE_ORDER_GRID_CLASS = "grid grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)_auto_auto_auto] items-center gap-2"
+
+type MobileOrderTableProps = {
+  children: ReactNode
+  label?: string
+}
+
+export function MobileOrderTable({ children, label = "Orders table" }: MobileOrderTableProps) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-border/70 bg-card/95" aria-label={label}>
+      <div className={`${MOBILE_ORDER_GRID_CLASS} border-b border-border/70 bg-muted/35 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground`}>
+        <span>Order</span>
+        <span>Customer</span>
+        <span>Status</span>
+        <span className="text-right">Total</span>
+        <span aria-hidden="true" />
+      </div>
+      <div className="divide-y divide-border/60">{children}</div>
+    </div>
+  )
+}
+
 type MobileOrderCardProps = {
   orderId: string
   code: string
@@ -55,29 +77,30 @@ export function MobileOrderCard({
   action,
 }: MobileOrderCardProps) {
   return (
-    <details className={`group rounded-lg border bg-card/95 shadow-sm ${selected ? "border-primary bg-primary/5" : "border-border/70"}`}>
-      <summary className="flex min-w-0 cursor-pointer list-none items-center gap-2 p-3 [&::-webkit-details-marker]:hidden">
-        {selectable ? (
-          <input
-            type="checkbox"
-            checked={selected}
-            disabled={disabled}
-            onChange={onSelect}
-            onClick={(event) => event.stopPropagation()}
-            className="h-4 w-4 shrink-0 rounded border-border disabled:opacity-40"
-            aria-label={`Select order ${code}`}
-          />
-        ) : null}
-        <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 items-center gap-2">
-            <p className="min-w-0 truncate font-mono text-xs font-semibold">{code}</p>
-            <Badge variant={statusVariant(status)} className="shrink-0 rounded-md text-[10px]">{status}</Badge>
+    <details className={`group ${selected ? "bg-primary/5" : "bg-card/95"}`}>
+      <summary className={`${MOBILE_ORDER_GRID_CLASS} min-w-0 cursor-pointer list-none px-3 py-3 text-xs outline-none transition-colors hover:bg-muted/20 focus-visible:bg-muted/25 [&::-webkit-details-marker]:hidden`}>
+        <div className="flex min-w-0 items-center gap-2">
+          {selectable ? (
+            <input
+              type="checkbox"
+              checked={selected}
+              disabled={disabled}
+              onChange={onSelect}
+              onClick={(event) => event.stopPropagation()}
+              className="h-4 w-4 shrink-0 rounded border-border disabled:opacity-40"
+              aria-label={`Select order ${code}`}
+            />
+          ) : null}
+          <div className="min-w-0">
+            <p className="truncate font-mono text-[11px] font-semibold">{code}</p>
+            <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{date}</p>
           </div>
-          <p className="mt-1 truncate text-xs text-muted-foreground">{customer} · {date}</p>
         </div>
-        <div className="shrink-0 text-right">
-          <p className="text-sm font-bold">{formatGhanaCedis(amount)}</p>
-          {profit !== undefined ? <p className={profit > 0 ? "text-[10px] font-medium text-primary" : "text-[10px] text-muted-foreground"}>{formatGhanaCedis(profit)} profit</p> : null}
+        <p className="min-w-0 truncate font-medium">{customer}</p>
+        <Badge variant={statusVariant(status)} className="max-w-[5.5rem] truncate rounded-md px-1.5 text-[10px]">{status}</Badge>
+        <div className="min-w-0 text-right">
+          <p className="text-xs font-bold">{formatGhanaCedis(amount)}</p>
+          {profit !== undefined ? <p className={profit > 0 ? "truncate text-[10px] font-medium text-primary" : "truncate text-[10px] text-muted-foreground"}>{formatGhanaCedis(profit)} profit</p> : null}
         </div>
         <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
       </summary>

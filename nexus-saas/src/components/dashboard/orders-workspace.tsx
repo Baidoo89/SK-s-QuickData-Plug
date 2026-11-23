@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { OrderStatusSelect } from "@/components/admin/order-status-select"
 import { OrderTimelineDialog } from "@/components/orders/order-timeline-dialog"
-import { MobileOrderCard } from "@/components/orders/mobile-order-card"
+import { MobileOrderCard, MobileOrderTable } from "@/components/orders/mobile-order-card"
 import { useToast } from "@/components/ui/use-toast"
 import { formatGhanaCedis } from "@/lib/currency"
 
@@ -451,7 +451,8 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
         </div>
       ) : null}
 
-      <div className="space-y-2 lg:hidden">
+      <div className="lg:hidden">
+        <MobileOrderTable>
         {rows.map((order) => {
           const editableStatus = canEditStatus(order)
           return (
@@ -477,6 +478,7 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
             />
           )
         })}
+        </MobileOrderTable>
       </div>
 
       <div className="hidden ops-table-surface min-w-0 max-w-full overflow-hidden rounded-lg lg:block">

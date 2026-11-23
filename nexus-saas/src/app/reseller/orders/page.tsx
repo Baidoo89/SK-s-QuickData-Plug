@@ -8,7 +8,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { OrderTimelineDialog } from "@/components/orders/order-timeline-dialog";
-import { MobileOrderCard } from "@/components/orders/mobile-order-card";
+import { MobileOrderCard, MobileOrderTable } from "@/components/orders/mobile-order-card";
 import { getStorefrontPaymentMap } from "@/lib/storefront-payment-map";
 import { PortalAccessMessage } from "@/components/access/portal-access-message";
 import { PageHeader } from "@/components/ui/page-header";
@@ -196,7 +196,8 @@ export default async function ResellerOrdersPage(
                 <div className="px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                   Orders table
                 </div>
-                <div className="space-y-2 lg:hidden">
+                <div className="lg:hidden">
+                  <MobileOrderTable>
                   {ordersWithPayment.map((order) => {
                     const date = new Date(order.createdAt);
                     const customerName = order.customer?.name || "Guest";
@@ -221,6 +222,7 @@ export default async function ResellerOrdersPage(
                       />
                     );
                   })}
+                  </MobileOrderTable>
                 </div>
                 <div className="hidden ops-table-surface table-scroll rounded-lg lg:block">
                   <Table className="min-w-[820px] text-xs">
