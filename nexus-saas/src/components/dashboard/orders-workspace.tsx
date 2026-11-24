@@ -354,7 +354,7 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
   }
 
   return (
-    <div className="portal-page max-w-full space-y-3 pb-24 md:pb-0">
+    <div className="portal-page max-w-full space-y-3">
       <div className="premium-surface min-w-0 rounded-lg p-3">
         <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <label className="flex items-center gap-2 text-sm font-medium">
@@ -395,6 +395,45 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
           </div>
         </details>
       </div>
+
+      {selectedRows.length > 0 ? (
+        <div className="premium-surface sticky top-16 z-30 max-w-full rounded-lg border p-3 shadow-lg backdrop-blur-xl" role="region" aria-label="Selected order actions" aria-live="polite">
+          <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+            <span className="font-semibold">
+              Active set: {selectedRows.length}
+            </span>
+            <div className="hidden flex-wrap gap-1 sm:flex">
+              <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800">{selectedPendingRows.length} pending</Badge>
+              <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-800">{selectedProcessingRows.length} processing</Badge>
+            </div>
+            <button type="button" className="rounded px-1 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => setSelected(new Set())}>
+              Clear set
+            </button>
+          </div>
+          <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-5">
+            <Button type="button" variant="outline" size="sm" className="border-amber-300 bg-amber-50 text-xs font-semibold text-amber-900 hover:bg-amber-100" onClick={() => bulkUpdate("PROCESSING")} disabled={savingStatus !== null || selectedPendingRows.length === 0}>
+              {savingStatus === "PROCESSING" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-4 w-4" />}
+              Claim Set
+            </Button>
+            <Button type="button" variant="outline" size="sm" className="border-blue-300 bg-blue-50 text-xs font-semibold text-blue-800 hover:bg-blue-100" onClick={() => copyOrders("selected")}>
+              <ClipboardCopy className="mr-2 h-4 w-4" />
+              Copy
+            </Button>
+            <Button type="button" variant="outline" size="sm" className="border-violet-300 bg-violet-50 text-xs font-semibold text-violet-800 hover:bg-violet-100" onClick={sendSelectedToApi} disabled={dispatchingApi}>
+              {dispatchingApi ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+              Auto
+            </Button>
+            <Button type="button" size="sm" className="bg-emerald-600 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700" onClick={() => bulkUpdate("COMPLETED")} disabled={savingStatus !== null}>
+              {savingStatus === "COMPLETED" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+              Deliver Set
+            </Button>
+            <Button type="button" variant="destructive" size="sm" className="text-xs font-semibold shadow-sm" onClick={() => bulkUpdate("FAILED")} disabled={savingStatus !== null}>
+              {savingStatus === "FAILED" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
+              Fail Set
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       {previewOpen ? (
         <div className="premium-surface rounded-lg p-3">
@@ -577,44 +616,6 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
         </div>
       </div>
 
-      {selectedRows.length > 0 ? (
-        <div className="premium-surface fixed inset-x-0 bottom-0 z-40 max-w-full border-t p-3 backdrop-blur md:left-auto md:right-6 md:bottom-6 md:w-[640px] md:rounded-lg md:border">
-          <div className="mb-2 flex items-center justify-between gap-3 text-sm">
-            <span className="font-semibold">
-              Active set: {selectedRows.length}
-            </span>
-            <div className="hidden flex-wrap gap-1 sm:flex">
-              <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800">{selectedPendingRows.length} pending</Badge>
-              <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-800">{selectedProcessingRows.length} processing</Badge>
-            </div>
-            <button type="button" className="text-xs text-muted-foreground" onClick={() => setSelected(new Set())}>
-              Clear set
-            </button>
-          </div>
-          <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-5">
-            <Button type="button" variant="outline" size="sm" className="border-amber-300 bg-amber-50 text-xs font-semibold text-amber-900 hover:bg-amber-100" onClick={() => bulkUpdate("PROCESSING")} disabled={savingStatus !== null || selectedPendingRows.length === 0}>
-              {savingStatus === "PROCESSING" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-4 w-4" />}
-              Claim Set
-            </Button>
-            <Button type="button" variant="outline" size="sm" className="border-blue-300 bg-blue-50 text-xs font-semibold text-blue-800 hover:bg-blue-100" onClick={() => copyOrders("selected")}>
-              <ClipboardCopy className="mr-2 h-4 w-4" />
-              Copy
-            </Button>
-            <Button type="button" variant="outline" size="sm" className="border-violet-300 bg-violet-50 text-xs font-semibold text-violet-800 hover:bg-violet-100" onClick={sendSelectedToApi} disabled={dispatchingApi}>
-              {dispatchingApi ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-              Auto
-            </Button>
-            <Button type="button" size="sm" className="bg-emerald-600 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700" onClick={() => bulkUpdate("COMPLETED")} disabled={savingStatus !== null}>
-              {savingStatus === "COMPLETED" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-              Deliver Set
-            </Button>
-            <Button type="button" variant="destructive" size="sm" className="text-xs font-semibold shadow-sm" onClick={() => bulkUpdate("FAILED")} disabled={savingStatus !== null}>
-              {savingStatus === "FAILED" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
-              Fail Set
-            </Button>
-          </div>
-        </div>
-      ) : null}
     </div>
   )
 }
