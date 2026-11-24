@@ -18,6 +18,7 @@ import { OrderTimelineDialog } from "@/components/orders/order-timeline-dialog"
 import { formatGhanaCedis } from "@/lib/currency"
 import { getDispatchMetaByOrderIds } from "@/lib/admin-order-dispatch"
 import { resolveOrderRecipientPhone } from "@/lib/order-recipient"
+import { getOrderStatusBadgeClass, getOrderStatusLabel } from "@/lib/order-status"
 import { PageHeader } from "@/components/ui/page-header"
 
 type OrderFilters = {
@@ -135,12 +136,7 @@ export default async function AdminOrdersPage(
   const ordersRaw = await getAdminOrders(filters)
   const orders = Array.isArray(ordersRaw) ? ordersRaw : []
 
-  function statusBadgeClass(orderStatus: string) {
-    if (orderStatus === "COMPLETED") return "status-success border"
-    if (orderStatus === "PENDING" || orderStatus === "PROCESSING") return "status-warning border"
-    if (orderStatus === "FAILED" || orderStatus === "PAYMENT_FAILED") return ""
-    return "status-info border"
-  }
+  const statusBadgeClass = (orderStatus: string) => getOrderStatusBadgeClass(orderStatus)
 
   return (
     <div className="portal-page space-y-6">
@@ -276,10 +272,10 @@ export default async function AdminOrdersPage(
                     <TableCell>{order.dispatch?.network || "-"}</TableCell>
                     <TableCell>
                       <Badge
-                        variant={order.status === "COMPLETED" ? "secondary" : order.status === "FAILED" ? "destructive" : "outline"}
+                        variant="outline"
                         className={statusBadgeClass(order.status)}
                       >
-                        {order.status}
+                        {getOrderStatusLabel(order.status)}
                       </Badge>
                     </TableCell>
                     <TableCell>

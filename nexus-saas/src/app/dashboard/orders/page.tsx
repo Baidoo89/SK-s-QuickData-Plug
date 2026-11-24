@@ -12,6 +12,7 @@ import { formatGhanaCedis } from "@/lib/currency"
 import { getDispatchMetaByOrderIds } from "@/lib/admin-order-dispatch"
 import { getOrderSourceLogMap, ORDER_SOURCE_LABELS, resolveOrderSource } from "@/lib/order-source"
 import { resolveOrderRecipientPhone } from "@/lib/order-recipient"
+import { getActiveManualOrderSets } from "@/lib/manual-order-sets"
 import { Clock, Download, ShoppingCart } from "lucide-react"
 
 type OrderFilters = {
@@ -27,13 +28,13 @@ type OrderFilters = {
 async function getOrders(filters: OrderFilters = {}) {
   try {
     const session = await auth()
-    if (!session?.user?.email) return []
+    if (!session?.user?.email) return { orders: [], organizationId: null as string | null }
 
     const user = await db.user.findUnique({
       where: { email: session.user.email },
     })
 
-    if (!user?.organizationId) return []
+    if (!user?.organizationId) return { orders: [], organizationId: null as string | null }
 
     const where: any = {
       organizationId: user.organizationId,
@@ -105,10 +106,10 @@ async function getOrders(filters: OrderFilters = {}) {
       enriched = enriched.filter((order) => order.source === filters.source)
     }
 
-    return enriched
+    return { orders: enriched, organizationId: user.organizationId }
   } catch (error) {
     console.error("Error loading orders", error)
-    return []
+    return { orders: [], organizationId: null as string | null }
   }
 }
 
@@ -128,8 +129,12 @@ export default async function OrdersPage(
 
   const filters: OrderFilters = { status, from, to, q, source, agentId, userId }
 
-  const ordersRaw = await getOrders(filters)
+  const orderResult = await getOrders(filters)
+  const ordersRaw = orderResult.orders
   const orders = Array.isArray(ordersRaw) ? ordersRaw : []
+  const initialClaimedSets = !status || status === "PROCESSING"
+    ? await getActiveManualOrderSets({ organizationId: orderResult.organizationId })
+    : []
 
   const query = new URLSearchParams()
   if (status) query.set("status", status)
@@ -292,7 +297,7 @@ export default async function OrdersPage(
               secondaryAction={hasFilters ? undefined : { label: "Manage Products", href: "/dashboard/products" }}
             />
           ) : (
-            <DashboardOrdersWorkspace rows={workspaceRows} />
+            <DashboardOrdersWorkspace rows={workspaceRows} initialClaimedSets={initialClaimedSets} />
           )}
         </CardContent>
       </Card>

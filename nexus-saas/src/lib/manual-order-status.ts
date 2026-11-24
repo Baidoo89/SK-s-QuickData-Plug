@@ -8,7 +8,7 @@ const allowedStatuses = new Set(["PENDING", "PROCESSING", "COMPLETED", ...revers
 export async function applyManualOrderStatus(input: {
   orderId: string; organizationId: string | null; status: string;
   actorId: string; actorName: string; action: string;
-  expectedStatuses?: string[]; manualOnly?: boolean
+  expectedStatuses?: string[]; manualOnly?: boolean; meta?: Record<string, unknown>
 }) {
   if (!allowedStatuses.has(input.status)) throw new Error("INVALID_ORDER_STATUS_TRANSITION")
   const result = await db.$transaction(async tx => {
@@ -31,7 +31,7 @@ export async function applyManualOrderStatus(input: {
       await reverseOrderWalletDebitInTransaction(tx, { orderId: existing.id, organizationId: existing.organizationId, reason })
       await reverseOrderProfitInTransaction(tx, { orderId: existing.id, organizationId: existing.organizationId, previousStatus: existing.status, reason })
     }
-    await tx.auditLog.create({ data: { actorId: input.actorId, actorName: input.actorName, action: input.action, targetType: "ORDER", targetId: existing.id, organizationId: existing.organizationId, meta: JSON.stringify({ previousStatus: existing.status, status: input.status }) } })
+    await tx.auditLog.create({ data: { actorId: input.actorId, actorName: input.actorName, action: input.action, targetType: "ORDER", targetId: existing.id, organizationId: existing.organizationId, meta: JSON.stringify({ previousStatus: existing.status, status: input.status, ...input.meta }) } })
     return { updated, changed: existing.status !== updated.status }
   }, { maxWait: 10000, timeout: 20000 })
   if (result?.changed) await notifyApiOrderStatus(result.updated.id, result.updated.status)

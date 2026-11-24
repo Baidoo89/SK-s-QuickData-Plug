@@ -14,6 +14,7 @@ import { PortalAccessMessage } from "@/components/access/portal-access-message"
 import { PageHeader } from "@/components/ui/page-header"
 import { formatGhanaCedis } from "@/lib/currency"
 import { resolveOrderRecipientPhone } from "@/lib/order-recipient"
+import { getOrderStatusBadgeClass, getOrderStatusLabel } from "@/lib/order-status"
 import { Store } from "lucide-react"
 
 type AgentOrderItemRow = {
@@ -57,13 +58,6 @@ type OrderFilters = {
   from?: string
   to?: string
   q?: string
-}
-
-function orderStatusBadgeClass(status: string) {
-  if (status === "COMPLETED") return "status-success border"
-  if (status === "PENDING" || status === "PROCESSING") return "status-warning border"
-  if (status === "FAILED" || status === "PAYMENT_FAILED") return ""
-  return "status-info border"
 }
 
 export default async function AgentOrdersPage(
@@ -334,18 +328,10 @@ export default async function AgentOrdersPage(
                           </TableCell>
                           <TableCell className="text-xs">
                               <Badge
-                                variant={
-                                  order.status === "COMPLETED"
-                                  ? "secondary"
-                                  : order.status === "PENDING" || order.status === "PROCESSING"
-                                  ? "outline"
-                                  : order.status === "FAILED"
-                                  ? "destructive"
-                                  : "outline"
-                                }
-                                className={orderStatusBadgeClass(order.status)}
+                                variant="outline"
+                                className={getOrderStatusBadgeClass(order.status)}
                             >
-                              {order.status}
+                              {getOrderStatusLabel(order.status)}
                             </Badge>
                           </TableCell>
                           <TableCell>

@@ -12,6 +12,7 @@ import { OrderTimelineDialog } from "@/components/orders/order-timeline-dialog"
 import { MobileOrderCard, MobileOrderTable } from "@/components/orders/mobile-order-card"
 import { useToast } from "@/components/ui/use-toast"
 import { formatGhanaCedis } from "@/lib/currency"
+import { getOrderStatusBadgeClass } from "@/lib/order-status"
 
 export type DashboardOrderRow = {
   id: string
@@ -36,12 +37,16 @@ export type DashboardOrderRow = {
 
 type Props = {
   rows: DashboardOrderRow[]
+  initialClaimedSets?: ClaimedSet[]
 }
 
 type ClaimedSet = {
   id: string
   label: string
   orderIds: string[]
+  pendingCount?: number
+  processingCount?: number
+  completedCount?: number
 }
 
 function formatDate(value: string) {
@@ -87,12 +92,6 @@ function canEditStatus(order: DashboardOrderRow) {
   return order.paymentStatus === "PAID" && !PAYMENT_LOCKED_STATUSES.has(order.status)
 }
 
-function statusTone(status: string) {
-  if (status === "COMPLETED") return "secondary"
-  if (status === "FAILED" || status === "PAYMENT_FAILED") return "destructive"
-  return "outline"
-}
-
 function getDisplayStatus(order: DashboardOrderRow) {
   if (order.paymentStatus === "FAILED") return "PAYMENT FAILED"
   if (order.paymentStatus === "PENDING") return "AWAITING PAYMENT"
@@ -100,14 +99,14 @@ function getDisplayStatus(order: DashboardOrderRow) {
   return order.status
 }
 
-export function DashboardOrdersWorkspace({ rows }: Props) {
+export function DashboardOrdersWorkspace({ rows, initialClaimedSets = [] }: Props) {
   const router = useRouter()
   const { toast } = useToast()
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [savingStatus, setSavingStatus] = useState<"PROCESSING" | "COMPLETED" | "FAILED" | null>(null)
   const [dispatchingApi, setDispatchingApi] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
-  const [claimedSets, setClaimedSets] = useState<ClaimedSet[]>([])
+  const [claimedSets, setClaimedSets] = useState<ClaimedSet[]>(initialClaimedSets)
 
   const actionableRows = useMemo(() => rows.filter((row) => row.actionable), [rows])
   const pendingRows = useMemo(() => actionableRows.filter((row) => row.status === "PENDING"), [actionableRows])
@@ -132,9 +131,15 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
     () =>
       claimedSets.map((set) => {
         const setRows = rows.filter((row) => set.orderIds.includes(row.id))
-        const processingCount = setRows.filter((row) => row.status === "PROCESSING").length
-        const pendingCount = setRows.filter((row) => row.status === "PENDING").length
-        const completedCount = setRows.filter((row) => row.status === "COMPLETED").length
+        const processingCount = setRows.length > 0
+          ? setRows.filter((row) => row.status === "PROCESSING").length
+          : set.processingCount ?? 0
+        const pendingCount = setRows.length > 0
+          ? setRows.filter((row) => row.status === "PENDING").length
+          : set.pendingCount ?? 0
+        const completedCount = setRows.length > 0
+          ? setRows.filter((row) => row.status === "COMPLETED").length
+          : set.completedCount ?? 0
 
         return {
           ...set,
@@ -202,12 +207,16 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
     keepSelectedIds,
     successDescription,
     removeClaimedSetId,
+    manualSetId,
+    manualSetLabel,
   }: {
     orderIds: string[]
     status: "PROCESSING" | "COMPLETED" | "FAILED"
     keepSelectedIds?: string[]
     successDescription?: string
     removeClaimedSetId?: string
+    manualSetId?: string
+    manualSetLabel?: string
   }) {
     setSavingStatus(status)
     try {
@@ -217,6 +226,7 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
         body: JSON.stringify({
           orderIds,
           status,
+          ...(manualSetId ? { manualSetId, manualSetLabel } : {}),
         }),
       })
 
@@ -271,23 +281,29 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
     if (!confirmed) return
 
     const orderIds = updateRows.map((row) => row.id)
-    const claimedSetId = `claimed-${Date.now()}`
+    const claimedSetId = status === "PROCESSING"
+      ? `manual-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+      : undefined
+    const claimedSetLabel = status === "PROCESSING" ? `Set ${claimedSets.length + 1}` : undefined
     const ok = await submitBulkStatus({
       orderIds,
       status,
       keepSelectedIds: status === "PROCESSING" ? orderIds : undefined,
       successDescription: status === "PROCESSING"
-        ? `${orderIds.length} claimed. This set stays selected and is saved below.`
+        ? `${orderIds.length} claimed. This set is now available in Processing sets.`
         : undefined,
+      manualSetId: claimedSetId,
+      manualSetLabel: claimedSetLabel,
     })
 
     if (ok && status === "PROCESSING") {
       setClaimedSets((current) => [
         ...current,
         {
-          id: claimedSetId,
-          label: `Set ${current.length + 1}`,
+          id: claimedSetId!,
+          label: claimedSetLabel!,
           orderIds,
+          processingCount: orderIds.length,
         },
       ])
     }
@@ -598,7 +614,7 @@ export function DashboardOrdersWorkspace({ rows }: Props) {
                       endpointBase="/api/dashboard/orders"
                     />
                   ) : (
-                    <Badge variant={statusTone(order.status)} className="rounded-md">{getDisplayStatus(order)}</Badge>
+                    <Badge variant="outline" className={`rounded-md ${getOrderStatusBadgeClass(getDisplayStatus(order))}`}>{getDisplayStatus(order)}</Badge>
                   )}
                 </TableCell>
                 <TableCell>

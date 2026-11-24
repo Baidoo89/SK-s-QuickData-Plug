@@ -4,6 +4,7 @@ import { ChevronDown } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { OrderTimelineDialog } from "@/components/orders/order-timeline-dialog"
 import { formatGhanaCedis } from "@/lib/currency"
+import { getOrderStatusBadgeClass, getOrderStatusLabel } from "@/lib/order-status"
 
 export const MOBILE_ORDER_GRID_CLASS = "grid grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)_auto_auto_auto] items-center gap-2"
 
@@ -49,12 +50,6 @@ type MobileOrderCardProps = {
   action?: ReactNode
 }
 
-function statusVariant(status: string): "secondary" | "destructive" | "outline" {
-  if (status === "COMPLETED" || status === "DELIVERED") return "secondary"
-  if (status.includes("FAILED") || status === "FAILED") return "destructive"
-  return "outline"
-}
-
 export function MobileOrderCard({
   orderId,
   code,
@@ -97,7 +92,7 @@ export function MobileOrderCard({
           </div>
         </div>
         <p className="min-w-0 truncate font-medium">{customer}</p>
-        <Badge variant={statusVariant(status)} className="max-w-[5.5rem] truncate rounded-md px-1.5 text-[10px]">{status}</Badge>
+        <Badge variant="outline" className={`max-w-[5.5rem] truncate rounded-md px-1.5 text-[10px] ${getOrderStatusBadgeClass(status)}`}>{getOrderStatusLabel(status)}</Badge>
         <div className="min-w-0 text-right">
           <p className="text-xs font-bold">{formatGhanaCedis(amount)}</p>
           {profit !== undefined ? <p className={profit > 0 ? "truncate text-[10px] font-medium text-primary" : "truncate text-[10px] text-muted-foreground"}>{formatGhanaCedis(profit)} profit</p> : null}

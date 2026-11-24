@@ -8,6 +8,8 @@ import { applyManualOrderStatus } from "@/lib/manual-order-status"
 const schema = z.object({
   orderIds: z.array(z.string().min(1)).min(1).max(200),
   status: z.enum(["PROCESSING", "COMPLETED", "FAILED", "CANCELLED", "REFUNDED"]),
+  manualSetId: z.string().trim().min(1).max(120).optional(),
+  manualSetLabel: z.string().trim().min(1).max(80).optional(),
 })
 
 const ALLOWED_CURRENT_STATUSES = new Set(["PENDING", "PROCESSING"])
@@ -54,7 +56,18 @@ export async function POST(req: Request) {
         continue
       }
 
-      const saved = await applyManualOrderStatus({ orderId: order.id, organizationId: order.organizationId, status: parsed.data.status, actorId: authResult.user.id, actorName: authResult.user.email, action: "ORDER_BULK_MANUAL_STATUS", expectedStatuses: ["PENDING", "PROCESSING"], manualOnly: true })
+      const claimingSet = parsed.data.status === "PROCESSING" && parsed.data.manualSetId
+      const saved = await applyManualOrderStatus({
+        orderId: order.id,
+        organizationId: order.organizationId,
+        status: parsed.data.status,
+        actorId: authResult.user.id,
+        actorName: authResult.user.email,
+        action: claimingSet ? "ORDER_MANUAL_CLAIMED" : "ORDER_BULK_MANUAL_STATUS",
+        expectedStatuses: ["PENDING", "PROCESSING"],
+        manualOnly: true,
+        meta: claimingSet ? { manualSetId: parsed.data.manualSetId, manualSetLabel: parsed.data.manualSetLabel } : undefined,
+      })
       if (!saved) { skipped += 1; continue }
 
       updated += 1
