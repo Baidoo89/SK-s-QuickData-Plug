@@ -202,7 +202,7 @@ export default async function ResellerOrdersPage(
                       <MobileOrderCard
                         key={order.id}
                         orderId={order.id}
-                        code={order.publicOrderCode || order.id.slice(-8)}
+                        code={order.publicOrderCode || order.id}
                         date={date.toLocaleString()}
                         customer={customerName}
                         phone={phone}

@@ -6,7 +6,7 @@ import { OrderTimelineDialog } from "@/components/orders/order-timeline-dialog"
 import { formatGhanaCedis } from "@/lib/currency"
 import { getOrderStatusBadgeClass, getOrderStatusLabel } from "@/lib/order-status"
 
-export const MOBILE_ORDER_GRID_CLASS = "grid grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)_auto_auto_auto] items-center gap-2"
+export const MOBILE_ORDER_GRID_CLASS = "grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.55fr)_auto_auto_auto] items-center gap-2"
 
 type MobileOrderTableProps = {
   children: ReactNode
@@ -18,7 +18,7 @@ export function MobileOrderTable({ children, label = "Orders table" }: MobileOrd
     <div className="overflow-hidden rounded-lg border border-border/70 bg-card/95" aria-label={label}>
       <div className={`${MOBILE_ORDER_GRID_CLASS} border-b border-border/70 bg-muted/35 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground`}>
         <span>Order</span>
-        <span>Customer</span>
+        <span>Customer / bundle</span>
         <span>Status</span>
         <span className="text-right">Total</span>
         <span aria-hidden="true" />
@@ -87,11 +87,14 @@ export function MobileOrderCard({
             />
           ) : null}
           <div className="min-w-0">
-            <p className="truncate font-mono text-[11px] font-semibold">{code}</p>
-            <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{date}</p>
+            <p className="break-all font-mono text-[10px] font-semibold leading-tight">{code}</p>
+            <p className="mt-0.5 truncate text-[9px] text-muted-foreground">{date}</p>
           </div>
         </div>
-        <p className="min-w-0 truncate font-medium">{customer}</p>
+        <div className="min-w-0">
+          <p className="truncate font-medium">{customer}</p>
+          {bundle || phone ? <p className="truncate text-[10px] text-muted-foreground">{[bundle, phone].filter(Boolean).join(" · ")}</p> : null}
+        </div>
         <Badge variant="outline" className={`max-w-[5.5rem] truncate rounded-md px-1.5 text-[10px] ${getOrderStatusBadgeClass(status)}`}>{getOrderStatusLabel(status)}</Badge>
         <div className="min-w-0 text-right">
           <p className="text-xs font-bold">{formatGhanaCedis(amount)}</p>

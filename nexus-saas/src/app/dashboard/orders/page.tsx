@@ -160,7 +160,7 @@ export default async function OrdersPage(
 
     return {
       id: order.id,
-      publicOrderCode: order.publicOrderCode || order.id.slice(-8),
+      publicOrderCode: order.publicOrderCode || order.id,
       createdAt: order.createdAt.toISOString(),
       buyerName: order.customer?.name || "Guest Customer",
       phoneNumber: resolveOrderRecipientPhone(order),
