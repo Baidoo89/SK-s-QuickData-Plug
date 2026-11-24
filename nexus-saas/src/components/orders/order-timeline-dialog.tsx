@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Clock3, Loader2 } from "lucide-react"
 import { format } from "date-fns"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -14,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { formatGhanaCedis } from "@/lib/currency"
+import { useToast } from "@/components/ui/use-toast"
 
 type TimelinePayload = {
   order: {
@@ -49,10 +51,14 @@ function compactMeta(meta: Record<string, unknown>) {
 }
 
 export function OrderTimelineDialog({ orderId, endpointBase = "/api/orders" }: Props) {
+  const router = useRouter()
+  const { toast } = useToast()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [verifyingPayment, setVerifyingPayment] = useState(false)
   const [payload, setPayload] = useState<TimelinePayload | null>(null)
   const [error, setError] = useState("")
+  const canVerifyStorefrontPayment = endpointBase === "/api/orders"
 
   async function loadTimeline(nextOpen: boolean) {
     setOpen(nextOpen)
@@ -71,6 +77,26 @@ export function OrderTimelineDialog({ orderId, endpointBase = "/api/orders" }: P
       setError(err instanceof Error ? err.message : "Could not load timeline")
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function verifyPaymentAgain() {
+    if (!payload?.payment || verifyingPayment) return
+
+    setVerifyingPayment(true)
+    try {
+      const response = await fetch(`/api/orders/${encodeURIComponent(orderId)}/payment/verify`, { method: "POST" })
+      const json = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(json?.error?.message || "Paystack has not confirmed this payment")
+
+      toast({ title: "Payment verified", description: "The order was recovered and is ready for processing." })
+      setPayload(null)
+      setOpen(false)
+      router.refresh()
+    } catch (error) {
+      toast({ variant: "destructive", title: "Payment not recovered", description: error instanceof Error ? error.message : "Paystack has not confirmed this payment" })
+    } finally {
+      setVerifyingPayment(false)
     }
   }
 
@@ -122,7 +148,16 @@ export function OrderTimelineDialog({ orderId, endpointBase = "/api/orders" }: P
                     <Badge variant="outline">{payload.payment.owner}</Badge>
                     <Badge variant="outline">{payload.payment.status}</Badge>
                     <span className="font-mono text-xs text-muted-foreground">{payload.payment.reference}</span>
+                    {canVerifyStorefrontPayment && payload.payment.owner === "STOREFRONT" && payload.payment.status !== "SUCCESS" ? (
+                      <Button type="button" size="sm" variant="outline" className="h-8 text-xs" onClick={verifyPaymentAgain} disabled={verifyingPayment}>
+                        {verifyingPayment ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
+                        {verifyingPayment ? "Checking..." : "Verify again"}
+                      </Button>
+                    ) : null}
                   </div>
+                  {canVerifyStorefrontPayment && payload.payment.owner === "STOREFRONT" && payload.payment.status !== "SUCCESS" ? (
+                    <p className="mt-2 text-xs text-muted-foreground">Use this only when the customer says money left their account.</p>
+                  ) : null}
                 </div>
               ) : null}
             </div>
