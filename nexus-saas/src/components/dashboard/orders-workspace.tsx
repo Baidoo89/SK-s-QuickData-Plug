@@ -58,6 +58,18 @@ function formatDate(value: string) {
   }).format(new Date(value))
 }
 
+function createManualSetLabel(id: string) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date())
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]))
+  return `B-${values.day}${values.month?.toUpperCase()}-${values.hour}${values.minute}-${id.slice(-2).toUpperCase()}`
+}
+
 function formatBundleForCopy(value: string) {
   const match = value.match(/\b(\d+(?:\.\d+)?)\s*(GB|MB|KB|TB)\b/i)
   if (!match) return value || "Bundle N/A"
@@ -284,7 +296,7 @@ export function DashboardOrdersWorkspace({ rows, initialClaimedSets = [] }: Prop
     const claimedSetId = status === "PROCESSING"
       ? `manual-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
       : undefined
-    const claimedSetLabel = status === "PROCESSING" ? `Set ${claimedSets.length + 1}` : undefined
+    const claimedSetLabel = claimedSetId ? createManualSetLabel(claimedSetId) : undefined
     const ok = await submitBulkStatus({
       orderIds,
       status,
