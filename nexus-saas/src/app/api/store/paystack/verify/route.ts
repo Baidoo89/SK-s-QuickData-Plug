@@ -7,6 +7,7 @@ import { getBaseUrl } from "@/lib/mail"
 import { getOrganizationPaymentSettings } from "@/lib/organization-payment-settings"
 import { resolveOrderDispatch } from "@/lib/order-dispatch"
 import { resolveOrderRecipientPhone } from "@/lib/order-recipient"
+import { parsePaystackMetadata } from "@/lib/paystack-metadata"
 
 export const dynamic = "force-dynamic"
 
@@ -30,16 +31,6 @@ function parseJsonArray(value: string | null | undefined) {
   }
 }
 
-function parseJsonObject(value: string | null | undefined) {
-  if (!value) return {}
-  try {
-    const parsed = JSON.parse(value)
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {}
-  } catch {
-    return {}
-  }
-}
-
 async function resolveReturnPath(meta: Record<string, unknown>, payment: StorefrontPaymentRow | null) {
   const rawReturnPath = typeof meta.returnPath === "string" ? meta.returnPath : ""
   if (
@@ -52,7 +43,7 @@ async function resolveReturnPath(meta: Record<string, unknown>, payment: Storefr
     return rawReturnPath
   }
 
-  const parsedPaymentMeta = parseJsonObject(payment?.metadata)
+  const parsedPaymentMeta = parsePaystackMetadata(payment?.metadata)
   const subscriberSlug =
     typeof meta.subscriberSlug === "string"
       ? meta.subscriberSlug
@@ -154,7 +145,7 @@ export async function GET(req: Request) {
 
     const data = await response.json().catch(() => null)
     verifiedSuccess = data?.status === true && data?.data?.status === "success"
-    const meta = (data?.data?.metadata || {}) as Record<string, unknown>
+    const meta = parsePaystackMetadata(data?.data?.metadata)
     const payment = await findStorefrontPayment(reference)
     const returnPath = await resolveReturnPath(meta, payment)
 

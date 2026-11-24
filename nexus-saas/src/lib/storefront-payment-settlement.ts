@@ -1,8 +1,9 @@
 import { Prisma } from "@prisma/client"
 import { db } from "@/lib/db"
 import { moneyToMinor, minorToMoney } from "@/lib/money"
+import { parsePaystackMetadata, type PaystackMetadata } from "@/lib/paystack-metadata"
 
-type GatewayPayment = { reference?: unknown; status?: unknown; currency?: unknown; amount?: unknown; metadata?: Record<string, unknown> }
+type GatewayPayment = { reference?: unknown; status?: unknown; currency?: unknown; amount?: unknown; metadata?: PaystackMetadata | string | null }
 function ids(value: unknown): string[] {
   if (!Array.isArray(value) || value.some(id => typeof id !== "string" || !id)) throw new Error("INVALID_STOREFRONT_PAYMENT")
   return [...new Set(value as string[])].sort()
@@ -15,7 +16,7 @@ function sameIds(left: unknown, right: string[]) {
 // The caller must obtain gatewayPayment using server-to-server verification.
 export async function settleStorefrontPayment(input: { reference: string; organizationId: string; gatewayPayment: GatewayPayment }) {
   const gateway = input.gatewayPayment
-  const meta = gateway.metadata ?? {}
+  const meta = parsePaystackMetadata(gateway.metadata)
   if (gateway.reference !== input.reference || gateway.currency !== "GHS" || meta.organizationId !== input.organizationId) throw new Error("INVALID_STOREFRONT_PAYMENT")
   return db.$transaction(async tx => {
     await tx.$queryRaw`SELECT "id" FROM "StorefrontPayment" WHERE "reference" = ${input.reference} FOR UPDATE`

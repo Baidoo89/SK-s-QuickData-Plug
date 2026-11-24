@@ -2,9 +2,10 @@ import { randomUUID } from "node:crypto"
 import { db } from "@/lib/db"
 import { moneyToMinor, minorToMoney } from "@/lib/money"
 import { getNextBillingDate } from "@/lib/subscription-access"
+import { parsePaystackMetadata, type PaystackMetadata } from "@/lib/paystack-metadata"
 
 type Actor = { id: string; organizationId: string | null; role: string }
-type GatewayPayment = { reference?: unknown; status?: unknown; currency?: unknown; amount?: unknown; metadata?: Record<string, unknown> }
+type GatewayPayment = { reference?: unknown; status?: unknown; currency?: unknown; amount?: unknown; metadata?: PaystackMetadata | string | null }
 const SUBSCRIPTION_QUOTE_TTL_MS = 30 * 60 * 1000
 
 export async function createSubscriptionQuote(actor: Actor, planId: string) {
@@ -27,7 +28,7 @@ export async function createSubscriptionQuote(actor: Actor, planId: string) {
 }
 
 export async function settleSubscriptionPayment(reference: string, gateway: GatewayPayment) {
-  const meta = gateway.metadata ?? {}
+  const meta = parsePaystackMetadata(gateway.metadata)
   if (gateway.reference !== reference || gateway.status !== "success" || gateway.currency !== "GHS" || meta.purpose !== "platform_subscription" || !Number.isSafeInteger(gateway.amount)) throw new Error("INVALID_SUBSCRIPTION_PAYMENT")
   const invoice = await db.subscriptionCheckout.findUnique({ where: { reference }, select: { organizationId: true } })
   if (!invoice) throw new Error("INVALID_SUBSCRIPTION_PAYMENT")

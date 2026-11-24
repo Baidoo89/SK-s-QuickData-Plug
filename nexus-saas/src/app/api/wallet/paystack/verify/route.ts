@@ -5,6 +5,7 @@ import { ApiErrors, logApiError } from "@/lib/api-response";
 import { recordVerifiedWalletTopup } from "@/lib/wallet-topup";
 import { getBaseUrl } from "@/lib/mail";
 import { getOrganizationPaymentSettings } from "@/lib/organization-payment-settings";
+import { parsePaystackMetadata } from "@/lib/paystack-metadata";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +55,7 @@ export async function GET(req: Request) {
     }
 
     const data = await response.json().catch(() => null);
-    const meta = (data?.data?.metadata || {}) as Record<string, unknown>;
+    const meta = parsePaystackMetadata(data?.data?.metadata);
     const returnPath = resolveWalletReturnPath(meta);
 
     if (!data?.status || data.data?.status !== "success") {

@@ -1,9 +1,10 @@
 import { db } from "@/lib/db"
 import { lockWallet } from "@/lib/wallet-lock"
+import { parsePaystackMetadata, type PaystackMetadata } from "@/lib/paystack-metadata"
 
 type VerifiedPayment = {
   reference?: unknown; status?: unknown; currency?: unknown; amount?: unknown;
-  metadata?: Record<string, unknown>
+  metadata?: PaystackMetadata | string | null
 }
 function cents(value: unknown): number {
   if (typeof value !== "number" || !Number.isFinite(value)) throw new Error("INVALID_WALLET_PAYMENT")
@@ -14,7 +15,7 @@ function cents(value: unknown): number {
 // Call only with the server-to-server verification response, never browser data.
 export async function recordVerifiedWalletTopup(input: { organizationId: string; reference: string; fundingOwner: "PLATFORM" | "SUBSCRIBER"; payment: VerifiedPayment }) {
   const { payment } = input
-  const meta = payment.metadata ?? {}
+  const meta = parsePaystackMetadata(payment.metadata)
   const userId = typeof meta.walletUserId === "string" ? meta.walletUserId : ""
   if (!input.reference || payment.reference !== input.reference || payment.status !== "success" || payment.currency !== "GHS" || meta.purpose !== "wallet_topup" || meta.organizationId !== input.organizationId || !userId) throw new Error("INVALID_WALLET_PAYMENT")
   const net = cents(meta.walletTopupAmountGHS)

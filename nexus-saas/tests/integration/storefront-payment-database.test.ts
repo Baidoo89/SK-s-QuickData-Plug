@@ -39,6 +39,14 @@ it("repeated and concurrent verification dispatches a paid order only once", asy
   expect((await db.storefrontPayment.findUniqueOrThrow({ where: { id: f.payment.id } })).status).toBe("SUCCESS")
   expect(await db.auditLog.count({ where: { targetId: f.order.id, action: "STOREFRONT_PAYMENT_SUCCESS" } })).toBe(1)
 })
+it("accepts Paystack stringified metadata during verification", async () => {
+  const f = await fixture()
+  state.payment.data.metadata = JSON.stringify(state.payment.data.metadata)
+  const response = await GET(f.request())
+  expect(response.headers.get("location")).toContain("checkout=success")
+  expect((await db.storefrontPayment.findUniqueOrThrow({ where: { id: f.payment.id } })).status).toBe("SUCCESS")
+  expect((await db.order.findUniqueOrThrow({ where: { id: f.order.id } })).paymentStatus).toBe("PAID")
+})
 it("a later failed verification cannot downgrade a successful payment", async () => {
   const f = await fixture()
   await GET(f.request())
