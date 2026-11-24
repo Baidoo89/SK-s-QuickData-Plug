@@ -24,6 +24,14 @@ function parseMeta(value: string | null) {
   }
 }
 
+function compactSetLabel(id: string, createdAt: Date) {
+  const day = String(createdAt.getUTCDate()).padStart(2, "0")
+  const month = createdAt.toLocaleString("en-US", { month: "short", timeZone: "UTC" }).toUpperCase()
+  const hour = String(createdAt.getUTCHours()).padStart(2, "0")
+  const minute = String(createdAt.getUTCMinutes()).padStart(2, "0")
+  return `B-${day}${month}-${hour}${minute}-${id.slice(-2).toUpperCase()}`
+}
+
 /**
  * Rebuilds active manual batches from their claim audit events. This keeps a
  * claimed set available after a refresh or when the owner returns later.
@@ -57,9 +65,10 @@ export async function getActiveManualOrderSets(params: {
       continue
     }
 
+    const storedLabel = typeof meta.manualSetLabel === "string" ? meta.manualSetLabel.trim() : ""
     groups.set(groupKey, {
       id: setId,
-      label: typeof meta.manualSetLabel === "string" && meta.manualSetLabel.trim() ? meta.manualSetLabel : `Set ${groups.size + 1}`,
+      label: storedLabel && !/^Set\s+\d+$/i.test(storedLabel) ? storedLabel : compactSetLabel(setId, log.createdAt),
       orderIds: new Set([log.targetId]),
       createdAt: log.createdAt,
     })
