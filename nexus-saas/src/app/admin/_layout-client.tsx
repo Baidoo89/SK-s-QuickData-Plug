@@ -38,7 +38,7 @@ function NavLink({ href, label, icon: Icon, closeOnClick = false }: { href: stri
     <Link
       href={href}
       title={label}
-      className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+      className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
         active ? "border-primary/30 bg-primary/10 text-primary shadow-sm" : "text-muted-foreground hover:text-primary"
       }`}
     >
@@ -105,6 +105,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             size="icon"
             className={sidebarCollapsed ? "h-8 w-8" : "ml-auto h-8 w-8"}
             onClick={() => setSidebarCollapsed((value) => !value)}
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
@@ -121,7 +122,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex min-w-0 items-center gap-3">
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="h-9 w-9 shrink-0 md:hidden">
+                <Button variant="outline" size="icon" className="h-9 w-9 shrink-0 md:hidden" aria-label="Open navigation">
                   <Menu className="h-5 w-5" />
                   <span className="sr-only">Open navigation</span>
                 </Button>
@@ -175,7 +176,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </DropdownMenu>
           </div>
         </header>
-        <main className="content-sheen min-w-0 flex-1 overflow-x-hidden px-3 py-4 pt-16 sm:px-4 md:p-6 md:pt-[76px]">
+        <a href="#admin-main-content" className="sr-only z-50 rounded-lg bg-background p-3 focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
+          Skip to content
+        </a>
+        <main id="admin-main-content" tabIndex={-1} className="content-sheen min-w-0 flex-1 overflow-x-hidden px-3 py-4 pt-16 outline-none sm:px-4 md:p-6 md:pt-[76px]">
           {children}
         </main>
       </div>
